@@ -123,6 +123,7 @@ function waitForCart(): Promise<Element> {
         }
 
         const mo = new MutationObserver(() => {
+            console.log("waiting for planner")
             const iframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe')?.contentDocument;
             if(iframe){
                 const found = iframe.querySelector('#classSearchTable');
@@ -133,14 +134,45 @@ function waitForCart(): Promise<Element> {
             }
 
         });
-        mo.observe(document, { childList: true, subtree: true });
+if(iframe) {
+    mo.observe(iframe, {childList: true, subtree: true});
+}
+});
+}
+function waitForRows(
+    table: HTMLTableElement,
+    minRows = 2          // wait at least for first parent + its child
+): Promise<NodeListOf<HTMLTableRowElement>> {
+    return new Promise(resolve => {
+        const tbody = table.querySelector('tbody')!;
+        const check = () => {
+            const rows = tbody.querySelectorAll('tr');
+            if (rows.length >= minRows) {
+                mo.disconnect();
+                resolve(rows);
+            }
+        };
+
+        // first check immediately
+        check();
+
+        // then watch for new rows
+        const mo = new MutationObserver(check);
+        mo.observe(tbody, { childList: true });
     });
 }
+
 
 (async () => {
     const scheduleElement = await waitForScheduleTable();
 
     scrapeScheduleTable(scheduleElement);
+
+    const plannerElement = await waitForCart();
+    console.log("Planner element found");
+    console.log(plannerElement);
+    await scrapePlanner(plannerElement);
+
 })();
 
 /*});*/
@@ -214,19 +246,53 @@ function scrapeScheduleTable(scheduleTable : Element){
 
 }
 const planner_courses: Course[] = [];
-function scrapePlanner (plannerTable : Element){
-const selected_classes = plannerTable.querySelectorAll('tbody > tr');
-const filtered_classes = Array.from(selected_classes).filter(el => el.classList.contains("child")); // Removes header
+async function scrapePlanner (plannerTable : Element){
+const selected_classes =  await waitForRows(plannerTable as HTMLTableElement, 2);
+const filtered_classes = Array.from(selected_classes).filter(el => el.classList.contains("child")); // Excludes headers
 
+console.log("Selected classes");
+console.log(selected_classes);
+
+    console.log("Filtered classes");
+    console.log(filtered_classes);
     filtered_classes.forEach((class_item : Element) =>{
         let cAbr = "";
         let cIns = "";
-        const class_details = class_item.querySelector('[id^="searchResultsInner"]');
-        const class_detail_body = class_details.querySelector('tbody > tr');
-        cIns = class_detail_body.querySelector('[data-label="INSTRUCTOR"]')?.textContent ?? "";
-        const class_header = class_item.previousElementSibling.querySelectorAll('td');
-        cAbr = class_header.item(1).textContent ?? "";
+        if(!class_item){
+            console.log("Class item not found");
+            return;
+        }
+        console.log(class_item);
 
+        const class_details = class_item.querySelector('[id^="searchResultsInner"]');
+        if(!class_details){
+            console.log("Planner inner search table not found")
+        return;
+        }
+        const class_detail_body = class_details.querySelector('tbody > tr');
+       if(!class_detail_body){
+           console.log("Planner Course details not found")
+       return;
+       }
+        cIns = class_detail_body.querySelector('[data-label="INSTRUCTOR"]')?.textContent ?? "";
+
+        const class_header = class_item.previousElementSibling;
+        if(!class_header){
+            console.log("Planner Course Header Not Found");
+        return;
+        }
+        const class_header_item = class_header.querySelectorAll('td');
+
+        cAbr = class_header_item.item(1).textContent ?? "";
+        const course : Course = {
+            abr: cAbr,
+            instructor: cIns,
+            title: "",
+            id: ","
+        }
+        console.log("planner course");
+        console.log(course);
+        planner_courses.push(course);
     });
 }
 
