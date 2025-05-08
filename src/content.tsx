@@ -86,7 +86,7 @@ const courses: Course[] = [];
 console.log("Started");
 
 
-function waitForElement(): Promise<Element> {
+function waitForScheduleTable(): Promise<Element> {
     console.log("Waiting for element");
     return new Promise(resolve => {
         const iframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe')?.contentDocument;
@@ -111,18 +111,42 @@ function waitForElement(): Promise<Element> {
         mo.observe(document, { childList: true, subtree: true });
     });
 }
+function waitForCart(): Promise<Element> {
+    console.log("Waiting for element");
+    return new Promise(resolve => {
+        const iframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe')?.contentDocument;
+        if(iframe){
+            const existing = iframe.querySelector('#classSearchTable');
+            if(existing){
+                return resolve(existing);
+            }
+        }
+
+        const mo = new MutationObserver(() => {
+            const iframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe')?.contentDocument;
+            if(iframe){
+                const found = iframe.querySelector('#classSearchTable');
+                if(found){
+                    mo.disconnect();
+                    resolve(found);
+                }
+            }
+
+        });
+        mo.observe(document, { childList: true, subtree: true });
+    });
+}
 
 (async () => {
-    const scheduleElement = await waitForElement();
+    const scheduleElement = await waitForScheduleTable();
 
-    // ✅ Safe to scrape now
     scrapeScheduleTable(scheduleElement);
 })();
 
 /*});*/
-function scrapeScheduleTable(iframeDoc : Element){
-    const courseSpans = iframeDoc?.querySelectorAll('span.showCourseDetailsLink');
-    const scheduled_courses = iframeDoc?.querySelectorAll('tbody > tr');
+function scrapeScheduleTable(scheduleTable : Element){
+    const courseSpans = scheduleTable?.querySelectorAll('span.showCourseDetailsLink');
+    const scheduled_courses = scheduleTable?.querySelectorAll('tbody > tr');
     if(scheduled_courses?.length){ // All courses
         const filtered_classes = Array.from(scheduled_courses).filter(el => el.classList.contains("child")); // Excludes headers
 
@@ -172,7 +196,6 @@ function scrapeScheduleTable(iframeDoc : Element){
     }else{
         console.log("No selected courses found")
     }
-    console.log(courseSpans);
     if(courseSpans) {
         courseSpans.forEach((span, index) => {
             const dataset = (span as HTMLElement).dataset;
@@ -190,6 +213,21 @@ function scrapeScheduleTable(iframeDoc : Element){
     }
 
 }
+const planner_courses: Course[] = [];
+function scrapePlanner (plannerTable : Element){
+const selected_classes = plannerTable.querySelectorAll('tbody > tr');
+const filtered_classes = Array.from(selected_classes).filter(el => el.classList.contains("child")); // Removes header
+
+    filtered_classes.forEach((class_item : Element) =>{
+        let cAbr = "";
+        let cIns = "";
+        const class_details = class_item.querySelector('[id^="searchResultsInner"]');
+        const class_detail_body = class_details.querySelector('tbody > tr');
+        cIns = class_detail_body.querySelector('[data-label="INSTRUCTOR"]')?.textContent ?? "";
+        const class_header = class_item.previousElementSibling.querySelectorAll('td');
+        cAbr = class_header.item(1).textContent ?? "";
+
+    });
+}
 
 
-/*courseObserver.observe(document.body, {childList: true, subtree: true});*/
