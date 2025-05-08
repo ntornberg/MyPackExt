@@ -113,8 +113,6 @@ function waitForElement(): Promise<Element> {
 }
 
 (async () => {
-    console.log("waitng");
-
     const scheduleElement = await waitForElement();
 
     // ✅ Safe to scrape now
@@ -125,8 +123,6 @@ function waitForElement(): Promise<Element> {
 function scrapeScheduleTable(iframeDoc : Element){
     const courseSpans = iframeDoc?.querySelectorAll('span.showCourseDetailsLink');
     const scheduled_courses = iframeDoc?.querySelectorAll('tbody > tr');
-    console.log(iframeDoc);
-    console.log(scheduled_courses);
     if(scheduled_courses?.length){ // All courses
         const filtered_classes = Array.from(scheduled_courses).filter(el => el.classList.contains("child")); // Excludes headers
 
@@ -149,14 +145,12 @@ function scrapeScheduleTable(iframeDoc : Element){
             let cId : string = "";
             let cAbr : string = "";
             let cIns : string = "";
-            console.log("Found class data");
-            console.log(class_data_list);
             class_data_list.forEach((class_item) =>{ // Loop through class tooltip
                 if((class_item as HTMLElement).className == 'sect'){
                     const section_details_container = class_item.querySelector('[id^="section_details"]');
-                    console.log(section_details_container);
+
                     if (!section_details_container) return; // Null check
-                    const details_list = section_details_container.querySelectorAll('#div') ?? "";
+                    const details_list = section_details_container.querySelectorAll('div') ?? "";
                     cTitle = details_list.item(0).textContent ?? "";
                     cId = details_list.item(2).querySelector('.classDetailValue')?.textContent ?? "";
                     cIns = details_list.item(9).querySelector('.classDetailValue')?.textContent ?? "";
@@ -165,7 +159,7 @@ function scrapeScheduleTable(iframeDoc : Element){
                 }
             });
             if (!cTitle || !cId || !cIns) return; // Null check
-            cAbr = cTitle.trim().split(/\s+/)[0];
+            cAbr = cTitle.trim().split(/\s-+/)[0];
             const course: Course = {
                 title: cTitle,
                 id: cId,
