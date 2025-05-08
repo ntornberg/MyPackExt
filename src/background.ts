@@ -1,3 +1,4 @@
+/*
 console.log("back loaded")
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log(sender);
@@ -9,4 +10,4 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
         return true;
     }
-});
+});*/
