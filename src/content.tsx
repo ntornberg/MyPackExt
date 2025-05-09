@@ -334,7 +334,24 @@ async function scrapePlanner(plannerTableElement: Element): Promise<void> {
         AppLogger.error("Error scraping planner/cart table or waiting for rows:", error);
     }
 }
+async function computeHash(courseName: string, professorName: string): Promise<string> {
+    const input = courseName + professorName;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(input);
 
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data); // Hash as ArrayBuffer
+
+
+    // Convert first 8 bytes to a single 64-bit unsigned integer (big-endian)
+    const view = new DataView(hashBuffer);
+    const uniqueHash = view.getBigUint64(0, false); // false = big-endian like C#
+
+    return uniqueHash.toString();
+}
+
+async function getCourseDetails(course: Course): Promise<void> {
+    const uniqueCourseHash = await computeHash(course.abr, course.instructor);
+}
 
 /* --- Commented Out Code Block (Original - Kept for reference) --- */
 /*type CourseInfo = {
