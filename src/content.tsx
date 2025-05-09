@@ -1,6 +1,26 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 
+// --- Logger Utility ---
+// Provides a structured way to log messages.
+class AppLogger {
+    private static prefix = "[MyPackEnhancer]";
+
+    public static info(message?: any, ...optionalParams: any[]): void {
+        console.info(`${this.prefix} [INFO] ${new Date().toISOString()}`, message, ...optionalParams);
+    }
+
+    public static warn(message?: any, ...optionalParams: any[]): void {
+        console.warn(`${this.prefix} [WARN] ${new Date().toISOString()}`, message, ...optionalParams);
+    }
+
+    public static error(message?: any, ...optionalParams: any[]): void {
+        console.error(`${this.prefix} [ERROR] ${new Date().toISOString()}`, message, ...optionalParams);
+    }
+    // Debug logs can be added here if needed, but are omitted for now to reduce verbosity.
+}
+
+// --- React Component ---
 const App: React.FC = () => {
     return (
         <div style={{ padding: '1rem' }}>
@@ -9,44 +29,8 @@ const App: React.FC = () => {
         </div>
     );
 };
-/*type CourseInfo = {
-    courseID : string;
-}*/
-/*let userId : string;
-const cookieObserver = new MutationObserver(() => {
-    chrome.runtime.sendMessage({ type: "GET_COOKIES" }, (cookies) => {
-        if (chrome.runtime.lastError) {
-            console.error("Message failed:", chrome.runtime.lastError.message);
-            return;
-        }
-        const targetCookie = cookies.find((cookie: any) => cookie.name === 'PS_LOGINLIST');
-        if (targetCookie) {
-            console.log(targetCookie.value);
-            userId = targetCookie.value.substring(targetCookie.value.lastIndexOf("/") + 1);
 
-
-        }else{
-            console.log("Failed To find Cookie")
-        }
-    });
-});*/
-/*cookieObserver.observe(document.body, {childList: true, subtree: true});*/
-
-/*function form_url(userId: string, courseId :string) : string{
-    const base = "https://portalsp.acs.ncsu.edu/psc/" + userId;
-    return base + "/EMPLOYEE/NCSIS/s/WEBLIB_ENROLL.ISCRIPT1.FieldFormula.IScript_getClassSearchResults?crseId=" + courseId;
-
-
-}*/
-
-/*const GetCourseDetails: React.FC<CourseInfo> = ({courseID}) =>{
-
-const [data,setData] = useState<any>(null);
-
-    useEffect(() => {
-        fetch('')
-    }, []);
-}*/
+// --- Sidebar Injection ---
 const mount = document.createElement('div');
 mount.id = 'mypack-sidebar';
 Object.assign(mount.style, {
@@ -59,262 +43,329 @@ Object.assign(mount.style, {
     zIndex: '999999',
     boxShadow: '0 0 10px rgba(0,0,0,0.3)',
 });
-
 document.body.appendChild(mount);
 const root = createRoot(mount);
 root.render(<App />);
-/*
-#shoppingCartTable_wrapper
-#shoppingCartTable
-#scheduleTable_wrapper
-#scheduleTable
-#plannerTable_wrapper
-#plannerTable
-#requiredCoursesTable
-#gepRequirementsTable
- */
-type Course ={
-    title : string;
-    id : string;
-    abr : string;
+AppLogger.info("MyPack Enhancer sidebar injected.");
+
+// --- Course Data Structure ---
+type Course = {
+    title: string;
+    id: string;
+    abr: string;
     instructor: string;
 }
 
-const courses: Course[] = [];
-/*const courseObserver = new MutationObserver(() => {*/
-/** Resolves with a reference to the iframe element */
-console.log("Started");
+const courses: Course[] = []; // Stores courses from the main schedule table
+const planner_courses: Course[] = []; // Stores courses from the planner/cart
 
+AppLogger.info("MyPack Enhancer script started.");
 
+/**
+ * Waits for the schedule table ('#scheduleTable') within the MyPack iframe.
+ * @returns {Promise<Element>} A promise that resolves with the '#scheduleTable' element.
+ */
 function waitForScheduleTable(): Promise<Element> {
-    console.log("Waiting for element");
+    AppLogger.info("Waiting for schedule table (#scheduleTable)...");
     return new Promise(resolve => {
-        const iframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe')?.contentDocument;
-        if(iframe){
-            const existing = iframe.querySelector('#scheduleTable');
-            if(existing){
-                return resolve(existing);
-            }
+        const findTable = (): Element | null => {
+            const iframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe')?.contentDocument;
+            return iframe ? iframe.querySelector('#scheduleTable') : null;
+        };
+
+        const existingTable = findTable();
+        if (existingTable) {
+            AppLogger.info("Schedule table found immediately.");
+            return resolve(existingTable);
         }
 
-        const mo = new MutationObserver(() => {
-            const iframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe')?.contentDocument;
-            if(iframe){
-                const found = iframe.querySelector('#scheduleTable');
-                if(found){
-                    mo.disconnect();
-                    resolve(found);
-                }
+        const observer = new MutationObserver(() => {
+            const table = findTable();
+            if (table) {
+                AppLogger.info("Schedule table found by MutationObserver.");
+                observer.disconnect();
+                resolve(table);
             }
-
         });
-        mo.observe(document, { childList: true, subtree: true });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
     });
 }
+
+/**
+ * Waits for the planner/cart table ('#classSearchTable') within the enroll wizard container in an iframe.
+ * @returns {Promise<Element>} A promise that resolves with the '#classSearchTable' element.
+ */
 function waitForCart(): Promise<Element> {
-    console.log("Waiting for element");
+    AppLogger.info("Waiting for planner/cart table (#classSearchTable)...");
     return new Promise(resolve => {
-        const iframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe')?.contentDocument;
-        if(iframe){
-            const existing = iframe.querySelector('#classSearchTable');
-            if(existing){
-                return resolve(existing);
-            }
+        const findTable = (): Element | null => {
+            const iframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe')?.contentDocument;
+            if (!iframe) return null;
+            const plannerParent = iframe.querySelector('#enroll-wizard-container');
+            if (!plannerParent) return null;
+            return plannerParent.querySelector('#classSearchTable');
+        };
+
+        const existingTable = findTable();
+        if (existingTable) {
+            AppLogger.info("Planner/cart table found immediately.");
+            return resolve(existingTable);
         }
 
-        const mo = new MutationObserver(() => {
-            console.log("waiting for planner")
-            const iframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe')?.contentDocument;
-            if(iframe){
-                const found = iframe.querySelector('#classSearchTable');
-                if(found){
-                    mo.disconnect();
-                    resolve(found);
-                }
+        const observer = new MutationObserver(() => {
+            const table = findTable();
+            if (table) {
+                AppLogger.info("Planner/cart table found by MutationObserver.");
+                observer.disconnect();
+                resolve(table);
             }
-
         });
-if(iframe) {
-    mo.observe(iframe, {childList: true, subtree: true});
-}
-});
-}
-function waitForRows(
-    table: HTMLTableElement,
-    minRows = 2          // wait at least for first parent + its child
-): Promise<NodeListOf<HTMLTableRowElement>> {
-    return new Promise(resolve => {
 
-        const tbody = table.querySelector('tbody')!;
-        const mo = new MutationObserver(() => {
+        // Determine the most appropriate node to observe.
+        // Start with document.documentElement as a fallback.
+        let targetNodeToObserve: Node = document.documentElement;
+        const initialIframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe');
+        if (initialIframe?.contentDocument) {
+            const plannerParent = initialIframe.contentDocument.querySelector('#enroll-wizard-container');
+            if (plannerParent) {
+                targetNodeToObserve = plannerParent; // Observe #enroll-wizard-container if available
+            } else {
+                targetNodeToObserve = initialIframe.contentDocument; // Observe iframe document if #enroll-wizard-container is not
+            }
+        }
+        observer.observe(targetNodeToObserve, { childList: true, subtree: true });
+    });
+}
+
+/**
+ * Waits for a minimum number of rows to appear in a given table's tbody.
+ * @param {HTMLTableElement} table - The table element to observe.
+ * @param {number} [minRows=2] - The minimum number of rows to wait for.
+ * @returns {Promise<NodeListOf<HTMLTableRowElement>>} A promise that resolves with the NodeList of rows.
+ */
+function waitForRows(table: HTMLTableElement, minRows = 2): Promise<NodeListOf<HTMLTableRowElement>> {
+    return new Promise((resolve, reject) => {
+        const tbody = table.querySelector('tbody');
+        if (!tbody) {
+            AppLogger.warn("waitForRows: Table has no tbody element.", table);
+            return reject(new Error("Table does not have a tbody element."));
+        }
+
+        let observer: MutationObserver | null = null;
+        const checkRows = () => {
             const rows = tbody.querySelectorAll('tr');
             if (rows.length >= minRows) {
-                mo.disconnect();
+                if (observer) observer.disconnect();
                 resolve(rows);
+                return true;
             }
-        });
-        const rows = tbody.querySelectorAll('tr');
-        if (rows.length >= minRows) {
-            mo.disconnect();
-            return resolve(rows);
-        }
+            return false;
+        };
 
+        if (checkRows()) return; // Check immediately
 
-
-        // then watch for new rows
-
-        mo.observe(tbody, { childList: true });
+        observer = new MutationObserver(checkRows);
+        observer.observe(tbody, { childList: true });
     });
 }
-async function observer_planner_changes() {
+
+/**
+ * Creates a debounced version of a function.
+ * @param {() => void} fn - The function to debounce.
+ * @param {number} [ms=100] - The debounce delay in milliseconds. (Increased from original 20/25 for stability)
+ * @returns {() => void} The debounced function.
+ */
+const debounce = (fn: () => void, ms = 100): () => void => {
+    let timeoutId: number;
+    return () => {
+        clearTimeout(timeoutId);
+        timeoutId = window.setTimeout(fn, ms);
+    };
+};
+
+/**
+ * Sets up a MutationObserver to watch for changes in the planner/cart container.
+ * When changes occur, it triggers a debounced scraping of the planner table.
+ */
+async function observer_planner_changes(): Promise<void> {
     const iframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe');
     const iframeDoc = iframe?.contentDocument;
-    if (!iframeDoc) return;
-    const plannerParent = iframeDoc.querySelector('#enroll-wizard-container');
-    if (!plannerParent) return;
+    if (!iframeDoc) {
+        AppLogger.warn("observer_planner_changes: Iframe document not found. Cannot observe planner changes.");
+        return;
+    }
+    const plannerParentContainer = iframeDoc.querySelector('#enroll-wizard-container');
+    if (!plannerParentContainer) {
+        AppLogger.warn("observer_planner_changes: Planner container (#enroll-wizard-container) not found. Cannot observe planner changes.");
+        return;
+    }
 
-    const planner_observer = new MutationObserver(async () => {
-        console.log("Planner element found");
-        const plannerElement = await waitForCart();
-        await scrapePlanner(plannerElement);
-    });
-    planner_observer.observe(plannerParent, {childList: true, subtree: true,attributes: true,characterData: true});
+    const debouncedScrape = debounce(async () => {
+        AppLogger.info("Planner changes detected, re-scraping planner...");
+        try {
+            const plannerElement = await waitForCart(); // Re-ensure planner table is accessible
+            await scrapePlanner(plannerElement);
+        } catch (error) {
+            AppLogger.error("Error during debounced planner scrape:", error);
+        }
+    }, 100); // Debounce time of 100ms
 
+    const plannerObserver = new MutationObserver(debouncedScrape);
+    plannerObserver.observe(plannerParentContainer, { childList: true, subtree: true });
+    AppLogger.info("Observer for planner/cart changes is now active.");
 }
-    (async () => {
-        const scheduleElement = await waitForScheduleTable();
 
+// --- Main Execution Block ---
+(async () => {
+    try {
+        const scheduleElement = await waitForScheduleTable();
         scrapeScheduleTable(scheduleElement);
 
         const plannerElement = await waitForCart();
-        console.log("Planner element found");
-        console.log(plannerElement);
+        AppLogger.info("Initial planner element found, performing first scrape.");
         await scrapePlanner(plannerElement);
-        await observer_planner_changes();
-    })();
 
-    /*});*/
-    function scrapeScheduleTable(scheduleTable: Element) {
-        const courseSpans = scheduleTable?.querySelectorAll('span.showCourseDetailsLink');
-        const scheduled_courses = scheduleTable?.querySelectorAll('tbody > tr');
-        if (scheduled_courses?.length) { // All courses
-            const filtered_classes = Array.from(scheduled_courses).filter(el => el.classList.contains("child")); // Excludes headers
+        await observer_planner_changes(); // Set up observer for subsequent changes
 
-            filtered_classes.forEach((elem) => {  // All lower rows of the schedule table, section,type,days,time,etc.
-                const tbl = (elem as HTMLElement)
-                const inner_table = tbl.querySelector('[id^="scheduleInner_"]') // Inner table (Gets through nesting)
-                if (!inner_table) {
-                    console.log("No inner schedule table detected");
-                    return;
-                } // Null check
-
-                const class_row = inner_table.querySelector('tbody > tr'); // Gets first row of inner table (the only row)
-                if (!class_row) {
-
-                    console.log("No class rows detected");
-                    return;
-                } // Null check
-                const class_data_list = class_row.querySelectorAll('td'); // Gets all cells in the row
-                let cTitle: string = "";
-                let cId: string = "";
-                let cAbr: string = "";
-                let cIns: string = "";
-                class_data_list.forEach((class_item) => { // Loop through class tooltip
-                    if ((class_item as HTMLElement).className == 'sect') {
-                        const section_details_container = class_item.querySelector('[id^="section_details"]');
-
-                        if (!section_details_container) return; // Null check
-                        const details_list = section_details_container.querySelectorAll('div') ?? "";
-                        cTitle = details_list.item(0).textContent ?? "";
-                        cId = details_list.item(2).querySelector('.classDetailValue')?.textContent ?? "";
-                        cIns = details_list.item(9).querySelector('.classDetailValue')?.textContent ?? "";
-                    } else {
-                        console.log("Section row not found");
-                    }
-                });
-                if (!cTitle || !cId || !cIns) return; // Null check
-                cAbr = cTitle.trim().split(/\s-+/)[0];
-                const course: Course = {
-                    title: cTitle,
-                    id: cId,
-                    abr: cAbr,
-                    instructor: cIns,
-                }
-                console.log(course);
-                courses.push(course);
-            });
-        } else {
-            console.log("No selected courses found")
-        }
-        if (courseSpans) {
-            courseSpans.forEach((span, index) => {
-                const dataset = (span as HTMLElement).dataset;
-
-                console.log(`Span ${index}`);
-                console.log(`  Course: ${dataset.course}`);
-                console.log(`  Title: ${dataset.course_title}`);
-                console.log(`  ID: ${dataset.crse_id}`);
-                console.log(`  Offer #: ${dataset.crse_offer_nbr}`);
-                /*if(dataset.crse_id != null) {
-                    const rq_url = form_url(userId, dataset.crse_id);
-                    console.log(rq_url);
-                }*/
-            });
-        }
-
+    } catch (error) {
+        AppLogger.error("An error occurred during the main execution block:", error);
     }
+})();
 
-    const planner_courses: Course[] = [];
+/**
+ * Scrapes course data from the main schedule table.
+ * @param {Element} scheduleTableElement - The HTML element of the schedule table.
+ */
+function scrapeScheduleTable(scheduleTableElement: Element): void {
+    AppLogger.info("Scraping schedule table...");
+    //const courseDetailSpans = scheduleTableElement.querySelectorAll('span.showCourseDetailsLink');
+    const allScheduledRows = scheduleTableElement.querySelectorAll('tbody > tr');
+    let scrapedCount = 0;
 
-    async function scrapePlanner(plannerTable: Element) {
-        const selected_classes = await waitForRows(plannerTable as HTMLTableElement, 2);
-        const filtered_classes = Array.from(selected_classes).filter(el => el.classList.contains("child")); // Excludes headers
+    if (allScheduledRows?.length) {
+        const courseSectionRows = Array.from(allScheduledRows).filter(el => el.classList.contains("child"));
 
-        console.log("Selected classes");
-        console.log(selected_classes);
+        courseSectionRows.forEach((rowElement) => {
+            const htmlRowElement = rowElement as HTMLElement;
+            const innerTable = htmlRowElement.querySelector('[id^="scheduleInner_"]');
+            if (!innerTable) return;
 
-        console.log("Filtered classes");
-        console.log(filtered_classes);
-        filtered_classes.forEach((class_item: Element) => {
-            let cAbr = "";
-            let cIns = "";
-            if (!class_item) {
-                console.log("Class item not found");
-                return;
-            }
-            console.log(class_item);
+            const classDataRow = innerTable.querySelector('tbody > tr');
+            if (!classDataRow) return;
 
-            const class_details = class_item.querySelector('[id^="searchResultsInner"]');
-            if (!class_details) {
-                console.log("Planner inner search table not found")
-                return;
-            }
-            const class_detail_body = class_details.querySelector('tbody > tr');
-            if (!class_detail_body) {
-                console.log("Planner Course details not found")
-                return;
-            }
-            cIns = class_detail_body.querySelector('[data-label="INSTRUCTOR"]')?.textContent ?? "";
+            const classDataCells = classDataRow.querySelectorAll('td');
+            let courseTitle = "", courseIdNum = "", courseAbbreviation = "", courseInstructor = "";
 
-            const class_header = class_item.previousElementSibling;
-            if (!class_header) {
-                console.log("Planner Course Header Not Found");
-                return;
-            }
-            const class_header_item = class_header.querySelectorAll('td');
+            classDataCells.forEach((cell) => {
+                if ((cell as HTMLElement).className === 'sect') {
+                    const sectionDetailsContainer = cell.querySelector('[id^="section_details"]');
+                    if (!sectionDetailsContainer) return;
+                    const detailDivs = sectionDetailsContainer.querySelectorAll('div');
+                    if (detailDivs.length > 9) {
+                        courseTitle = detailDivs[0]?.textContent?.trim() ?? "";
+                        courseIdNum = detailDivs[2]?.querySelector('.classDetailValue')?.textContent?.trim() ?? "";
+                        courseInstructor = detailDivs[9]?.querySelector('.classDetailValue')?.textContent?.trim() ?? "Staff";
+                    }
+                }
+            });
 
-            cAbr = class_header_item.item(1).textContent ?? "";
-            const course: Course = {
-                abr: cAbr,
-                instructor: cIns,
-                title: "",
-                id: ""
-            }
-            console.log("planner course");
-            console.log(course);
-            planner_courses.push(course);
+            if (!courseTitle || !courseIdNum) return;
+
+            courseAbbreviation = courseTitle.trim().split(/\s-\s/)[0];
+            const scrapedCourse: Course = {
+                title: courseTitle, id: courseIdNum, abr: courseAbbreviation, instructor: courseInstructor,
+            };
+            courses.push(scrapedCourse);
+            AppLogger.info("Detected scheduled course:", scrapedCourse.abr, scrapedCourse.id, scrapedCourse.instructor);
+            scrapedCount++;
         });
     }
+    AppLogger.info(`Schedule table scraping complete. Found ${scrapedCount} courses.`);
+
+    // Optional: Log details from courseDetailSpans if needed, kept minimal for now
+    // if (courseDetailSpans) {
+    //     AppLogger.info(`Found ${courseDetailSpans.length} 'showCourseDetailsLink' spans with metadata.`);
+    // }
+}
+
+/**
+ * Scrapes course data from the planner/cart table.
+ * @param {Element} plannerTableElement - The HTML element of the planner/cart table.
+ */
+async function scrapePlanner(plannerTableElement: Element): Promise<void> {
+    AppLogger.info("Scraping planner/cart table...");
+    planner_courses.length = 0; // Clear previous planner courses
+    let scrapedCount = 0;
+
+    try {
+        const classRows = await waitForRows(plannerTableElement as HTMLTableElement, 2); // Expect at least header + child or two child rows
+        const filteredClassDetailRows = Array.from(classRows).filter(el => el.classList.contains("child"));
+
+        filteredClassDetailRows.forEach((classDetailRow) => {
+            let courseAbbreviation = "N/A";
+            let courseInstructor = "N/A";
+
+            const searchResultsInnerTable = classDetailRow.querySelector('[id^="searchResultsInner"]');
+            if (!searchResultsInnerTable) return;
+
+            const innerTableBodyRow = searchResultsInnerTable.querySelector('tbody > tr');
+            if (!innerTableBodyRow) return;
+
+            courseInstructor = innerTableBodyRow.querySelector('[data-label="INSTRUCTOR"]')?.textContent?.trim() ?? "Staff";
+
+            const courseHeaderRow = classDetailRow.previousElementSibling;
+            if (courseHeaderRow) {
+                const headerCells = courseHeaderRow.querySelectorAll('td');
+                if (headerCells.length > 1) {
+                    courseAbbreviation = headerCells[1]?.textContent?.trim() ?? "N/A";
+                }
+            }
+
+            const scrapedPlannerCourse: Course = {
+                abr: courseAbbreviation, instructor: courseInstructor, title: "", id: "", // Title/ID might need more specific scraping if available here
+            };
+            planner_courses.push(scrapedPlannerCourse);
+            AppLogger.info("Detected planner course:", scrapedPlannerCourse.abr, scrapedPlannerCourse.instructor);
+            scrapedCount++;
+        });
+        AppLogger.info(`Planner/cart scraping complete. Found ${scrapedCount} courses.`);
+
+    } catch (error) {
+        AppLogger.error("Error scraping planner/cart table or waiting for rows:", error);
+    }
+}
 
 
+/* --- Commented Out Code Block (Original - Kept for reference) --- */
+/*type CourseInfo = {
+    courseID : string;
+}*/
+/*let userId : string;
+const cookieObserver = new MutationObserver(() => {
+    chrome.runtime.sendMessage({ type: "GET_COOKIES" }, (cookies) => {
+        if (chrome.runtime.lastError) {
+            AppLogger.error("Message failed:", chrome.runtime.lastError.message); // Using new logger
+            return;
+        }
+        const targetCookie = cookies.find((cookie: any) => cookie.name === 'PS_LOGINLIST');
+        if (targetCookie) {
+            AppLogger.info(targetCookie.value); // Using new logger
+            userId = targetCookie.value.substring(targetCookie.value.lastIndexOf("/") + 1);
+        }else{
+            AppLogger.warn("Failed To find Cookie"); // Using new logger
+        }
+    });
+});*/
+/*cookieObserver.observe(document.body, {childList: true, subtree: true});*/
 
+/*function form_url(userId: string, courseId :string) : string{
+    const base = "https://portalsp.acs.ncsu.edu/psc/" + userId;
+    return base + "/EMPLOYEE/NCSIS/s/WEBLIB_ENROLL.ISCRIPT1.FieldFormula.IScript_getClassSearchResults?crseId=" + courseId;
+}*/
+
+/*const GetCourseDetails: React.FC<CourseInfo> = ({courseID}) =>{
+const [data,setData] = useState<any>(null);
+    useEffect(() => {
+        fetch('')
+    }, []);
+}*/
