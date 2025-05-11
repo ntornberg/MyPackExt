@@ -82,6 +82,7 @@ function waitForScheduleTable(): Promise<Element> {
         const observer = new MutationObserver(() => {
             const table = findTable();
             if (table) {
+                console.log(table);
                 AppLogger.info("Schedule table found by MutationObserver.");
                 observer.disconnect();
                 resolve(table);
@@ -241,7 +242,7 @@ function scrapeScheduleTable(scheduleTableElement: Element): void {
     //const courseDetailSpans = scheduleTableElement.querySelectorAll('span.showCourseDetailsLink');
     const allScheduledRows = scheduleTableElement.querySelectorAll('tbody > tr');
     let scrapedCount = 0;
-
+    console.log(allScheduledRows);
     if (allScheduledRows?.length) {
         const courseSectionRows = Array.from(allScheduledRows).filter(el => el.classList.contains("child"));
 
@@ -334,23 +335,36 @@ async function scrapePlanner(plannerTableElement: Element): Promise<void> {
         AppLogger.error("Error scraping planner/cart table or waiting for rows:", error);
     }
 }
-async function computeHash(courseName: string, professorName: string): Promise<string> {
-    const input = courseName + professorName;
-    const encoder = new TextEncoder();
-    const data = encoder.encode(input);
 
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data); // Hash as ArrayBuffer
-
-
-    // Convert first 8 bytes to a single 64-bit unsigned integer (big-endian)
-    const view = new DataView(hashBuffer);
-    const uniqueHash = view.getBigUint64(0, false); // false = big-endian like C#
-
-    return uniqueHash.toString();
-}
 
 async function getCourseDetails(course: Course): Promise<void> {
-    const uniqueCourseHash = await computeHash(course.abr, course.instructor);
+    const url = `https://app-gradefetchbackend.azurewebsites.net/api/FetchGradeData?courseName=${course.title},instructorName=${course.instructor}`;
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+    const json_response = await response.json();
+    const displayElement = `
+<Card sx={{ maxWidth: 400, m: 2 }}>
+  <CardContent>
+    <Typography variant="h6">${json_response.courseName} - ${json_response.subject}</Typography>
+    <Typography variant="subtitle2" color="text.secondary">${json_response.instructorName}</Typography>
+
+    <Typography sx={{ mt: 2 }}>A Avg: ${json_response.aAverage}%</Typography>
+    <Typography>B Avg: ${json_response.bAverage}%</Typography>
+    <Typography>C Avg: ${json_response.cAverage}%</Typography>
+    <Typography>D Avg: ${json_response.dAverage}%</Typography>
+    <Typography>F Avg: ${json_response.fAverage}%</Typography>
+
+    <Typography sx={{ mt: 1 }} color="text.secondary">
+      Class Average Range: ${json_response.classAverageMin}% – ${json_response.classAverageMax}%
+    </Typography>
+  </CardContent>
+</Card>
+`;
+
 }
 
 /* --- Commented Out Code Block (Original - Kept for reference) --- */
