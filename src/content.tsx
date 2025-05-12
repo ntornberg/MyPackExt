@@ -70,7 +70,8 @@ type GradeData = {
 
 const GradeCard: React.FC<GradeData> = (data) => (
     <div style={{
-        maxWidth: '400px',
+        width: '100%',
+        boxSizing: 'border-box',
         margin: '0.5rem',
         padding: '1rem',
         backgroundColor: 'white',
@@ -82,11 +83,11 @@ const GradeCard: React.FC<GradeData> = (data) => (
     }}>
         <h3>{data.courseName} - {data.subject}</h3>
         <p><strong>Instructor:</strong> {data.instructorName}</p>
-        <p>A Avg: {data.aAverage}%</p>
-        <p>B Avg: {data.bAverage}%</p>
-        <p>C Avg: {data.cAverage}%</p>
-        <p>D Avg: {data.dAverage}%</p>
-        <p>F Avg: {data.fAverage}%</p>
+        <p>A: {data.aAverage}%</p>
+        <p>B: {data.bAverage}%</p>
+        <p>C: {data.cAverage}%</p>
+        <p>D: {data.dAverage}%</p>
+        <p>F: {data.fAverage}%</p>
         <p style={{ color: 'gray' }}>
             Class Avg Range: {data.classAverageMin}% – {data.classAverageMax}%
         </p>
@@ -234,63 +235,7 @@ function debounceScraper(scrapePlanner: (plannerTableElement: Element) => Promis
     }, 100);
 }
 const debouncedScrapePlanner = debounceScraper(scrapePlanner);
-/**
- * Sets up a MutationObserver to watch for changes in the planner/cart container.
- * When changes occur, it triggers a debounced scraping of the planner table.
- */
-/*async function observer_planner_changes(): Promise<void> {
-    const iframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe');
-    const iframeDoc = iframe?.contentDocument;
-    if (!iframeDoc) {
-        AppLogger.warn("observer_planner_changes: Iframe document not found. Cannot observe planner changes.");
-        return;
-    }
-    const plannerParentContainer = iframeDoc.querySelector('#enroll-wizard-container');
-    if (!plannerParentContainer) {
-        AppLogger.warn("observer_planner_changes: Planner container (#enroll-wizard-container) not found. Cannot observe planner changes.");
-        return;
-    }
-    console.log(plannerParentContainer);
-    let mutationRelevant = false;
-    let mutationQueued = false;
-    const plannerObserver = new MutationObserver((mutationsList) => {
 
-        for (const m of mutationsList) {
-            if (m.addedNodes.length > 0 || m.removedNodes.length > 0) {
-                mutationRelevant = true;
-                const isInternal = Array.from(m.addedNodes).concat(Array.from(m.removedNodes)).some(node =>
-                    node instanceof HTMLElement &&
-                    (node.id === "mypack-extension-data" || node.closest?.("#mypack-extension-data"))
-                );
-                if (isInternal) {
-                    AppLogger.info("Skipped internal mutation from extension content.");
-                    return;
-                }
-                for (const node of m.addedNodes) {
-                    console.log("Added node:", node);
-                }
-            }
-        }
-        if (mutationRelevant) {
-            AppLogger.info("External DOM mutation detected (added/removed node). Re-scraping...");
-            console.log("Changes: ", mutationsList);
-            AppLogger.info("Planner changes detected, re-scraping planner...");
-            if (!mutationQueued) {
-                mutationQueued = true;
-                setTimeout(() => {
-                    mutationQueued = false;
-                    debouncedScrapePlanner();
-                }, 0);
-            }
-        }
-    });
-
-
-
-    plannerObserver.observe(plannerParentContainer, { childList: true, subtree: true ,  attributes: false,
-        characterData: false });
-    AppLogger.info("Observer for planner/cart changes is now active.");
-}*/
 
 // --- Main Execution Block ---
 (async () => {
@@ -413,6 +358,13 @@ async function scrapePlanner(plannerTableElement: Element): Promise<void> {
                 (dialogElement as HTMLElement).style.width = "auto";
                 (dialogElement as HTMLElement).style.maxWidth = "none";
                 (dialogElement as HTMLElement).style.overflowX = "visible";
+            }
+            const dialog_inner = dialogElement?.querySelector('[id^="dialog"]');
+            if (dialog_inner) {
+
+                (dialog_inner as HTMLElement).style.width = "auto";
+                (dialog_inner as HTMLElement).style.maxWidth = "none";
+                (dialog_inner as HTMLElement).style.overflowX = "visible";
             }
         }
         for (const classDetailRow of filteredClassDetailRows) {
