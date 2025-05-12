@@ -10,9 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/x-charts": "^8.3.0",
     "jsonpath-plus": "^10.3.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-gauge-component": "^1.2.64",
     "recharts": "^2.15.3"
   },
   "devDependencies": {

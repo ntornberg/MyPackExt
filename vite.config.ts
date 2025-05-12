@@ -15,4 +15,10 @@ export default defineConfig({
   build: {
     outDir: 'dist',
   },
+  resolve: {
+    alias: {
+      // Force MUI to use @emotion/styled directly
+      '@mui/styled-engine': '@mui/styled-engine', // or '@emotion/react' if custom
+    },
+  },
 });

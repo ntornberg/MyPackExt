@@ -1,7 +1,8 @@
 import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-
+import { PieChart, pieArcLabelClasses } from '@mui/x-charts/PieChart';
 import {createRoot} from 'react-dom/client';
+
+import { GaugeComponent } from 'react-gauge-component';
 
 // --- Logger Utility ---
 // Provides a structured way to log messages.
@@ -19,9 +20,9 @@ class AppLogger {
     public static error(message?: any, ...optionalParams: any[]): void {
         console.error(`${this.prefix} [ERROR] ${new Date().toISOString()}`, message, ...optionalParams);
     }
+
     // Debug logs can be added here if needed, but are omitted for now to reduce verbosity.
 }
-
 
 // --- Course Data Structure ---
 type Course = {
@@ -30,6 +31,15 @@ type Course = {
     abr: string;
     instructor: string;
 }
+type MatchedRateMyProf = {
+    master_name: string;
+    first_name?: string | null;
+    last_name?: string | null;
+    avgRating?: number | null;
+    department?: string | null;
+    school?: string | null;
+    id?: string | null;
+};
 type GradeData = {
     courseName: string;
     subject: string;
@@ -42,57 +52,175 @@ type GradeData = {
     classAverageMin: number;
     classAverageMax: number;
 };
-const renderLabel = ({ percent, name } :{percent: number; name: string }) =>
-    `${name}: ${(percent * 100).toFixed(0)}%`;
-const GradeCard: React.FC<GradeData> = (data) => (
-    <div style={{
-        width: 'max-content',
+export const GradeCard: React.FC<GradeData> = ({
+                                                   courseName,
+                                                   subject,
+                                                   instructorName,
+                                                   aAverage,
+                                                   bAverage,
+                                                   cAverage,
+                                                   dAverage,
+                                                   fAverage,
+                                                   classAverageMin,
+                                                   classAverageMax,
+                                               }) => {
+    const colors = ['#2ecc71', '#a3e635', '#facc15', '#f97316', '#ef4444'];
 
-        boxSizing: 'border-box',
-        margin: '0.5rem',
-        padding: '1rem',
-        backgroundColor: 'white',
-        boxShadow: '0 0 8px rgba(0,0,0,0.2)',
-        borderRadius: '8px',
-        fontSize: '14px',
-        zIndex: 99999,
-        position: 'relative'
 
-    }}>
-        <h3>{data.courseName} - {data.subject}</h3>
-        <p><strong>Instructor:</strong> {data.instructorName}</p>
-        <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-                <Pie
-                    data={[
-                    {name : 'A', value: data.aAverage},
-                    {name : 'B', value: data.bAverage},
-                    {name : 'C', value: data.cAverage},
-                    {name : 'D', value: data.dAverage},
-                    {name : 'F', value: data.fAverage},
-                    ]}
-                    dataKey="value"
-                    cx="50%"
-                    cy="100%" // Push center to the bottom for half-circle
-                    startAngle={180}
-                    endAngle={0}
-                    outerRadius={100}
-                    label={renderLabel}
-                >
-                    <Cell fill="#4CAF50" />
-                    <Cell fill="#2196F3" />
-                    <Cell fill="#FFC107" />
-                    <Cell fill="#F44336" />
-                    <Cell fill="#9E9E9E" />
-                </Pie>
-            </PieChart>
-        </ResponsiveContainer>
-        <p style={{ color: 'gray' }}>
-            Class Avg Range: {data.classAverageMin}% – {data.classAverageMax}%
-        </p>
-    </div>
-);
+    const total = aAverage + bAverage + cAverage + dAverage + fAverage;
 
+    return (
+        <div
+            style={{
+                width: 'fit-content',
+                margin: '0.5rem',
+                padding: '1rem',
+                background: '#fff',
+                boxShadow: '0 0 8px rgba(0,0,0,.2)',
+                borderRadius: 8,
+                fontSize: 14, // Base font size for the card
+            }}
+        >
+            <h3>{courseName} – {subject}</h3>
+            <p><strong>Instructor:</strong> {instructorName}</p>
+
+            <PieChart
+                width={350}
+                height={300}
+                //margin={{ top: '20%', right: 40, bottom: 60, left: 40 }}
+                hideLegend={true}
+
+                series={[{
+                    /* STEP 1 – force circle marks on each slice  */
+                    outerRadius: '90%',
+                    arcLabelRadius: '50%',
+                    paddingAngle: 0,
+                    arcLabel: ({ id, value }) =>
+                        `${id}: ${(value / total * 100).toFixed(0)}%`,
+                    arcLabelMinAngle: 15,
+                      data: [
+                        { id: 'A', value: aAverage, label: 'A', color: colors[0] },
+                        { id: 'B', value: bAverage, label: 'B', color: colors[1] },
+                        { id: 'C', value: cAverage, label: 'C', color: colors[2] },
+                        { id: 'D', value: dAverage, label: 'D', color: colors[3] },
+                        { id: 'F', value: fAverage, label: 'F', color: colors[4] },
+                    ],
+
+
+
+                }]}
+                sx={{
+                    [`& .${pieArcLabelClasses.root}`]: {
+                        fontWeight: 'bold',
+                    },
+                }}
+            />
+
+            <p style={{ color: '#666', marginTop: '.5rem' }}>
+                Class Avg Range: {classAverageMin}% – {classAverageMax}%
+            </p>
+        </div>
+    );
+};
+
+
+export const ProfRatingCard: React.FC<MatchedRateMyProf> = ({
+                                                                master_name,
+                                                                first_name,
+                                                                last_name,
+                                                                avgRating = 0,
+                                                                department,
+                                                                school,
+                                                            }) => {
+    const displayName = `${first_name ?? ''} ${last_name ?? ''}`.trim() || master_name;
+
+    return (
+        <div
+            style={{
+                width: 'fit-content',
+                margin: '0.5rem',
+                padding: '1rem',
+                background: '#fff',
+                boxShadow: '0 0 8px rgba(0,0,0,.2)',
+                borderRadius: 8,
+                fontSize: 14,
+            }}
+        >
+            <h3>{displayName}</h3>
+            {department && <p><strong>Dept:</strong> {department}</p>}
+            {school && <p><strong>School:</strong> {school}</p>}
+
+            {/* Gauge: 0 – 5, with dynamic color */}
+            <GaugeComponent
+                type="semicircle"
+                arc={{
+                    width: 0.2,
+                    padding: 0.005,
+                    cornerRadius: 1,
+gradient:true,
+                    subArcs: [
+                        {
+                            limit: 1,
+                            color: '#B22222',
+                            showTick: true,
+
+                        },
+                        {
+                            limit: 2,
+                            color: '#FF8C00',
+                            showTick: true,
+                        },
+                        {
+                            limit: 3,
+                            color: '#FFD700',
+                            showTick: true,
+                        },
+                        {
+                            limit: 4, color: '#9ACD32', showTick: true,
+
+                        },
+                        {
+                            color: '#228B22',
+
+                        },
+                    ]
+                }}
+                pointer={{
+                    color: '#000000',
+                    length: 0.80,
+                    width: 15,
+                    // elastic: true,
+                }}
+                labels={{
+                    valueLabel: {
+                        formatTextValue: (avgRating: string) => avgRating,
+                        hide: true
+                    },
+                    tickLabels: {
+                        type: 'outer',
+                        defaultTickValueConfig: {
+                            formatTextValue: (avgRating: string) => avgRating ,
+                            style: {fontSize: 10}
+                        },
+                        ticks: [
+                            { value: 1 },
+                            { value: 2 },
+                            { value: 3 },
+                            { value: 4 }
+                        ],
+                    }
+                }}
+                value={parseFloat((avgRating ?? 0.0).toString())}
+                minValue={0}
+                maxValue={5}
+            />
+
+            <p style={{ color: '#666', marginTop: '.5rem' }}>
+                Average Rating: {(avgRating ?? 0).toFixed(2)} / 5
+            </p>
+        </div>
+    );
+};
 const courses: Course[] = []; // Stores courses from the main schedule table
 const planner_courses: Course[] = []; // Stores courses from the planner/cart
 
@@ -377,18 +505,35 @@ async function scrapePlanner(plannerTableElement: Element): Promise<void> {
             planner_courses.push(scrapedPlannerCourse);
             AppLogger.info("Detected planner course:", scrapedPlannerCourse.abr, scrapedPlannerCourse.instructor);
             scrapedCount++;
-            const detailsElement = await getCourseDetails(scrapedPlannerCourse);
-            if(detailsElement.textContent === "No grade data available."){
-                continue;
-            }
+            const courseGradeDataElement = await getCourseDetails(scrapedPlannerCourse);
+            const rateMyProfDataElement = await getProfessorDetails(scrapedPlannerCourse.instructor);
             const tableCell = document.createElement("td");
-            tableCell.colSpan = 8;
-            tableCell.appendChild(detailsElement);
+            tableCell.colSpan = classDetailRow.cells.length;
+            tableCell.style.position = 'relative';
+            tableCell.style.height = '400px';                  // enough for two cards
+            tableCell.style.padding = '0';
+            if (courseGradeDataElement.textContent !== "No grade data available.") {
 
-            const existing = classDetailRow.querySelector("#mypack-extension-data");
-            if (!existing) {
-                classDetailRow.appendChild(tableCell);
+                tableCell.appendChild(courseGradeDataElement);
+
+                const existing = classDetailRow.querySelector("#mypack-extension-data-grade");
+                if (!existing) {
+                    classDetailRow.appendChild(tableCell);
+                }
             }
+            console.log(rateMyProfDataElement);
+
+            if (rateMyProfDataElement.textContent !== "Professor not found.") {
+
+                tableCell.appendChild(rateMyProfDataElement);
+
+                const existing = classDetailRow.querySelector("#mypack-extension-data-prof");
+                if (!existing) {
+                    classDetailRow.appendChild(tableCell);
+                }
+            }
+
+
         }
         AppLogger.info(`Planner/cart scraping complete. Found ${scrapedCount} courses.`);
 
@@ -401,6 +546,18 @@ async function scrapePlanner(plannerTableElement: Element): Promise<void> {
         const iframeDoc = iframe.contentDocument;
 
         const dialogElement = iframeDoc.querySelector('[role="dialog"]');
+        const style = iframeDoc.createElement('style');
+        style.textContent = `
+    .ui-dialog.cust-ui-dialog {
+      position: fixed !important;
+      top: 10vh !important;
+      left: 50% !important;
+      transform: translateX(-50%);
+      max-height: 85vh !important;
+      overflow: auto;
+    }
+  `;
+        iframeDoc.head.appendChild(style);
         console.log("possible dialog", dialogElement); //TODO: Might be a little too big and def fucks up the header
         if (dialogElement) {
 
@@ -424,11 +581,14 @@ async function scrapePlanner(plannerTableElement: Element): Promise<void> {
 async function getCourseDetails(course: Course): Promise<HTMLDivElement> {
     console.log("Fetching course details for:", course);
     const wrapper = document.createElement("div");
-    wrapper.id = "mypack-extension-data";
+    wrapper.id = "mypack-extension-data-grade";
     wrapper.style.marginTop = "0.5rem";
     wrapper.style.overflow = "auto";
     wrapper.style.maxWidth = "400px";
-
+    wrapper.style.maxHeight = '250px';
+    wrapper.style.overflow = 'auto';
+    wrapper.style.display = 'inline-block';
+    wrapper.style.verticalAlign = 'top';
     try {
         const url = `https://app-gradefetchbackend.azurewebsites.net/api/FetchGradeData?courseName=${encodeURIComponent(course.abr)}&professorName=${encodeURIComponent(course.instructor)}`;
         const response = await fetch(url);
@@ -440,6 +600,7 @@ async function getCourseDetails(course: Course): Promise<HTMLDivElement> {
         }
 
         const json = await response.json();
+        console.log(json);
         const root = createRoot(wrapper);
 
         const gradeData: GradeData = {
@@ -459,6 +620,47 @@ async function getCourseDetails(course: Course): Promise<HTMLDivElement> {
         return wrapper;
 
     } catch (error) {
+        AppLogger.error("Exception while fetching course details:", error);
+        wrapper.textContent = "Error loading data.";
+        return wrapper;
+    }
+}
+
+async function getProfessorDetails(profName: string): Promise<HTMLDivElement> {
+    console.log("Fetching RateMyProfessor data for: ", profName);
+    const wrapper = document.createElement("div");
+    wrapper.id = "mypack-extension-data-prof";
+    wrapper.style.marginTop = "0.5rem";
+    wrapper.style.overflow = "auto";
+    wrapper.style.maxWidth = "400px";
+    wrapper.style.maxHeight = '250px';
+    wrapper.style.overflow = 'auto';
+    wrapper.style.display = 'inline-block';
+    wrapper.style.verticalAlign = 'top';
+    try{
+        const url = `https://app-gradefetchbackend.azurewebsites.net/api/FetchRateMyProfData?&professorName=${encodeURIComponent(profName)}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            AppLogger.error("Error fetching course details:", response.status, response.statusText);
+            wrapper.textContent = "No grade data available.";
+            return wrapper;
+        }
+        const json = await response.json();
+        const root = createRoot(wrapper);
+        console.log(json);
+        const profData: MatchedRateMyProf = {
+            master_name: json.MasterName,
+            first_name: json.FirstName,
+            last_name: json.LastName,
+            avgRating: parseFloat(json.AvgRating ?? "0"),
+            department: json.Department,
+            school: json.School,
+            id: json.Id,
+        }
+        root.render(<ProfRatingCard {...profData} />);
+        return wrapper;
+    }catch (error){
         AppLogger.error("Exception while fetching course details:", error);
         wrapper.textContent = "Error loading data.";
         return wrapper;
