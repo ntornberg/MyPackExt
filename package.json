@@ -12,7 +12,8 @@
   "dependencies": {
     "jsonpath-plus": "^10.3.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "recharts": "^2.15.3"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.32",

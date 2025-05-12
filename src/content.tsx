@@ -1,4 +1,6 @@
 import React from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+
 import {createRoot} from 'react-dom/client';
 
 // --- Logger Utility ---
@@ -20,33 +22,6 @@ class AppLogger {
     // Debug logs can be added here if needed, but are omitted for now to reduce verbosity.
 }
 
-// --- React Component ---
-/*const App: React.FC = () => {
-    return (
-        <div style={{ padding: '1rem' }}>
-            <h2>📚 MyPack Enhancer</h2>
-            <p>React injected into MyPack via Chrome Extension!</p>
-        </div>
-    );
-};*/
-
-// --- Sidebar Injection ---
-/*const mount = document.createElement('div');
-mount.id = 'mypack-sidebar';
-Object.assign(mount.style, {
-    position: 'fixed',
-    top: '0',
-    right: '0',
-    width: '300px',
-    height: '100%',
-    backgroundColor: '#fff',
-    zIndex: '999999',
-    boxShadow: '0 0 10px rgba(0,0,0,0.3)',
-});
-document.body.appendChild(mount);
-const root = createRoot(mount);
-root.render(<App />);
-AppLogger.info("MyPack Enhancer sidebar injected.");*/
 
 // --- Course Data Structure ---
 type Course = {
@@ -67,7 +42,8 @@ type GradeData = {
     classAverageMin: number;
     classAverageMax: number;
 };
-
+const renderLabel = ({ percent, name } :{percent: number; name: string }) =>
+    `${name}: ${(percent * 100).toFixed(0)}%`;
 const GradeCard: React.FC<GradeData> = (data) => (
     <div style={{
         width: 'max-content',
@@ -81,19 +57,42 @@ const GradeCard: React.FC<GradeData> = (data) => (
         fontSize: '14px',
         zIndex: 99999,
         position: 'relative'
+
     }}>
         <h3>{data.courseName} - {data.subject}</h3>
         <p><strong>Instructor:</strong> {data.instructorName}</p>
-        <p>A: {data.aAverage}%</p>
-        <p>B: {data.bAverage}%</p>
-        <p>C: {data.cAverage}%</p>
-        <p>D: {data.dAverage}%</p>
-        <p>F: {data.fAverage}%</p>
+        <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+                <Pie
+                    data={[
+                    {name : 'A', value: data.aAverage},
+                    {name : 'B', value: data.bAverage},
+                    {name : 'C', value: data.cAverage},
+                    {name : 'D', value: data.dAverage},
+                    {name : 'F', value: data.fAverage},
+                    ]}
+                    dataKey="value"
+                    cx="50%"
+                    cy="100%" // Push center to the bottom for half-circle
+                    startAngle={180}
+                    endAngle={0}
+                    outerRadius={100}
+                    label={renderLabel}
+                >
+                    <Cell fill="#4CAF50" />
+                    <Cell fill="#2196F3" />
+                    <Cell fill="#FFC107" />
+                    <Cell fill="#F44336" />
+                    <Cell fill="#9E9E9E" />
+                </Pie>
+            </PieChart>
+        </ResponsiveContainer>
         <p style={{ color: 'gray' }}>
             Class Avg Range: {data.classAverageMin}% – {data.classAverageMax}%
         </p>
     </div>
 );
+
 const courses: Course[] = []; // Stores courses from the main schedule table
 const planner_courses: Course[] = []; // Stores courses from the planner/cart
 
