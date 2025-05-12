@@ -1,5 +1,5 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import {createRoot} from 'react-dom/client';
 
 // --- Logger Utility ---
 // Provides a structured way to log messages.
@@ -21,17 +21,17 @@ class AppLogger {
 }
 
 // --- React Component ---
-const App: React.FC = () => {
+/*const App: React.FC = () => {
     return (
         <div style={{ padding: '1rem' }}>
             <h2>📚 MyPack Enhancer</h2>
             <p>React injected into MyPack via Chrome Extension!</p>
         </div>
     );
-};
+};*/
 
 // --- Sidebar Injection ---
-const mount = document.createElement('div');
+/*const mount = document.createElement('div');
 mount.id = 'mypack-sidebar';
 Object.assign(mount.style, {
     position: 'fixed',
@@ -46,7 +46,7 @@ Object.assign(mount.style, {
 document.body.appendChild(mount);
 const root = createRoot(mount);
 root.render(<App />);
-AppLogger.info("MyPack Enhancer sidebar injected.");
+AppLogger.info("MyPack Enhancer sidebar injected.");*/
 
 // --- Course Data Structure ---
 type Course = {
@@ -55,7 +55,43 @@ type Course = {
     abr: string;
     instructor: string;
 }
+type GradeData = {
+    courseName: string;
+    subject: string;
+    instructorName: string;
+    aAverage: number;
+    bAverage: number;
+    cAverage: number;
+    dAverage: number;
+    fAverage: number;
+    classAverageMin: number;
+    classAverageMax: number;
+};
 
+const GradeCard: React.FC<GradeData> = (data) => (
+    <div style={{
+        maxWidth: '400px',
+        margin: '0.5rem',
+        padding: '1rem',
+        backgroundColor: 'white',
+        boxShadow: '0 0 8px rgba(0,0,0,0.2)',
+        borderRadius: '8px',
+        fontSize: '14px',
+        zIndex: 99999,
+        position: 'relative'
+    }}>
+        <h3>{data.courseName} - {data.subject}</h3>
+        <p><strong>Instructor:</strong> {data.instructorName}</p>
+        <p>A Avg: {data.aAverage}%</p>
+        <p>B Avg: {data.bAverage}%</p>
+        <p>C Avg: {data.cAverage}%</p>
+        <p>D Avg: {data.dAverage}%</p>
+        <p>F Avg: {data.fAverage}%</p>
+        <p style={{ color: 'gray' }}>
+            Class Avg Range: {data.classAverageMin}% – {data.classAverageMax}%
+        </p>
+    </div>
+);
 const courses: Course[] = []; // Stores courses from the main schedule table
 const planner_courses: Course[] = []; // Stores courses from the planner/cart
 
@@ -184,11 +220,25 @@ const debounce = (fn: () => void, ms = 100): () => void => {
     };
 };
 
+function debounceScraper(scrapePlanner: (plannerTableElement: Element) => Promise<void>) {
+     // Debounce time of 100ms
+    return debounce(async () => {
+        AppLogger.info("Planner changes detected, re-scraping planner...");
+        try {
+            const plannerElement = await waitForCart(); // Re-ensure planner table is accessible
+            console.log(plannerElement);
+            await scrapePlanner(plannerElement);
+        } catch (error) {
+            AppLogger.error("Error during debounced planner scrape:", error);
+        }
+    }, 100);
+}
+const debouncedScrapePlanner = debounceScraper(scrapePlanner);
 /**
  * Sets up a MutationObserver to watch for changes in the planner/cart container.
  * When changes occur, it triggers a debounced scraping of the planner table.
  */
-async function observer_planner_changes(): Promise<void> {
+/*async function observer_planner_changes(): Promise<void> {
     const iframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe');
     const iframeDoc = iframe?.contentDocument;
     if (!iframeDoc) {
@@ -200,33 +250,87 @@ async function observer_planner_changes(): Promise<void> {
         AppLogger.warn("observer_planner_changes: Planner container (#enroll-wizard-container) not found. Cannot observe planner changes.");
         return;
     }
+    console.log(plannerParentContainer);
+    let mutationRelevant = false;
+    let mutationQueued = false;
+    const plannerObserver = new MutationObserver((mutationsList) => {
 
-    const debouncedScrape = debounce(async () => {
-        AppLogger.info("Planner changes detected, re-scraping planner...");
-        try {
-            const plannerElement = await waitForCart(); // Re-ensure planner table is accessible
-            await scrapePlanner(plannerElement);
-        } catch (error) {
-            AppLogger.error("Error during debounced planner scrape:", error);
+        for (const m of mutationsList) {
+            if (m.addedNodes.length > 0 || m.removedNodes.length > 0) {
+                mutationRelevant = true;
+                const isInternal = Array.from(m.addedNodes).concat(Array.from(m.removedNodes)).some(node =>
+                    node instanceof HTMLElement &&
+                    (node.id === "mypack-extension-data" || node.closest?.("#mypack-extension-data"))
+                );
+                if (isInternal) {
+                    AppLogger.info("Skipped internal mutation from extension content.");
+                    return;
+                }
+                for (const node of m.addedNodes) {
+                    console.log("Added node:", node);
+                }
+            }
         }
-    }, 100); // Debounce time of 100ms
+        if (mutationRelevant) {
+            AppLogger.info("External DOM mutation detected (added/removed node). Re-scraping...");
+            console.log("Changes: ", mutationsList);
+            AppLogger.info("Planner changes detected, re-scraping planner...");
+            if (!mutationQueued) {
+                mutationQueued = true;
+                setTimeout(() => {
+                    mutationQueued = false;
+                    debouncedScrapePlanner();
+                }, 0);
+            }
+        }
+    });
 
-    const plannerObserver = new MutationObserver(debouncedScrape);
-    plannerObserver.observe(plannerParentContainer, { childList: true, subtree: true });
+
+
+    plannerObserver.observe(plannerParentContainer, { childList: true, subtree: true ,  attributes: false,
+        characterData: false });
     AppLogger.info("Observer for planner/cart changes is now active.");
-}
+}*/
 
 // --- Main Execution Block ---
 (async () => {
     try {
         const scheduleElement = await waitForScheduleTable();
         scrapeScheduleTable(scheduleElement);
-
-        const plannerElement = await waitForCart();
+        const initialIframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe');
+        if(initialIframe) {
+            console.log(initialIframe);
+            const initialIframeDoc = initialIframe.contentDocument;
+            if (!initialIframeDoc) {
+                AppLogger.warn("Initial iframe document not found. Cannot set up event listener for button clicks.");
+                return;
+            }
+            initialIframeDoc.addEventListener("click", function (event) {
+                const target = event.target;
+                console.log(target);
+                if(!target) return;
+                let buttonSpan = (target as HTMLElement).closest('[class^="showClassSectionsLink"]');
+                console.log(buttonSpan);
+                if(!buttonSpan){
+                    buttonSpan = (target as HTMLElement).closest('[class^=" control center"]');
+                    if(buttonSpan){
+                        debouncedScrapePlanner();
+                        console.log("Button clicked:", buttonSpan.textContent);
+                    }
+                }
+                if(!buttonSpan) return;
+                if (buttonSpan.role === "button") {
+                    console.log("Button clicked:", buttonSpan.textContent);
+                    console.log(target);
+                    debouncedScrapePlanner();
+                }
+            });
+        }else{
+            AppLogger.warn("Initial iframe not found. Cannot set up event listener for button clicks.");
+        }
+        //const plannerElement = await waitForCart();
         AppLogger.info("Initial planner element found, performing first scrape.");
-        await scrapePlanner(plannerElement);
-
-        await observer_planner_changes(); // Set up observer for subsequent changes
+        //await observer_planner_changes(); // Set up observer for subsequent changes
 
     } catch (error) {
         AppLogger.error("An error occurred during the main execution block:", error);
@@ -301,16 +405,25 @@ async function scrapePlanner(plannerTableElement: Element): Promise<void> {
     try {
         const classRows = await waitForRows(plannerTableElement as HTMLTableElement, 2); // Expect at least header + child or two child rows
         const filteredClassDetailRows = Array.from(classRows).filter(el => el.classList.contains("child"));
+        const iframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe');
+        if (iframe) { // Expand to allow content to fit
+            const dialogElement = iframe.querySelector('[role="dialog"]');
+            if (dialogElement) {
 
-        filteredClassDetailRows.forEach((classDetailRow) => {
+                (dialogElement as HTMLElement).style.width = "auto";
+                (dialogElement as HTMLElement).style.maxWidth = "none";
+                (dialogElement as HTMLElement).style.overflowX = "visible";
+            }
+        }
+        for (const classDetailRow of filteredClassDetailRows) {
             let courseAbbreviation = "N/A";
             let courseInstructor = "N/A";
 
             const searchResultsInnerTable = classDetailRow.querySelector('[id^="searchResultsInner"]');
-            if (!searchResultsInnerTable) return;
+            if (!searchResultsInnerTable) continue;
 
             const innerTableBodyRow = searchResultsInnerTable.querySelector('tbody > tr');
-            if (!innerTableBodyRow) return;
+            if (!innerTableBodyRow) continue;
 
             courseInstructor = innerTableBodyRow.querySelector('[data-label="INSTRUCTOR"]')?.textContent?.trim() ?? "Staff";
 
@@ -328,7 +441,19 @@ async function scrapePlanner(plannerTableElement: Element): Promise<void> {
             planner_courses.push(scrapedPlannerCourse);
             AppLogger.info("Detected planner course:", scrapedPlannerCourse.abr, scrapedPlannerCourse.instructor);
             scrapedCount++;
-        });
+            const detailsElement = await getCourseDetails(scrapedPlannerCourse);
+            if(detailsElement.textContent === "No grade data available."){
+                continue;
+            }
+            const tableCell = document.createElement("td");
+            tableCell.colSpan = 8;
+            tableCell.appendChild(detailsElement);
+
+            const existing = classDetailRow.querySelector("#mypack-extension-data");
+            if (!existing) {
+                classDetailRow.appendChild(tableCell);
+            }
+        }
         AppLogger.info(`Planner/cart scraping complete. Found ${scrapedCount} courses.`);
 
     } catch (error) {
@@ -337,66 +462,46 @@ async function scrapePlanner(plannerTableElement: Element): Promise<void> {
 }
 
 
-async function getCourseDetails(course: Course): Promise<void> {
-    const url = `https://app-gradefetchbackend.azurewebsites.net/api/FetchGradeData?courseName=${course.title},instructorName=${course.instructor}`;
-    const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    });
-    const json_response = await response.json();
-    const displayElement = `
-<Card sx={{ maxWidth: 400, m: 2 }}>
-  <CardContent>
-    <Typography variant="h6">${json_response.courseName} - ${json_response.subject}</Typography>
-    <Typography variant="subtitle2" color="text.secondary">${json_response.instructorName}</Typography>
+async function getCourseDetails(course: Course): Promise<HTMLDivElement> {
+    console.log("Fetching course details for:", course);
+    const wrapper = document.createElement("div");
+    wrapper.id = "mypack-extension-data";
+    wrapper.style.marginTop = "0.5rem";
+    wrapper.style.overflow = "auto";
+    wrapper.style.maxWidth = "400px";
 
-    <Typography sx={{ mt: 2 }}>A Avg: ${json_response.aAverage}%</Typography>
-    <Typography>B Avg: ${json_response.bAverage}%</Typography>
-    <Typography>C Avg: ${json_response.cAverage}%</Typography>
-    <Typography>D Avg: ${json_response.dAverage}%</Typography>
-    <Typography>F Avg: ${json_response.fAverage}%</Typography>
+    try {
+        const url = `https://app-gradefetchbackend.azurewebsites.net/api/FetchGradeData?courseName=${encodeURIComponent(course.abr)}&professorName=${encodeURIComponent(course.instructor)}`;
+        const response = await fetch(url);
 
-    <Typography sx={{ mt: 1 }} color="text.secondary">
-      Class Average Range: ${json_response.classAverageMin}% – ${json_response.classAverageMax}%
-    </Typography>
-  </CardContent>
-</Card>
-`;
+        if (!response.ok) {
+            AppLogger.error("Error fetching course details:", response.status, response.statusText);
+            wrapper.textContent = "No grade data available.";
+            return wrapper;
+        }
 
+        const json = await response.json();
+        const root = createRoot(wrapper);
+
+        const gradeData: GradeData = {
+            courseName: json.CourseName,
+            subject: json.Subject,
+            instructorName: json.InstructorName,
+            aAverage: parseFloat(json.AAverage ?? "0"),
+            bAverage: parseFloat(json.BAverage ?? "0"),
+            cAverage: parseFloat(json.CAverage ?? "0"),
+            dAverage: parseFloat(json.DAverage ?? "0"),
+            fAverage: parseFloat(json.FAverage ?? "0"),
+            classAverageMin: json.ClassAverageMin ? parseFloat(json.ClassAverageMin) : 0,
+            classAverageMax: json.ClassAverageMax ? parseFloat(json.ClassAverageMax) : 0,
+        };
+
+        root.render(<GradeCard {...gradeData} />);
+        return wrapper;
+
+    } catch (error) {
+        AppLogger.error("Exception while fetching course details:", error);
+        wrapper.textContent = "Error loading data.";
+        return wrapper;
+    }
 }
-
-/* --- Commented Out Code Block (Original - Kept for reference) --- */
-/*type CourseInfo = {
-    courseID : string;
-}*/
-/*let userId : string;
-const cookieObserver = new MutationObserver(() => {
-    chrome.runtime.sendMessage({ type: "GET_COOKIES" }, (cookies) => {
-        if (chrome.runtime.lastError) {
-            AppLogger.error("Message failed:", chrome.runtime.lastError.message); // Using new logger
-            return;
-        }
-        const targetCookie = cookies.find((cookie: any) => cookie.name === 'PS_LOGINLIST');
-        if (targetCookie) {
-            AppLogger.info(targetCookie.value); // Using new logger
-            userId = targetCookie.value.substring(targetCookie.value.lastIndexOf("/") + 1);
-        }else{
-            AppLogger.warn("Failed To find Cookie"); // Using new logger
-        }
-    });
-});*/
-/*cookieObserver.observe(document.body, {childList: true, subtree: true});*/
-
-/*function form_url(userId: string, courseId :string) : string{
-    const base = "https://portalsp.acs.ncsu.edu/psc/" + userId;
-    return base + "/EMPLOYEE/NCSIS/s/WEBLIB_ENROLL.ISCRIPT1.FieldFormula.IScript_getClassSearchResults?crseId=" + courseId;
-}*/
-
-/*const GetCourseDetails: React.FC<CourseInfo> = ({courseID}) =>{
-const [data,setData] = useState<any>(null);
-    useEffect(() => {
-        fetch('')
-    }, []);
-}*/
