@@ -70,7 +70,8 @@ type GradeData = {
 
 const GradeCard: React.FC<GradeData> = (data) => (
     <div style={{
-        width: '100%',
+        width: 'max-content',
+
         boxSizing: 'border-box',
         margin: '0.5rem',
         padding: '1rem',
@@ -350,23 +351,7 @@ async function scrapePlanner(plannerTableElement: Element): Promise<void> {
     try {
         const classRows = await waitForRows(plannerTableElement as HTMLTableElement, 2); // Expect at least header + child or two child rows
         const filteredClassDetailRows = Array.from(classRows).filter(el => el.classList.contains("child"));
-        const iframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe');
-        if (iframe) { // Expand to allow content to fit
-            const dialogElement = iframe.querySelector('[role="dialog"]');
-            if (dialogElement) {
 
-                (dialogElement as HTMLElement).style.width = "auto";
-                (dialogElement as HTMLElement).style.maxWidth = "none";
-                (dialogElement as HTMLElement).style.overflowX = "visible";
-            }
-            const dialog_inner = dialogElement?.querySelector('[id^="dialog"]');
-            if (dialog_inner) {
-
-                (dialog_inner as HTMLElement).style.width = "auto";
-                (dialog_inner as HTMLElement).style.maxWidth = "none";
-                (dialog_inner as HTMLElement).style.overflowX = "visible";
-            }
-        }
         for (const classDetailRow of filteredClassDetailRows) {
             let courseAbbreviation = "N/A";
             let courseInstructor = "N/A";
@@ -411,6 +396,29 @@ async function scrapePlanner(plannerTableElement: Element): Promise<void> {
     } catch (error) {
         AppLogger.error("Error scraping planner/cart table or waiting for rows:", error);
     }
+    const iframe = document.querySelector('[id$="divPSPAGECONTAINER"] iframe') as HTMLIFrameElement | null;
+    if (iframe && iframe.contentDocument) { // Expand to allow content to fit
+
+        const iframeDoc = iframe.contentDocument;
+
+        const dialogElement = iframeDoc.querySelector('[role="dialog"]');
+        console.log("possible dialog", dialogElement); //TODO: Might be a little too big and def fucks up the header
+        if (dialogElement) {
+
+            (dialogElement as HTMLElement).style.width = 'fit-content';
+            (dialogElement as HTMLElement).style.maxWidth = 'none';
+            (dialogElement as HTMLElement).style.overflowX = "visible";
+        }
+        const dialog_inner = dialogElement?.querySelector('[id^="dialog"]');
+        if (dialog_inner) {
+
+            (dialog_inner as HTMLElement).style.width = 'fit-content';
+            (dialog_inner as HTMLElement).style.maxWidth = 'none';
+            (dialog_inner as HTMLElement).style.overflowX = "visible";
+        }
+
+    }
+
 }
 
 
