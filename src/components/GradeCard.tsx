@@ -1,7 +1,7 @@
 ﻿import React from 'react';
 import {PieChart, pieArcLabelClasses} from '@mui/x-charts/PieChart';
 import { useAutoSize } from '../hooks/useAutoSize';
-import { GradeData } from '../types';
+import type {GradeData} from '../types';
 
 export const GradeCard: React.FC<GradeData> = (props) => {
     const {
