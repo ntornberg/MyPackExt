@@ -1,9 +1,14 @@
 import React from 'react';
-import { PieChart, pieArcLabelClasses } from '@mui/x-charts/PieChart';
+import {PieChart, pieArcLabelClasses} from '@mui/x-charts/PieChart';
 import {createRoot} from 'react-dom/client';
-
-import { GaugeComponent } from 'react-gauge-component';
-
+declare global {
+    interface Window {
+        __savedDefine?: any;
+    }
+}
+import {GaugeComponent} from 'react-gauge-component';
+const __psDefine = window.__savedDefine;      // pull from global
+delete window.__savedDefine;
 // --- Logger Utility ---
 // Provides a structured way to log messages.
 class AppLogger {
@@ -22,6 +27,25 @@ class AppLogger {
     }
 
     // Debug logs can be added here if needed, but are omitted for now to reduce verbosity.
+}
+
+import {useRef, useState, useLayoutEffect} from 'react';
+
+export function useAutoSize(min = 180, aspect = 0.75) {
+    const ref = useRef<HTMLDivElement>(null);
+    const [size, setSize] = useState({w: 0, h: 0});
+
+    useLayoutEffect(() => {
+        if (!ref.current) return;
+        const obs = new ResizeObserver(([entry]) => {
+            const w = Math.max(entry.contentRect.width, min);
+            setSize({w, h: w * aspect});      // keep a 4 × 3 feel
+        });
+        obs.observe(ref.current);
+        return () => obs.disconnect();
+    }, []);
+
+    return [ref, size] as const;
 }
 
 // --- Course Data Structure ---
@@ -52,73 +76,69 @@ type GradeData = {
     classAverageMin: number;
     classAverageMax: number;
 };
-export const GradeCard: React.FC<GradeData> = ({
-                                                   courseName,
-                                                   subject,
-                                                   instructorName,
-                                                   aAverage,
-                                                   bAverage,
-                                                   cAverage,
-                                                   dAverage,
-                                                   fAverage,
-                                                   classAverageMin,
-                                                   classAverageMax,
-                                               }) => {
-    const colors = ['#2ecc71', '#a3e635', '#facc15', '#f97316', '#ef4444'];
+export const GradeCard: React.FC<GradeData> = (props) => {
+    const {
+        courseName, instructorName,
+        aAverage, bAverage, cAverage, dAverage, fAverage,
+        classAverageMin, classAverageMax
+    } = props;
 
-
+    const [wrapRef, {w, h}] = useAutoSize();          // 👈 observe width
     const total = aAverage + bAverage + cAverage + dAverage + fAverage;
+    if (!total) return null;                            // skip empty cards
+
+    const colors = ['#2ecc71', '#a3e635', '#facc15', '#f97316', '#ef4444'];
 
     return (
         <div
+            ref={wrapRef}
             style={{
-                width: 'fit-content',
-                margin: '0.5rem',
-                padding: '1rem',
+                /* let the flexbox size the card */
+                flex: '1 1 200px',   // may shrink down to 200 px
+                width: 'auto',
+                maxWidth: 420,
+
+                margin: '.5rem',
+                padding: '.25rem',
                 background: '#fff',
                 boxShadow: '0 0 8px rgba(0,0,0,.2)',
                 borderRadius: 8,
-                fontSize: 14, // Base font size for the card
+                fontSize: 14,
             }}
         >
-            <h3>{courseName} – {subject}</h3>
-            <p><strong>Instructor:</strong> {instructorName}</p>
+            <h3 style={{margin: '.25rem 0 .5rem'}}>
+                Historical grade data for <strong>{courseName}</strong> with:
+            </h3>
+            <p style={{margin: 0}}>
+                <strong>Instructor:</strong> {instructorName}
+            </p>
 
             <PieChart
-                width={350}
-                height={300}
-                //margin={{ top: '20%', right: 40, bottom: 60, left: 40 }}
-                hideLegend={true}
-
+                width={w}                 // 👈 live width / height
+                height={h}
+                hideLegend
                 series={[{
-                    /* STEP 1 – force circle marks on each slice  */
                     outerRadius: '90%',
                     arcLabelRadius: '50%',
                     paddingAngle: 0,
-                    arcLabel: ({ id, value }) =>
+                    arcLabel: ({id, value}) =>
                         `${id}: ${(value / total * 100).toFixed(0)}%`,
                     arcLabelMinAngle: 15,
-                      data: [
-                        { id: 'A', value: aAverage, label: 'A', color: colors[0] },
-                        { id: 'B', value: bAverage, label: 'B', color: colors[1] },
-                        { id: 'C', value: cAverage, label: 'C', color: colors[2] },
-                        { id: 'D', value: dAverage, label: 'D', color: colors[3] },
-                        { id: 'F', value: fAverage, label: 'F', color: colors[4] },
+                    data: [
+                        {id: 'A', value: aAverage, label: 'A', color: colors[0]},
+                        {id: 'B', value: bAverage, label: 'B', color: colors[1]},
+                        {id: 'C', value: cAverage, label: 'C', color: colors[2]},
+                        {id: 'D', value: dAverage, label: 'D', color: colors[3]},
+                        {id: 'F', value: fAverage, label: 'F', color: colors[4]},
                     ],
-
-
-
                 }]}
-                sx={{
-                    [`& .${pieArcLabelClasses.root}`]: {
-                        fontWeight: 'bold',
-                    },
-                }}
+                sx={{[`& .${pieArcLabelClasses.root}`]: {fontWeight: 'bold'}}}
             />
 
-            <p style={{ color: '#666', marginTop: '.5rem' }}>
-                Class Avg Range: {classAverageMin}% – {classAverageMax}%
-            </p>
+            <h4 style={{color: '#666', margin: '.5rem 0 0'}}>
+                Class Avg Range:&nbsp;
+                <strong>{classAverageMin}% – {classAverageMax}%</strong>
+            </h4>
         </div>
     );
 };
@@ -128,95 +148,80 @@ export const ProfRatingCard: React.FC<MatchedRateMyProf> = ({
                                                                 master_name,
                                                                 first_name,
                                                                 last_name,
-                                                                avgRating = 0,
-                                                                department,
-                                                                school,
+                                                                avgRating,
                                                             }) => {
-    const displayName = `${first_name ?? ''} ${last_name ?? ''}`.trim() || master_name;
+    // fall back to 0.0 when API returns null / undefined
+    const rating = parseFloat((avgRating ?? 0.0).toString());
+
+    const displayName =
+        `${first_name ?? ''} ${last_name ?? ''}`.trim() || master_name;
+
+    // measure card width so we can scale the gauge
+    const [wrapRef, {w}] = useAutoSize();
+    const gaugeW = w * 0.9;          // leave a little padding
 
     return (
         <div
+            ref={wrapRef}
             style={{
-                width: 'fit-content',
-                margin: '0.5rem',
-                padding: '1rem',
+                /* let the flexbox size the card */
+                flex: '1 1 200px',   // may shrink down to 200 px
+                width: 'auto',
+                maxWidth: 420,
+
+                margin: '.5rem',
+                padding: '.25rem',
                 background: '#fff',
                 boxShadow: '0 0 8px rgba(0,0,0,.2)',
                 borderRadius: 8,
                 fontSize: 14,
             }}
         >
-            <h3>{displayName}</h3>
-            {department && <p><strong>Dept:</strong> {department}</p>}
-            {school && <p><strong>School:</strong> {school}</p>}
+            <h3 style={{margin: '.25rem 0 .5rem'}}>
+                RateMyProfessor&nbsp;Score&nbsp;for:
+            </h3>
+            <p style={{margin: 0}}>
+                <strong>Name:</strong> {displayName}
+            </p>
 
-            {/* Gauge: 0 – 5, with dynamic color */}
-            <GaugeComponent
-                type="semicircle"
-                arc={{
-                    width: 0.2,
-                    padding: 0.005,
-                    cornerRadius: 1,
-gradient:true,
-                    subArcs: [
-                        {
-                            limit: 1,
-                            color: '#B22222',
-                            showTick: true,
-
-                        },
-                        {
-                            limit: 2,
-                            color: '#FF8C00',
-                            showTick: true,
-                        },
-                        {
-                            limit: 3,
-                            color: '#FFD700',
-                            showTick: true,
-                        },
-                        {
-                            limit: 4, color: '#9ACD32', showTick: true,
-
-                        },
-                        {
-                            color: '#228B22',
-
-                        },
-                    ]
-                }}
-                pointer={{
-                    color: '#000000',
-                    length: 0.80,
-                    width: 15,
-                    // elastic: true,
-                }}
-                labels={{
-                    valueLabel: {
-                        formatTextValue: (avgRating: string) => avgRating,
-                        hide: true
-                    },
-                    tickLabels: {
-                        type: 'outer',
-                        defaultTickValueConfig: {
-                            formatTextValue: (avgRating: string) => avgRating ,
-                            style: {fontSize: 10}
-                        },
-                        ticks: [
-                            { value: 1 },
-                            { value: 2 },
-                            { value: 3 },
-                            { value: 4 }
+            {/* Gauge scales only through this wrapper’s CSS width */}
+            <div style={{width: gaugeW, maxWidth: '100%', margin: '0 auto'}}>
+                <GaugeComponent
+                    type="semicircle"
+                    value={rating}
+                    minValue={0}
+                    maxValue={5}
+                    arc={{
+                        width: 0.2,
+                        padding: 0.005,
+                        cornerRadius: 1,
+                        gradient: true,
+                        subArcs: [
+                            {limit: 1, color: '#B22222', showTick: true},
+                            {limit: 2, color: '#FF8C00', showTick: true},
+                            {limit: 3, color: '#FFD700', showTick: true},
+                            {limit: 4, color: '#9ACD32', showTick: true},
+                            {color: '#228B22'},           // final arc (4 → 5)
                         ],
-                    }
-                }}
-                value={parseFloat((avgRating ?? 0.0).toString())}
-                minValue={0}
-                maxValue={5}
-            />
+                    }}
+                    pointer={{
+                        color: '#000000',
+                        length: 0.8,
+                        width: 15,
+                    }}
+                    labels={{
+                        valueLabel: {hide: true},
+                        tickLabels: {
+                            type: 'outer',
+                            defaultTickValueConfig: {style: {fontSize: 10}},
+                            ticks: [{value: 1}, {value: 2}, {value: 3}, {value: 4}],
+                        },
+                    }}
+                />
+            </div>
 
-            <p style={{ color: '#666', marginTop: '.5rem' }}>
-                Average Rating: {(avgRating ?? 0).toFixed(2)} / 5
+            <p style={{color: '#666', marginTop: '.5rem'}}>
+                <strong>Average Rating:</strong> {rating.toFixed(2)} / 5
             </p>
         </div>
     );
@@ -253,7 +258,7 @@ function waitForScheduleTable(): Promise<Element> {
                 resolve(table);
             }
         });
-        observer.observe(document.documentElement, { childList: true, subtree: true });
+        observer.observe(document.documentElement, {childList: true, subtree: true});
     });
 }
 
@@ -299,7 +304,7 @@ function waitForCart(): Promise<Element> {
                 targetNodeToObserve = initialIframe.contentDocument; // Observe iframe document if #enroll-wizard-container is not
             }
         }
-        observer.observe(targetNodeToObserve, { childList: true, subtree: true });
+        observer.observe(targetNodeToObserve, {childList: true, subtree: true});
     });
 }
 
@@ -331,7 +336,7 @@ function waitForRows(table: HTMLTableElement, minRows = 2): Promise<NodeListOf<H
         if (checkRows()) return; // Check immediately
 
         observer = new MutationObserver(checkRows);
-        observer.observe(tbody, { childList: true });
+        observer.observe(tbody, {childList: true});
     });
 }
 
@@ -350,7 +355,7 @@ const debounce = (fn: () => void, ms = 100): () => void => {
 };
 
 function debounceScraper(scrapePlanner: (plannerTableElement: Element) => Promise<void>) {
-     // Debounce time of 100ms
+    // Debounce time of 100ms
     return debounce(async () => {
         AppLogger.info("Planner changes detected, re-scraping planner...");
         try {
@@ -362,6 +367,7 @@ function debounceScraper(scrapePlanner: (plannerTableElement: Element) => Promis
         }
     }, 100);
 }
+
 const debouncedScrapePlanner = debounceScraper(scrapePlanner);
 
 
@@ -371,7 +377,7 @@ const debouncedScrapePlanner = debounceScraper(scrapePlanner);
         const scheduleElement = await waitForScheduleTable();
         scrapeScheduleTable(scheduleElement);
         const initialIframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe');
-        if(initialIframe) {
+        if (initialIframe) {
             console.log(initialIframe);
             const initialIframeDoc = initialIframe.contentDocument;
             if (!initialIframeDoc) {
@@ -381,24 +387,24 @@ const debouncedScrapePlanner = debounceScraper(scrapePlanner);
             initialIframeDoc.addEventListener("click", function (event) {
                 const target = event.target;
                 console.log(target);
-                if(!target) return;
+                if (!target) return;
                 let buttonSpan = (target as HTMLElement).closest('[class^="showClassSectionsLink"]');
                 console.log(buttonSpan);
-                if(!buttonSpan){
+                if (!buttonSpan) {
                     buttonSpan = (target as HTMLElement).closest('[class^=" control center"]');
-                    if(buttonSpan){
+                    if (buttonSpan) {
                         debouncedScrapePlanner();
                         console.log("Button clicked:", buttonSpan.textContent);
                     }
                 }
-                if(!buttonSpan) return;
+                if (!buttonSpan) return;
                 if (buttonSpan.role === "button") {
                     console.log("Button clicked:", buttonSpan.textContent);
                     console.log(target);
                     debouncedScrapePlanner();
                 }
             });
-        }else{
+        } else {
             AppLogger.warn("Initial iframe not found. Cannot set up event listener for button clicks.");
         }
         //const plannerElement = await waitForCart();
@@ -409,6 +415,17 @@ const debouncedScrapePlanner = debounceScraper(scrapePlanner);
         AppLogger.error("An error occurred during the main execution block:", error);
     }
 })();
+
+function createShadowHost(id: string): { host: HTMLDivElement, container: HTMLDivElement } {
+    const host = document.createElement("div");
+    host.id = id;
+
+    const shadow = host.attachShadow({mode: "open"});
+    const container = document.createElement("div");
+    shadow.appendChild(container);
+
+    return {host, container};
+}
 
 /**
  * Scrapes course data from the main schedule table.
@@ -466,6 +483,31 @@ function scrapeScheduleTable(scheduleTableElement: Element): void {
     // }
 }
 
+function ensureExtensionCell(row: HTMLTableRowElement): HTMLTableCellElement {
+    // look for a cell we already added
+    let cell = row.querySelector<HTMLTableCellElement>('td.mypack-extension-cell');
+    if (cell) {
+        cell.innerHTML = '';            // clear previous widgets
+        return cell;
+    }
+
+    // otherwise make a new <td>
+    cell = row.ownerDocument!.createElement('td');
+    cell.className = 'mypack-extension-cell';
+    cell.colSpan = row.cells.length;   // span across the whole inner table
+
+    Object.assign(cell.style, {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px,1fr))',
+        gap: '.75rem',
+        padding: 0,
+        whiteSpace: 'normal',
+    });
+
+    row.appendChild(cell);              // ←-- same row, so it shows beside the details
+    return cell;
+}
+
 /**
  * Scrapes course data from the planner/cart table.
  * @param {Element} plannerTableElement - The HTML element of the planner/cart table.
@@ -502,35 +544,33 @@ async function scrapePlanner(plannerTableElement: Element): Promise<void> {
             const scrapedPlannerCourse: Course = {
                 abr: courseAbbreviation, instructor: courseInstructor, title: "", id: "", // Title/ID might need more specific scraping if available here
             };
+
             planner_courses.push(scrapedPlannerCourse);
             AppLogger.info("Detected planner course:", scrapedPlannerCourse.abr, scrapedPlannerCourse.instructor);
             scrapedCount++;
             const courseGradeDataElement = await getCourseDetails(scrapedPlannerCourse);
             const rateMyProfDataElement = await getProfessorDetails(scrapedPlannerCourse.instructor);
-            const tableCell = document.createElement("td");
-            tableCell.colSpan = classDetailRow.cells.length;
-            tableCell.style.position = 'relative';
-            tableCell.style.height = '400px';                  // enough for two cards
-            tableCell.style.padding = '0';
+            const extRow = ensureExtensionCell(classDetailRow);   // parent row is the <tr class="child">
+            /*const gridCell = extRow.firstElementChild as HTMLTableCellElement;*/
+            //gridCell.colSpan = classDetailRow.cells.length;
+            /* tableCell.style.position = 'relative';
+             tableCell.style.height = '';     // let content define height
+             tableCell.style.whiteSpace = 'nowrap';
+             tableCell.style.padding = '0';*/
+
             if (courseGradeDataElement.textContent !== "No grade data available.") {
 
-                tableCell.appendChild(courseGradeDataElement);
+                extRow.appendChild(courseGradeDataElement);
 
-                const existing = classDetailRow.querySelector("#mypack-extension-data-grade");
-                if (!existing) {
-                    classDetailRow.appendChild(tableCell);
-                }
+
             }
             console.log(rateMyProfDataElement);
 
             if (rateMyProfDataElement.textContent !== "Professor not found.") {
 
-                tableCell.appendChild(rateMyProfDataElement);
+                extRow.appendChild(rateMyProfDataElement);
 
-                const existing = classDetailRow.querySelector("#mypack-extension-data-prof");
-                if (!existing) {
-                    classDetailRow.appendChild(tableCell);
-                }
+
             }
 
 
@@ -554,23 +594,76 @@ async function scrapePlanner(plannerTableElement: Element): Promise<void> {
       left: 50% !important;
       transform: translateX(-50%);
       max-height: 85vh !important;
+      width: 90vw !important;   /* grows from 540 px to ~90 % of viewport   */
+      max-width: 1400px !important;
       overflow: auto;
+      
     }
+     td.mypack-extension-cell{
+    /* live inside the column, not beyond it */
+    position: relative;
+    overflow: hidden;             /* <- keeps cards inside */
+
+    /* let CSS Grid do the wrapping */
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(260px,1fr));
+    gap: .75rem;
+    padding: 0;
+
+    /* make sure the cell takes part in width calcs */
+    width: 100%;
+    box-sizing: border-box;
+  }
+     #classSearchTable{
+      table-layout: auto !important;   /* abandon the fixed grid */
+  }
+/* --- every React card ----------------------------------- */
+  tr.child,
+td.mypack-extension-cell {
+  height: auto !important;
+  min-height: unset !important;
+  overflow: visible !important;
+}
+.mypack-extension-cell > * {
+  min-height: 0 !important;
+}
+
+  .ui-dialog-buttonpane {
+  position: static !important;
+  width: auto !important;
+  bottom: auto !important;
+  top: auto !important;
+  margin-top: 1rem;
+}
   `;
         iframeDoc.head.appendChild(style);
         console.log("possible dialog", dialogElement); //TODO: Might be a little too big and def fucks up the header
         if (dialogElement) {
 
-            (dialogElement as HTMLElement).style.width = 'fit-content';
-            (dialogElement as HTMLElement).style.maxWidth = 'none';
-            (dialogElement as HTMLElement).style.overflowX = "visible";
+            /* (dialogElement as HTMLElement).style.width = 'fit-content';
+             (dialogElement as HTMLElement).style.maxWidth = 'none';
+             (dialogElement as HTMLElement).style.overflowX = "visible";*/
+            Object.assign((dialogElement as HTMLElement).style, {
+                width: '90vw',        // <— almost full screen
+                maxWidth: '1400px',      // put a ceiling if you like
+                left: '50%',         // keep it centred
+                transform: 'translateX(-50%)',
+                overflowX: 'visible'
+            });
         }
         const dialog_inner = dialogElement?.querySelector('[id^="dialog"]');
         if (dialog_inner) {
 
-            (dialog_inner as HTMLElement).style.width = 'fit-content';
-            (dialog_inner as HTMLElement).style.maxWidth = 'none';
-            (dialog_inner as HTMLElement).style.overflowX = "visible";
+            /* (dialog_inner as HTMLElement).style.width = 'fit-content';
+             (dialog_inner as HTMLElement).style.maxWidth = 'none';
+             (dialog_inner as HTMLElement).style.overflowX = "visible";*/
+            Object.assign((dialog_inner as HTMLElement).style, {
+                width: '90vw',        // <— almost full screen
+                maxWidth: '1400px',      // put a ceiling if you like
+                left: '50%',         // keep it centred
+                transform: 'translateX(-50%)',
+                overflowX: 'visible'
+            });
         }
 
     }
@@ -580,13 +673,11 @@ async function scrapePlanner(plannerTableElement: Element): Promise<void> {
 
 async function getCourseDetails(course: Course): Promise<HTMLDivElement> {
     console.log("Fetching course details for:", course);
-    const wrapper = document.createElement("div");
-    wrapper.id = "mypack-extension-data-grade";
+    const {host: wrapper, container} = createShadowHost("mypack-extension-data-grade");
     wrapper.style.marginTop = "0.5rem";
-    wrapper.style.overflow = "auto";
+    wrapper.style.overflow = 'visible';   // not 'auto'
+
     wrapper.style.maxWidth = "400px";
-    wrapper.style.maxHeight = '250px';
-    wrapper.style.overflow = 'auto';
     wrapper.style.display = 'inline-block';
     wrapper.style.verticalAlign = 'top';
     try {
@@ -601,8 +692,20 @@ async function getCourseDetails(course: Course): Promise<HTMLDivElement> {
 
         const json = await response.json();
         console.log(json);
-        const root = createRoot(wrapper);
+        const root = createRoot(container);
+        const a = parseFloat(json.AAverage ?? "0");
+        const b = parseFloat(json.BAverage ?? "0");
+        const c = parseFloat(json.CAverage ?? "0");
+        const d = parseFloat(json.DAverage ?? "0");
+        const f = parseFloat(json.FAverage ?? "0");
 
+        // If all are null or 0, skip rendering
+        const total = a + b + c + d + f;
+        if (!total || isNaN(total)) {
+            AppLogger.info("No valid grade data found. Skipping GradeCard.");
+            wrapper.textContent = "No grade data available.";
+            return wrapper;
+        }
         const gradeData: GradeData = {
             courseName: json.CourseName,
             subject: json.Subject,
@@ -631,19 +734,18 @@ async function getProfessorDetails(profName: string): Promise<HTMLDivElement> {
     const wrapper = document.createElement("div");
     wrapper.id = "mypack-extension-data-prof";
     wrapper.style.marginTop = "0.5rem";
-    wrapper.style.overflow = "auto";
+    wrapper.style.overflow = 'visible';   // not 'auto'
+
     wrapper.style.maxWidth = "400px";
-    wrapper.style.maxHeight = '250px';
-    wrapper.style.overflow = 'auto';
     wrapper.style.display = 'inline-block';
     wrapper.style.verticalAlign = 'top';
-    try{
+    try {
         const url = `https://app-gradefetchbackend.azurewebsites.net/api/FetchRateMyProfData?&professorName=${encodeURIComponent(profName)}`;
         const response = await fetch(url);
 
         if (!response.ok) {
-            AppLogger.error("Error fetching course details:", response.status, response.statusText);
-            wrapper.textContent = "No grade data available.";
+            AppLogger.error("Error fetching professor details.", response.status, response.statusText);
+            wrapper.textContent = "Professor not found.";
             return wrapper;
         }
         const json = await response.json();
@@ -660,9 +762,15 @@ async function getProfessorDetails(profName: string): Promise<HTMLDivElement> {
         }
         root.render(<ProfRatingCard {...profData} />);
         return wrapper;
-    }catch (error){
+    } catch (error) {
         AppLogger.error("Exception while fetching course details:", error);
         wrapper.textContent = "Error loading data.";
         return wrapper;
     }
+}
+if (__psDefine) {
+    Object.defineProperty(window, 'define', {   // hand the loader back
+        value: __psDefine,
+        configurable: true
+    });
 }
