@@ -36,9 +36,9 @@ export const ProfRatingCard: React.FC<MatchedRateMyProf> = ({
                 fontSize: 14,
             }}
         >
-            <h3 style={{margin: '.25rem 0 .5rem'}}>
+            <h4 style={{margin: '.25rem 0 .5rem'}}>
                 RateMyProfessor&nbsp;Score&nbsp;for:
-            </h3>
+            </h4>
             <p style={{margin: 0}}>
                 <strong>Name:</strong> {displayName}
             </p>

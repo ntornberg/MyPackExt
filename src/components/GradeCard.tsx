@@ -33,20 +33,20 @@ export const GradeCard: React.FC<GradeData> = (props) => {
                 fontSize: 14,
             }}
         >
-            <h3 style={{margin: '.25rem 0 .5rem'}}>
+            <h4 style={{margin: '.25rem 0 .5rem'}}>
                 Historical grade data for <strong>{courseName}</strong> with:
-            </h3>
+            </h4>
             <p style={{margin: 0}}>
-                <strong>Instructor:</strong> {instructorName}
+                {instructorName}
             </p>
 
             <PieChart
-                width={w}                 // 👈 live width / height
+                width={w}
                 height={h}
                 hideLegend
                 series={[{
                     outerRadius: '90%',
-                    arcLabelRadius: '50%',
+                    arcLabelRadius: '80%',
                     paddingAngle: 0,
                     arcLabel: ({id, value}) =>
                         `${id}: ${(value / total * 100).toFixed(0)}%`,
@@ -63,7 +63,7 @@ export const GradeCard: React.FC<GradeData> = (props) => {
             />
 
             <h4 style={{color: '#666', margin: '.5rem 0 0'}}>
-                Class Avg Range:&nbsp;
+                Class Avg Range:&nbsp;\n
                 <strong>{classAverageMin}% – {classAverageMax}%</strong>
             </h4>
         </div>
