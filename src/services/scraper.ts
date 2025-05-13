@@ -1,7 +1,7 @@
 ﻿import { AppLogger } from '../utils/logger';
 import type {Course} from '../types';
 import {waitForCart, waitForRows} from '../utils/dom';
-import { getCourseDetails, getProfessorDetails } from './api';
+import { getCourseAndProfessorDetails } from './api';
 import { ensureExtensionCell } from '../utils/dom';
 import { debounce } from '../utils/common';
 
@@ -105,8 +105,9 @@ export async function scrapePlanner(plannerTableElement: Element): Promise<void>
             planner_courses.push(scrapedPlannerCourse);
             AppLogger.info("Detected planner course:", scrapedPlannerCourse.abr, scrapedPlannerCourse.instructor);
             scrapedCount++;
-            const courseGradeDataElement = await getCourseDetails(scrapedPlannerCourse);
-            const rateMyProfDataElement = await getProfessorDetails(scrapedPlannerCourse.instructor);
+            const courseElements = await getCourseAndProfessorDetails(scrapedPlannerCourse);
+            const courseGradeDataElement = courseElements.gradeElement;
+            const rateMyProfDataElement = courseElements.professorElement;
             const extRow = ensureExtensionCell(classDetailRow);   // parent row is the <tr class="child">
 
             if (courseGradeDataElement.textContent !== "No grade data available.") {
