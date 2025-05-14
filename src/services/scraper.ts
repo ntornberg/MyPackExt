@@ -109,7 +109,15 @@ export async function scrapePlanner(plannerTableElement: Element): Promise<void>
             const courseGradeDataElement = courseElements.gradeElement;
             const rateMyProfDataElement = courseElements.professorElement;
             const extRow = ensureExtensionCell(classDetailRow);   // parent row is the <tr class="child">
-
+            if (courseHeaderRow) {
+                const headerCell = document.createElement('td');
+                if(!scrapedPlannerCourse.instructor){
+                    headerCell.innerText = "No course information available.";
+                }else {
+                    headerCell.innerText = "Course information for " + scrapedPlannerCourse.abr + " with " + scrapedPlannerCourse.instructor.split(",")[1] + " " + scrapedPlannerCourse.instructor.split(",")[0];
+                }
+                courseHeaderRow.appendChild(headerCell);
+            }
             if (courseGradeDataElement.textContent !== "No grade data available.") {
                 extRow.appendChild(courseGradeDataElement);
             }

@@ -34,6 +34,36 @@ function debounceScraper(scrapePlanner: (plannerTableElement: Element) => Promis
 const debouncedScrapePlanner = debounceScraper(scrapePlanner);
 
 
+function injectXHRHookScript() {
+    const script = document.createElement("script");
+    script.src = chrome.runtime.getURL("realFetchHook.js");
+    script.onload = () => script.remove(); // Clean up
+    (document.head || document.documentElement).appendChild(script);
+}
+
+// Inject immediately
+injectXHRHookScript();
+
+// Also inject into dynamic iframes
+const observer = new MutationObserver(() => {
+    document.querySelectorAll("iframe").forEach((iframe) => {
+        try {
+            //const win = iframe.contentWindow;
+            const doc = iframe.contentDocument;
+            if (doc && !doc.querySelector('script[src*="realFetchHook.js"]')) {
+                const script = doc.createElement("script");
+                script.src = chrome.runtime.getURL("realFetchHook.js");
+                script.onload = () => script.remove();
+                doc.documentElement.appendChild(script);
+            }
+        } catch (err) {
+            // Ignore cross-origin access issues silently
+        }
+    });
+});
+
+observer.observe(document.body, { childList: true, subtree: true });
+
 // --- Main Execution Block ---
 (async () => {
     try {

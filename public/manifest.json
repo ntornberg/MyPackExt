@@ -3,7 +3,7 @@
   "name": "MyPack Course Picker",
   "version": "1.0",
   "description": "Improved course selection UI with integrated tools",
-  "permissions": ["storage", "scripting", "tabs","cookies"],
+  "permissions": ["storage","webRequest", ",scripting", "tabs", "webRequestBlocking"],
   "host_permissions": [
     "https://*.acs.ncsu.edu/*"
   ],
@@ -18,12 +18,19 @@
     {
       "matches": ["https://portalsp.acs.ncsu.edu/*"],
       "js": ["./src/content.js"],
-      "run_at": "document_idle"
+      "run_at": "document_start",
+      "all_frames": true
     }
   ],
   "icons": {
     "16": "icon.png",
     "48": "icon.png",
     "128": "icon.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["realFetchHook.js"],
+      "matches": ["<all_urls>"]
+    }
+    ]
 }

@@ -36,11 +36,11 @@ export const ProfRatingCard: React.FC<MatchedRateMyProf> = ({
                 fontSize: 14,
             }}
         >
-            <h4 style={{margin: '.25rem 0 .5rem'}}>
-                RateMyProfessor&nbsp;Score&nbsp;for:
+            <h4 style={{margin: '.25rem 0 .5rem', textAlign: 'center'}}>
+                RateMyProfessor&nbsp;Score&nbsp;
             </h4>
-            <p style={{margin: 0}}>
-                <strong>Name:</strong> {displayName}
+            <p style={{margin: 0, textAlign: 'center'}}>
+               {displayName}
             </p>
 
             {/* Gauge scales only through this wrapper's CSS width */}
@@ -79,8 +79,8 @@ export const ProfRatingCard: React.FC<MatchedRateMyProf> = ({
                 />
             </div>
 
-            <p style={{color: '#666', marginTop: '.5rem'}}>
-                <strong>Average Rating:</strong> {rating.toFixed(2)} / 5
+            <p style={{color: '#666', marginTop: '.5rem',textAlign: 'center'}}>
+                <strong>{rating.toFixed(2)} / 5</strong>
             </p>
         </div>
     );

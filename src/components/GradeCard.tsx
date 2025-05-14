@@ -4,13 +4,11 @@ import { useAutoSize } from '../hooks/useAutoSize';
 import type {GradeData} from '../types';
 
 export const GradeCard: React.FC<GradeData> = (props) => {
-    const {
-        courseName, instructorName,
-        aAverage, bAverage, cAverage, dAverage, fAverage,
+    const {aAverage, bAverage, cAverage, dAverage, fAverage,
         classAverageMin, classAverageMax
     } = props;
 
-    const [wrapRef, {w, h}] = useAutoSize();          // 👈 observe width
+    const [wrapRef, {w, h}] = useAutoSize();
     const total = aAverage + bAverage + cAverage + dAverage + fAverage;
     if (!total) return null;                            // skip empty cards
 
@@ -34,11 +32,9 @@ export const GradeCard: React.FC<GradeData> = (props) => {
             }}
         >
             <h4 style={{margin: '.25rem 0 .5rem'}}>
-                Historical grade data for <strong>{courseName}</strong> with:
+                Historical grade data:
             </h4>
-            <p style={{margin: 0}}>
-                {instructorName}
-            </p>
+
 
             <PieChart
                 width={w}
@@ -62,8 +58,8 @@ export const GradeCard: React.FC<GradeData> = (props) => {
                 sx={{[`& .${pieArcLabelClasses.root}`]: {fontWeight: 'bold'}}}
             />
 
-            <h4 style={{color: '#666', margin: '.5rem 0 0'}}>
-                Class Avg Range:&nbsp;\n
+            <h4 style={{color: '#666', margin: '.5rem 0 0', textAlign: 'center'}}>
+                Class Average &nbsp;
                 <strong>{classAverageMin}% – {classAverageMax}%</strong>
             </h4>
         </div>
