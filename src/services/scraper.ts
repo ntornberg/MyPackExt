@@ -125,18 +125,29 @@ export async function scrapePlanner(plannerTableElement: Element): Promise<void>
         AppLogger.error("Error scraping planner/cart table or waiting for rows:", error);
     }
     
-    applyIframeStyles();
+    await applyIframeStyles(plannerTableElement as HTMLTableElement);
 }
 
-/**
+/**.cust-ui-dialog-content {
+ overflow-y: visible !important;
+ }
  * Applies necessary styles to the iframe content for better display of extension data.
  */
-export function applyIframeStyles(): void {
+export async function applyIframeStyles(plannerTableElement : HTMLTableElement): Promise<void> {
+    console.log("Planner table element:", plannerTableElement);
     const iframe = document.querySelector('[id$="divPSPAGECONTAINER"] iframe') as HTMLIFrameElement | null;
     if (iframe && iframe.contentDocument) { // Expand to allow content to fit
         const iframeDoc = iframe.contentDocument;
         
-        const dialogElement = iframeDoc.querySelector('[role="dialog"]');
+        let dialog_inner = plannerTableElement.closest('[id^="ui-widget-content"]');
+        let dialog_parent;
+        if(!dialog_inner){
+            dialog_inner = plannerTableElement.closest('[role^="dialog"]');
+        }
+        if(dialog_inner){
+            dialog_parent = dialog_inner.closest('[role^="dialog"]');
+        }
+
         const style = iframeDoc.createElement('style');
         style.textContent = `
     .ui-dialog.cust-ui-dialog {
@@ -149,6 +160,7 @@ export function applyIframeStyles(): void {
       max-width: 1400px !important;
       overflow: auto;
     }
+    
      td.mypack-extension-cell{
     /* live inside the column, not beyond it */
     position: relative;
@@ -187,18 +199,20 @@ td.mypack-extension-cell {
 }
   `;
         iframeDoc.head.appendChild(style);
-        console.log("possible dialog", dialogElement); 
-        if (dialogElement) {
-            Object.assign((dialogElement as HTMLElement).style, {
+        console.log("possible dialog", dialog_parent);
+        if (dialog_parent) {
+            Object.assign((dialog_parent as HTMLElement).style, {
                 width: '90vw',        // <— almost full screen
                 maxWidth: '1400px',      // put a ceiling if you like
                 left: '50%',         // keep it centred
                 transform: 'translateX(-50%)',
-                overflowX: 'visible'
+                overflowX: 'visible',
+                position : 'relative',
             });
         }
-        const dialog_inner = dialogElement?.querySelector('[id^="dialog"]');
+
         if (dialog_inner) {
+            console.log("dialog_inner", dialog_inner);
             Object.assign((dialog_inner as HTMLElement).style, {
                 width: '90vw',        // <— almost full screen
                 maxWidth: '1400px',      // put a ceiling if you like
@@ -206,10 +220,84 @@ td.mypack-extension-cell {
                 transform: 'translateX(-50%)',
                 overflowX: 'visible'
             });
+
+            await applyFlexDialogLayout(dialog_parent as HTMLElement,dialog_inner as HTMLElement);
         }
+        /*const dialog_ui = document.querySelector('.ui-dialog');
+        if(dialog_ui){
+            const buttonPane = dialog_ui.querySelector('.ui-dialog-buttonpane');
+            if(buttonPane){
+                dialog_ui.appendChild(buttonPane);
+            }
+
+        }*/
+
     }
 }
+type CSSPropertiesWithImportant = {
+    [K in keyof CSSStyleDeclaration]?: string | [string, boolean]; // value or [value, isImportant]
+};
 
+async function setElementStyles(el: HTMLElement, styles: CSSPropertiesWithImportant): Promise<void> {
+    Object.entries(styles).forEach(([key, val]) => {
+        if (val !== undefined && val !== null) {
+            if (Array.isArray(val)) {
+                const [value, isImportant] = val;
+                el.style.setProperty(key, value, isImportant ? "important" : "");
+            } else {
+                el.style.setProperty(key, val);
+            }
+        }
+    });
+}
+
+// Main function
+async function applyFlexDialogLayout(parent_dialog: HTMLElement,inner_dialog: HTMLElement): Promise<void> {
+    /*const dialog = contentElement.parentElement as HTMLElement | null;
+    if (!dialog) return;*/
+
+    const titleBar = parent_dialog.querySelector('.ui-dialog-titlebar') as HTMLElement | null;
+    const buttonPane = parent_dialog.querySelector('.ui-dialog-buttonpane') as HTMLElement | null;
+    console.log("dialog", parent_dialog);
+    console.log("titleBar", titleBar);
+    console.log("buttonPane", buttonPane);
+    // Step 1: Make the dialog a vertical flex container
+    await setElementStyles(parent_dialog, {
+        display: ['flex',true],
+        flexDirection: ['column',true],
+        height: parent_dialog.style.height || getComputedStyle(parent_dialog).height,
+        maxHeight: parent_dialog.style.maxHeight || getComputedStyle(parent_dialog).maxHeight,
+        overflow: 'hidden'
+    });
+
+    // Step 2: Make the content area scrollable and flexible
+    await setElementStyles(inner_dialog, {
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        flexGrow: '1',
+        flexShrink: '1',
+        height: 'auto',
+        maxHeight: 'none'
+    });
+
+    // Step 3: Prevent title bar from shrinking
+    if (titleBar) {
+        await setElementStyles(titleBar, {
+            flexShrink: '0'
+        });
+    }
+
+    // Step 4: Stick the button pane to the bottom
+    if (buttonPane) {
+        await setElementStyles(buttonPane, {
+            position: 'static',
+            flexShrink: '0',
+            marginTop: 'auto'
+        });
+    }
+
+    console.log('Dialog layout updated!');
+}
 /**
  * Creates a debounced function for scraping the planner.
  * @param {Function} scrapePlanner - The function to debounce.
