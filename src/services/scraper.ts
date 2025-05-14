@@ -1,9 +1,9 @@
-﻿import { AppLogger } from '../utils/logger';
+﻿import {AppLogger} from '../utils/logger';
 import type {Course} from '../types';
 import {waitForCart, waitForRows} from '../utils/dom';
-import { getCourseAndProfessorDetails } from './api';
-import { ensureExtensionCell } from '../utils/dom';
-import { debounce } from '../utils/common';
+import {getCourseAndProfessorDetails} from './api';
+import {ensureExtensionCell} from '../utils/dom';
+import {debounce} from '../utils/common';
 
 // Arrays to store course data
 export const courses: Course[] = []; // Stores courses from the main schedule table
@@ -124,7 +124,7 @@ export async function scrapePlanner(plannerTableElement: Element): Promise<void>
     } catch (error) {
         AppLogger.error("Error scraping planner/cart table or waiting for rows:", error);
     }
-    
+
     await applyIframeStyles(plannerTableElement as HTMLTableElement);
 }
 
@@ -133,18 +133,18 @@ export async function scrapePlanner(plannerTableElement: Element): Promise<void>
  }
  * Applies necessary styles to the iframe content for better display of extension data.
  */
-export async function applyIframeStyles(plannerTableElement : HTMLTableElement): Promise<void> {
+export async function applyIframeStyles(plannerTableElement: HTMLTableElement): Promise<void> {
     console.log("Planner table element:", plannerTableElement);
     const iframe = document.querySelector('[id$="divPSPAGECONTAINER"] iframe') as HTMLIFrameElement | null;
     if (iframe && iframe.contentDocument) { // Expand to allow content to fit
         const iframeDoc = iframe.contentDocument;
-        
-        let dialog_inner = plannerTableElement.closest('[id^="ui-widget-content"]');
+
+        let dialog_inner = plannerTableElement.closest('[id^="dialog"]');
         let dialog_parent;
-        if(!dialog_inner){
+        if (!dialog_inner) {
             dialog_inner = plannerTableElement.closest('[role^="dialog"]');
         }
-        if(dialog_inner){
+        if (dialog_inner) {
             dialog_parent = dialog_inner.closest('[role^="dialog"]');
         }
 
@@ -207,7 +207,7 @@ td.mypack-extension-cell {
                 left: '50%',         // keep it centred
                 transform: 'translateX(-50%)',
                 overflowX: 'visible',
-                position : 'relative',
+                position: 'relative',
             });
         }
 
@@ -221,7 +221,7 @@ td.mypack-extension-cell {
                 overflowX: 'visible'
             });
 
-            await applyFlexDialogLayout(dialog_parent as HTMLElement,dialog_inner as HTMLElement);
+            await applyFlexDialogLayout(dialog_parent as HTMLElement, dialog_inner as HTMLElement);
         }
         /*const dialog_ui = document.querySelector('.ui-dialog');
         if(dialog_ui){
@@ -234,70 +234,52 @@ td.mypack-extension-cell {
 
     }
 }
-type CSSPropertiesWithImportant = {
-    [K in keyof CSSStyleDeclaration]?: string | [string, boolean]; // value or [value, isImportant]
-};
 
-async function setElementStyles(el: HTMLElement, styles: CSSPropertiesWithImportant): Promise<void> {
-    Object.entries(styles).forEach(([key, val]) => {
-        if (val !== undefined && val !== null) {
-            if (Array.isArray(val)) {
-                const [value, isImportant] = val;
-                el.style.setProperty(key, value, isImportant ? "important" : "");
-            } else {
-                el.style.setProperty(key, val);
-            }
-        }
-    });
-}
+
+
+
 
 // Main function
-async function applyFlexDialogLayout(parent_dialog: HTMLElement,inner_dialog: HTMLElement): Promise<void> {
-    /*const dialog = contentElement.parentElement as HTMLElement | null;
-    if (!dialog) return;*/
+async function applyFlexDialogLayout(parent_dialog: HTMLElement, inner_dialog: HTMLElement): Promise<void> {
 
+    const dlg = document.querySelector('.ui-dialog.cust-ui-dialog');
+    if (dlg) {
+        new MutationObserver(muts => console.log(muts))
+            .observe(dlg, {attributes: true, attributeFilter: ['style']});
+    }
     const titleBar = parent_dialog.querySelector('.ui-dialog-titlebar') as HTMLElement | null;
     const buttonPane = parent_dialog.querySelector('.ui-dialog-buttonpane') as HTMLElement | null;
     console.log("dialog", parent_dialog);
     console.log("titleBar", titleBar);
     console.log("buttonPane", buttonPane);
     // Step 1: Make the dialog a vertical flex container
-    await setElementStyles(parent_dialog, {
-        display: ['flex',true],
-        flexDirection: ['column',true],
-        height: parent_dialog.style.height || getComputedStyle(parent_dialog).height,
-        maxHeight: parent_dialog.style.maxHeight || getComputedStyle(parent_dialog).maxHeight,
-        overflow: 'hidden'
-    });
+    parent_dialog.style.setProperty('display', 'flex', 'important');
+    parent_dialog.style.setProperty('flex-direction', 'column', 'important');
+    parent_dialog.style.setProperty('height', parent_dialog.style.height || getComputedStyle(parent_dialog).height, 'important')
+    parent_dialog.style.setProperty('maxHeight', parent_dialog.style.maxHeight || getComputedStyle(parent_dialog).maxHeight, 'important');
+    parent_dialog.style.setProperty('overflow', 'hidden', 'important');
 
-    // Step 2: Make the content area scrollable and flexible
-    await setElementStyles(inner_dialog, {
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        flexGrow: '1',
-        flexShrink: '1',
-        height: 'auto',
-        maxHeight: 'none'
-    });
 
-    // Step 3: Prevent title bar from shrinking
+    inner_dialog.style.setProperty('overflowY', 'auto', 'important');
+    inner_dialog.style.setProperty('overflowX', 'hidden', 'important');
+    inner_dialog.style.setProperty('flexGrow', '1', 'important');
+    inner_dialog.style.setProperty('flexShrink', '1', 'important');
+    inner_dialog.style.setProperty('height', 'auto', 'important');
+    inner_dialog.style.setProperty('maxHeight', 'none', 'important');
     if (titleBar) {
-        await setElementStyles(titleBar, {
-            flexShrink: '0'
-        });
+        titleBar.style.setProperty('flexShrink', '0', 'important');
     }
-
     // Step 4: Stick the button pane to the bottom
-    if (buttonPane) {
-        await setElementStyles(buttonPane, {
-            position: 'static',
-            flexShrink: '0',
-            marginTop: 'auto'
-        });
+
+    if(buttonPane){
+        buttonPane.style.setProperty('position', 'static', 'important');
+        buttonPane.style.setProperty('flex-shrink', '0', 'important');
+        buttonPane.style.setProperty('margin-top', 'auto', 'important');
     }
 
     console.log('Dialog layout updated!');
 }
+
 /**
  * Creates a debounced function for scraping the planner.
  * @param {Function} scrapePlanner - The function to debounce.
