@@ -24,7 +24,7 @@ export async function setupListener() {
                     const hash = await generateCacheKey(item.crse_id);
                     await setGenericCache("planTermTableData", hash, item);
                 }
-                if (payload.responseType == "_shopCartCalEvents") {
+                if (payload.responseType == "_getShopCartCalEvents") {
                     const hash = await generateCacheKey(item.class_nbr);
                     await setGenericCache("shopCartCalEventsData", hash, item);
                 }
