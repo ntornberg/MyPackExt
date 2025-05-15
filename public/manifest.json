@@ -3,7 +3,7 @@
   "name": "MyPack Course Picker",
   "version": "1.0",
   "description": "Improved course selection UI with integrated tools",
-  "permissions": ["storage","webRequest", ",scripting", "tabs", "webRequestBlocking"],
+  "permissions": ["storage", "tabs"],
   "host_permissions": [
     "https://*.acs.ncsu.edu/*"
   ],

@@ -1,7 +1,38 @@
 ﻿(() => {
-    console.log("🔥 realFetchHook injected");
+    if (window.__myPackHookLoaded) {
+        return;
+    }
+    window.__myPackHookLoaded = true;
 
     const OriginalXHR = window.XMLHttpRequest;
+    const keywords = [
+        "_getClassSearchResults",
+        "_getShopCartTableData",
+        "_getScheduleTableData",
+        "_getScheduleCalEvents",
+        "_getCustomCalEvents",
+        "_getCustEventsTableData",
+        "_getPlanTermTableData",
+        "_getShopCartCalEvents",
+    ];
+
+    const receiverPromise = (function () {
+        if (window.top.__receiverPromise) return window.top.__receiverPromise;
+
+        return (window.top.__receiverPromise = new Promise((resolve) => {
+            if (window.top.__receiverReady) return resolve(true);
+
+            window.top.addEventListener("message", (ev) => {
+                if (
+                    ev.data?.type === "RECEIVER_READY" &&
+                    ev.data.source === "content-script"
+                ) {
+                    window.top.__receiverReady = true;
+                    resolve(true);
+                }
+            });
+        }));
+    })();
 
     class InterceptedXHR extends OriginalXHR {
         open(method, url, ...rest) {
@@ -10,16 +41,41 @@
         }
 
         send(...args) {
-            this.addEventListener("load", function () {
+            this.addEventListener("load", async function () {
                 try {
-                    if (
-                        this._url.includes("_getClassSearchResults") || this._url.includes("_getShopCartTableData") || this._url.includes("_getScheduleTableData") || this._url.includes("_getScheduleTableData") || this._url.includes("_getClassSearchResults") || this._url.includes("_getShopCartTableData") || this._url.includes("_getScheduleTableData") || this._url.includes("_getScheduleTableData") || this._url.includes("_getClassSearchResults") || this._url.includes("_getShopCartTableData") || this._url.includes("_getScheduleTableData") || this._url.includes("_getShopCartCalEvents") || this._url.includes("_getClassSearchResults") || this._url.includes("_getShopCartTableData") || this._url.includes("_getScheduleTableData") || this._url.includes("_getShopCartCalEvents") || this._url.includes("_getClassSearchResults") || this._url.includes("_getShopCartTableData") || this._url.includes("_getScheduleTableData") || this._url.includes("_getScheduleCalEvents") || this._url.includes("_getClassSearchResults") || this._url.includes("_getShopCartTableData") || this._url.includes("_getScheduleTableData") || this._url.includes("_getScheduleCalEvents") || this._url.includes("_getClassSearchResults") || this._url.includes("_getShopCartTableData") || this._url.includes("_getScheduleTableData") || this._url.includes("_getScheduleCalEvents") || this._url.includes("_getClassSearchResults") || this._url.includes("_getShopCartTableData") || this._url.includes("_getScheduleTableData") || this._url.includes("_getCustomCalEvents") || this._url.includes("_getClassSearchResults") || this._url.includes("_getShopCartTableData") || this._url.includes("_getScheduleTableData") || this._url.includes("_getCustomCalEvents") || this._url.includes("_getClassSearchResults") || this._url.includes("_getShopCartTableData") || this._url.includes("_getScheduleTableData") || this._url.includes("_getCustomCalEvents") || this._url.includes("_getClassSearchResults") || this._url.includes("_getShopCartTableData") || this._url.includes("_getScheduleTableData") || this._url.includes("_getCustEventsTableData")
-                    ) {
-                        console.log("✅ Matched target request to:", this._url);
-                        console.log("📄 Response (truncated):", this.responseText.slice(0, 300));
+                    const matchedKeyword = keywords.find((keyword) =>
+                        this._url.includes(keyword)
+                    );
+                    if (matchedKeyword) {
+                        let data = JSON.parse(this.responseText);
+                        if (matchedKeyword === "_getClassSearchResults") {
+                            data = data.data;
+                        }
+                        if (matchedKeyword === "_getCustEventsTableData") {
+                            data = data.data;
+                        }
+                        if (matchedKeyword === "_getScheduleTableData") {
+                            data = data.data;
+                        }
+                        if (matchedKeyword === "_getShopCartTableData") {
+                            data = data.data;
+                        }
+                        if (matchedKeyword === "_getPlanTermTableData") {
+                            data = data.data;
+                        }
+
+                        const ok = await receiverPromise;
+                        window.top.postMessage(
+                            {
+                                source: "realFetchHook",
+                                type: "CLASS_DATA",
+                                payload: { data: data, responseType: matchedKeyword },
+                            },
+                            "*"
+                        );
                     }
                 } catch (err) {
-                    console.warn("❌ Failed to intercept XHR:", err);
+                    // Silently fail without logging
                 }
             });
 

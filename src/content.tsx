@@ -3,6 +3,7 @@ import {waitForCart, waitForScheduleTable} from "./utils/dom.ts";
 declare global {
     interface Window {
         __savedDefine?: any;
+        __mypackEnhancerInitialized?: boolean;
     }
 }
 
@@ -12,7 +13,12 @@ delete window.__savedDefine;
 
 import {AppLogger} from "./utils/logger.ts";
 import {scrapePlanner, scrapeScheduleTable} from "./services/scraper.ts";
-import {debounce} from "./utils/common.ts";// Stores courses from the main schedule table// Stores courses from the planner/cart
+import {debounce} from "./utils/common.ts";
+import {setupListener} from "./services/siteResponseStorage.ts";
+// Stores courses from the main schedule table// Stores courses from the planner/cart
+
+
+
 
 AppLogger.info("MyPack Enhancer script started.");
 
@@ -23,7 +29,7 @@ function debounceScraper(scrapePlanner: (plannerTableElement: Element) => Promis
         AppLogger.info("Planner changes detected, re-scraping planner...");
         try {
             const plannerElement = await waitForCart(); // Re-ensure planner table is accessible
-            console.log(plannerElement);
+            AppLogger.info(plannerElement);
             await scrapePlanner(plannerElement);
         } catch (error) {
             AppLogger.error("Error during debounced planner scrape:", error);
@@ -50,9 +56,10 @@ const observer = new MutationObserver(() => {
         try {
             //const win = iframe.contentWindow;
             const doc = iframe.contentDocument;
-            if (doc && !doc.querySelector('script[src*="realFetchHook.js"]')) {
+            if (doc && !doc.querySelector('script[data-hooked="true"]')) {
                 const script = doc.createElement("script");
                 script.src = chrome.runtime.getURL("realFetchHook.js");
+                script.setAttribute("data-hooked", "true");  // Prevent future injections
                 script.onload = () => script.remove();
                 doc.documentElement.appendChild(script);
             }
@@ -67,11 +74,16 @@ observer.observe(document.body, { childList: true, subtree: true });
 // --- Main Execution Block ---
 (async () => {
     try {
+        if (window.__mypackEnhancerInitialized) {
+            console.warn("MyPack Enhancer already initialized. Skipping...");
+            return;
+        }
+        window.__mypackEnhancerInitialized = true;
         const scheduleElement = await waitForScheduleTable();
         scrapeScheduleTable(scheduleElement);
         const initialIframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe');
+        await setupListener();
         if (initialIframe) {
-            console.log(initialIframe);
             const initialIframeDoc = initialIframe.contentDocument;
             if (!initialIframeDoc) {
                 AppLogger.warn("Initial iframe document not found. Cannot set up event listener for button clicks.");
@@ -79,24 +91,22 @@ observer.observe(document.body, { childList: true, subtree: true });
             }
             initialIframeDoc.addEventListener("click", function (event) {
                 const target = event.target;
-                console.log(target);
                 if (!target) return;
                 let buttonSpan = (target as HTMLElement).closest('[class^="showClassSectionsLink"]');
-                console.log(buttonSpan);
                 if (!buttonSpan) {
                     buttonSpan = (target as HTMLElement).closest('[class^=" control center"]');
                     if (buttonSpan) {
                         debouncedScrapePlanner();
-                        console.log("Button clicked:", buttonSpan.textContent);
+                        AppLogger.info("Button clicked:", buttonSpan.textContent);
                     }
                 }
                 if (!buttonSpan) return;
                 if (buttonSpan.role === "button") {
-                    console.log("Button clicked:", buttonSpan.textContent);
-                    console.log(target);
+                    AppLogger.info("Button clicked:", buttonSpan.textContent);
                     debouncedScrapePlanner();
                 }
             });
+
         } else {
             AppLogger.warn("Initial iframe not found. Cannot set up event listener for button clicks.");
         }

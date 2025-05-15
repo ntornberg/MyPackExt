@@ -67,7 +67,7 @@ export function waitForScheduleTable(): Promise<Element> {
         const observer = new MutationObserver(() => {
             const table = findTable();
             if (table) {
-                console.log(table);
+                AppLogger.info(table);
                 AppLogger.info("Schedule table found by MutationObserver.");
                 observer.disconnect();
                 resolve(table);

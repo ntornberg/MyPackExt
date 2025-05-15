@@ -5,7 +5,7 @@ import { createShadowHost } from '../utils/dom';
 import { GradeCard } from '../components/GradeCard';
 import { ProfRatingCard } from '../components/ProfRatingCard';
 import React from "react";
-import { getCache, setCache } from "../cache/CourseRetrieval.tsx";
+import { getGenericCache, setGenericCache, generateCacheKey } from "../cache/CourseRetrieval.tsx";
 
 // Interface for combined API response
 interface CombinedApiResponse {
@@ -43,7 +43,7 @@ const courseDataCache = new Map<string, CombinedApiResponse>();
  */
 async function fetchCombinedData(course: Course): Promise<CombinedApiResponse | null> {
   // Generate a cache key for this course
-  const cacheKey = `${course.abr}-${course.instructor}`;
+  const cacheKey = await generateCacheKey(course.abr + " " + course.instructor );
   
   // Check memory cache first
   if (courseDataCache.has(cacheKey)) {
@@ -51,8 +51,11 @@ async function fetchCombinedData(course: Course): Promise<CombinedApiResponse | 
     return courseDataCache.get(cacheKey)!;
   }
   
+  // Generate hash for persistent cache lookup
+  const hash = await generateCacheKey(course.abr + " " + course.instructor );
+  
   // Check persistent cache
-  const persistentCache = await getCache(course);
+  const persistentCache = await getGenericCache("courseList", hash);
   if (persistentCache && persistentCache.combinedData) {
     try {
       const cachedData = JSON.parse(persistentCache.combinedData) as CombinedApiResponse;
@@ -85,8 +88,9 @@ async function fetchCombinedData(course: Course): Promise<CombinedApiResponse | 
     // Store in memory cache
     courseDataCache.set(cacheKey, combinedData);
     
-    // Store in persistent cache
-    await setCache(course, JSON.stringify(combinedData));
+    // Generate hash and store in persistent cache
+    const courseHash = await generateCacheKey(course.abr + " " + course.instructor );
+    await setGenericCache("courseList", courseHash, JSON.stringify(combinedData));
     
     return combinedData;
   } catch (error) {
@@ -245,26 +249,3 @@ export async function getCourseAndProfessorDetails(course: Course): Promise<Cour
   }
 }
 
-/**
- * @deprecated Use getCourseAndProfessorDetails instead
- * Fetches course grade details from the backend API.
- * @param {Course} course - The course to fetch details for.
- * @returns {Promise<HTMLDivElement>} - A promise that resolves with an HTML element containing the course data.
- */
-export async function getCourseDetails(course: Course): Promise<HTMLDivElement> {
-  AppLogger.warn("Deprecated: Use getCourseAndProfessorDetails instead");
-  const elements = await getCourseAndProfessorDetails(course);
-  return elements.gradeElement;
-}
-
-/**
- * @deprecated Use getCourseAndProfessorDetails instead
- * Fetches professor rating details from the backend API.
- * @param {Course} course - The course to fetch professor details for.
- * @returns {Promise<HTMLDivElement>} - A promise that resolves with an HTML element containing the professor data.
- */
-export async function getProfessorDetails(course: Course): Promise<HTMLDivElement> {
-  AppLogger.warn("Deprecated: Use getCourseAndProfessorDetails instead");
-  const elements = await getCourseAndProfessorDetails(course);
-  return elements.professorElement;
-}

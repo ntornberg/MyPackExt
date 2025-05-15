@@ -1,6 +1,4 @@
-﻿import type {Course} from "../types";
-
-// Define the structure of the cache entry
+﻿// Define the structure of the cache entry
 interface CacheEntry {
     combinedData: string;
     timestamp: number;
@@ -9,21 +7,32 @@ interface CacheEntry {
 // Cache expiration time (24 hours in milliseconds)
 const CACHE_EXPIRATION = 24 * 60 * 60 * 1000;
 
+// -------------------- Generic Cache Functions --------------------
+
 /**
- * Retrieves cached data for a course.
- * @param {Course} course - The course to get cached data for.
- * @returns {Promise<CacheEntry | null>} - The cached data or null if not found or expired.
+ * Creates a hash from an object's values.
+ * @param {Record<string, any>} item - The object to use for the hash.
+ * @returns {Promise<string>} - The generated unique key.
  */
-export async function getCache(course: Course): Promise<CacheEntry | null> {
-    const id = await hashString(course.abr + course.instructor);
-    const cached = await chrome.storage.local.get("courseList");
+export async function generateCacheKey(item: string): Promise<string> {
+    return hashString(item);
+}
+
+/**
+ * Retrieves cached data from a given cache category using a precomputed hash.
+ * @param {string} cacheCategory - The name of the cache category.
+ * @param {string} hash - The precomputed hash key.
+ * @returns {Promise<CacheEntry | null>} - The cache entry or null if not found/expired.
+ */
+export async function getGenericCache(cacheCategory: string, hash: string): Promise<CacheEntry | null> {
+    const cached = await chrome.storage.local.get(cacheCategory);
     
-    if (!cached || !cached.courseList) {
+    if (!cached || !cached[cacheCategory]) {
         return null;
     }
     
-    const cache: Record<string, CacheEntry> = cached.courseList || {};
-    const entry = cache[id];
+    const cache: Record<string, CacheEntry> = cached[cacheCategory];
+    const entry = cache[hash];
     
     if (!entry) {
         return null;
@@ -32,9 +41,8 @@ export async function getCache(course: Course): Promise<CacheEntry | null> {
     // Check if the cache entry has expired
     const now = Date.now();
     if (entry.timestamp && (now - entry.timestamp > CACHE_EXPIRATION)) {
-        // Cache expired, remove it
-        delete cache[id];
-        await chrome.storage.local.set({courseList: cache});
+        delete cache[hash];
+        await chrome.storage.local.set({ [cacheCategory]: cache });
         return null;
     }
     
@@ -42,40 +50,51 @@ export async function getCache(course: Course): Promise<CacheEntry | null> {
 }
 
 /**
- * Stores data in the cache for a course.
- * @param {Course} course - The course to cache data for.
- * @param {string} jsonData - The JSON data to cache.
+ * Stores data in the given cache category using a precomputed hash.
+ * @param {string} cacheCategory - The name of the cache category.
+ * @param {string} hash - The precomputed hash key.
+ * @param {string} jsonData - The JSON data to store.
  * @returns {Promise<void>}
  */
-export async function setCache(course: Course, jsonData: string): Promise<void> {
-    const id = await hashString(course.abr + course.instructor);
-    const data = await chrome.storage.local.get(["courseList"]);
-    const current_dict = data.courseList || {};
+export async function setGenericCache(cacheCategory: string, hash: string, jsonData: string): Promise<void> {
+    const data = await chrome.storage.local.get([cacheCategory]);
+    const current = data[cacheCategory] || {};
     
-    // Create a cache entry with the current timestamp
     const cacheEntry: CacheEntry = {
         combinedData: jsonData,
         timestamp: Date.now()
     };
     
-    current_dict[id] = cacheEntry;
-    await chrome.storage.local.set({courseList: current_dict});
+    current[hash] = cacheEntry;
+    await chrome.storage.local.set({ [cacheCategory]: current });
 }
+
+/**
+ * Clears all cached data for a given cache category.
+ * @param {string} cacheCategory - The cache category to clear.
+ * @returns {Promise<void>}
+ */
+export async function clearGenericCache(cacheCategory: string): Promise<void> {
+    await chrome.storage.local.remove(cacheCategory);
+}
+
 
 /**
  * Clears all cached course data.
  * @returns {Promise<void>}
  */
 export async function clearCache(): Promise<void> {
-    await chrome.storage.local.remove("courseList");
+    return clearGenericCache("courseList");
 }
+
+// ------------------------ Helper Function ------------------------
 
 /**
  * Creates a hash from a string.
  * @param {string} message - The string to hash.
  * @returns {Promise<string>} - The hashed string.
  */
-async function hashString(message: string): Promise<string> {
+ async function hashString(message: string): Promise<string> {
     const msgBuffer = new TextEncoder().encode(message); // Convert string to bytes
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer); // Hash it
     const hashArray = Array.from(new Uint8Array(hashBuffer)); // Convert buffer to byte array

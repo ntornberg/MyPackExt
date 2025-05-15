@@ -15,10 +15,9 @@ export const planner_courses: Course[] = []; // Stores courses from the planner/
  */
 export function scrapeScheduleTable(scheduleTableElement: Element): void {
     AppLogger.info("Scraping schedule table...");
-    //const courseDetailSpans = scheduleTableElement.querySelectorAll('span.showCourseDetailsLink');
     const allScheduledRows = scheduleTableElement.querySelectorAll('tbody > tr');
     let scrapedCount = 0;
-    console.log(allScheduledRows);
+
     if (allScheduledRows?.length) {
         const courseSectionRows = Array.from(allScheduledRows).filter(el => el.classList.contains("child"));
 
@@ -58,11 +57,6 @@ export function scrapeScheduleTable(scheduleTableElement: Element): void {
         });
     }
     AppLogger.info(`Schedule table scraping complete. Found ${scrapedCount} courses.`);
-
-    // Optional: Log details from courseDetailSpans if needed, kept minimal for now
-    // if (courseDetailSpans) {
-    //     AppLogger.info(`Found ${courseDetailSpans.length} 'showCourseDetailsLink' spans with metadata.`);
-    // }
 }
 
 /**
@@ -121,7 +115,6 @@ export async function scrapePlanner(plannerTableElement: Element): Promise<void>
             if (courseGradeDataElement.textContent !== "No grade data available.") {
                 extRow.appendChild(courseGradeDataElement);
             }
-            console.log(rateMyProfDataElement);
 
             if (rateMyProfDataElement.textContent !== "Professor not found.") {
                 extRow.appendChild(rateMyProfDataElement);
@@ -142,7 +135,7 @@ export async function scrapePlanner(plannerTableElement: Element): Promise<void>
  * Applies necessary styles to the iframe content for better display of extension data.
  */
 export async function applyIframeStyles(plannerTableElement: HTMLTableElement): Promise<void> {
-    console.log("Planner table element:", plannerTableElement);
+    AppLogger.info("Applying iframe styles...");
     const iframe = document.querySelector('[id$="divPSPAGECONTAINER"] iframe') as HTMLIFrameElement | null;
     if (iframe && iframe.contentDocument) { // Expand to allow content to fit
         const iframeDoc = iframe.contentDocument;
@@ -207,7 +200,6 @@ td.mypack-extension-cell {
 }
   `;
         iframeDoc.head.appendChild(style);
-        console.log("possible dialog", dialog_parent);
         if (dialog_parent) {
             Object.assign((dialog_parent as HTMLElement).style, {
                 width: '90vw',        // <— almost full screen
@@ -220,7 +212,6 @@ td.mypack-extension-cell {
         }
 
         if (dialog_inner) {
-            console.log("dialog_inner", dialog_inner);
             Object.assign((dialog_inner as HTMLElement).style, {
                 width: '90vw',        // <— almost full screen
                 maxWidth: '1400px',      // put a ceiling if you like
@@ -231,42 +222,25 @@ td.mypack-extension-cell {
 
             await applyFlexDialogLayout(dialog_parent as HTMLElement, dialog_inner as HTMLElement);
         }
-        /*const dialog_ui = document.querySelector('.ui-dialog');
-        if(dialog_ui){
-            const buttonPane = dialog_ui.querySelector('.ui-dialog-buttonpane');
-            if(buttonPane){
-                dialog_ui.appendChild(buttonPane);
-            }
-
-        }*/
-
     }
 }
 
-
-
-
-
 // Main function
 async function applyFlexDialogLayout(parent_dialog: HTMLElement, inner_dialog: HTMLElement): Promise<void> {
-
     const dlg = document.querySelector('.ui-dialog.cust-ui-dialog');
     if (dlg) {
-        new MutationObserver(muts => console.log(muts))
+        new MutationObserver(muts => AppLogger.info("Dialog mutations observed:", muts))
             .observe(dlg, {attributes: true, attributeFilter: ['style']});
     }
     const titleBar = parent_dialog.querySelector('.ui-dialog-titlebar') as HTMLElement | null;
     const buttonPane = parent_dialog.querySelector('.ui-dialog-buttonpane') as HTMLElement | null;
-    console.log("dialog", parent_dialog);
-    console.log("titleBar", titleBar);
-    console.log("buttonPane", buttonPane);
+
     // Step 1: Make the dialog a vertical flex container
     parent_dialog.style.setProperty('display', 'flex', 'important');
     parent_dialog.style.setProperty('flex-direction', 'column', 'important');
     parent_dialog.style.setProperty('height', parent_dialog.style.height || getComputedStyle(parent_dialog).height, 'important')
     parent_dialog.style.setProperty('maxHeight', parent_dialog.style.maxHeight || getComputedStyle(parent_dialog).maxHeight, 'important');
     parent_dialog.style.setProperty('overflow', 'hidden', 'important');
-
 
     inner_dialog.style.setProperty('overflowY', 'auto', 'important');
     inner_dialog.style.setProperty('overflowX', 'hidden', 'important');
@@ -285,7 +259,7 @@ async function applyFlexDialogLayout(parent_dialog: HTMLElement, inner_dialog: H
         buttonPane.style.setProperty('margin-top', 'auto', 'important');
     }
 
-    console.log('Dialog layout updated!');
+    AppLogger.info('Dialog layout updated!');
 }
 
 /**
@@ -299,7 +273,6 @@ export function debounceScraper(scrapePlanner: (plannerTableElement: Element) =>
         AppLogger.info("Planner changes detected, re-scraping planner...");
         try {
             const plannerElement = await waitForCart(); // Re-ensure planner table is accessible
-            console.log(plannerElement);
             await scrapePlanner(plannerElement);
         } catch (error) {
             AppLogger.error("Error during debounced planner scrape:", error);
@@ -308,3 +281,4 @@ export function debounceScraper(scrapePlanner: (plannerTableElement: Element) =>
 }
 
 export const debouncedScrapePlanner = debounceScraper(scrapePlanner);
+
