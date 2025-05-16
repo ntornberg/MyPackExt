@@ -73,7 +73,6 @@ async function fetchCombinedData(course: Course): Promise<CombinedApiResponse | 
   
   // Fetch from API if not in cache
   try {
-    // Using the new combined API endpoint
     AppLogger.info("Fetching combined data from API for:", course);
     const url = `https://app-gradefetchbackend.azurewebsites.net/api/FetchGradeData?courseName=${encodeURIComponent(course.abr)}&professorName=${encodeURIComponent(course.instructor)}`;
     const response = await fetch(url);

@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
     Drawer,
     Box,
@@ -7,28 +7,117 @@ import {
     List,
     ListItem,
     ListItemText,
+    ListSubheader,
+    Collapse,
+    TextField,
 } from '@mui/material';
-import Autocomplete from '@mui/joy/Autocomplete';
-import Input from '@mui/joy/Input';
+import Autocomplete from '@mui/material/Autocomplete';
+import { majorPlans } from '../Data/MajorPlans'
+import { minorPlans } from '../Data/MinorPlans';
 import Checkbox from '@mui/joy/Checkbox';
+import type { MajorPlans } from '../types/Plans';
+
 export default function SlideOutDrawer() {
-    const [open, setOpen] = useState(false);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [open, setOpen] = useState<Record<string, boolean>>({});
+    const major_options = Object.keys(majorPlans);
+    const minor_options = Object.keys(minorPlans);
+    const [selectedMajor, setSelectedMajor] = useState<string | null>(null);
+    const [selectedMinor, setSelectedMinor] = useState<string | null>(null);
+    const [selectedSubplan, setSelectedSubplan] = useState<string | null>(null);
+    const [searchMajor, setSearchMajor] = useState<string | null>(null);
+    //const [searchMinor, setSearchMinor] = useState<string | null>(null);
+    const [searchSubplan, setSearchSubplan] = useState<string | null>(null);
+
+    const subplanOptions = selectedMajor
+        ? Object.keys(majorPlans[selectedMajor]?.subplans || {})
+        : [];
+
+    const handleSearch = () => {
+        setSearchMajor(selectedMajor);
+        //setSearchMinor(selectedMinor);
+        setSearchSubplan(selectedSubplan);
+    };
+
+    const handleClick = (requirementKey: string) => {
+        setOpen((prevState) => ({
+            ...prevState,
+            [requirementKey]: !prevState[requirementKey],
+        }));
+    };
+
+    let requirementsList = null;
+    if (searchMajor && searchSubplan) {
+        const major_data = majorPlans[searchMajor as keyof MajorPlans];
+        const subplan_data = major_data?.subplans[searchSubplan as keyof typeof major_data.subplans];
+        if (subplan_data) {
+            requirementsList = (
+                <List>
+                    {Object.keys(subplan_data.requirements).map((requirementKey) => (
+                        <React.Fragment key={requirementKey}>
+                            <ListItem component="button" onClick={() => handleClick(requirementKey)}>
+                                <ListItemText primary={requirementKey} />
+                            </ListItem>
+                            <Collapse in={open[requirementKey]} timeout="auto" unmountOnExit>
+                                <List component="div" disablePadding>
+                                    <ListSubheader>Courses</ListSubheader>
+                                    {subplan_data.requirements[requirementKey].courses.map((course) => (
+                                        <ListItem key={course.course_abr} sx={{ pl: 4 }}>
+                                            <ListItemText
+                                                primary={course.course_descrip}
+                                                secondary={`${course.course_abr} ${course.course_id}`}
+                                            />
+                                        </ListItem>
+                                    ))}
+                                </List>
+                            </Collapse>
+                        </React.Fragment>
+                    ))}
+                </List>
+            );
+        }
+    }
 
     return (
         <Box sx={{ p: 2 }}>
-            <Typography variant='h5'>📚 MyPack Helper</Typography>
-            <Button onClick={() => setOpen(true)}>Open Drawer</Button>
+            
+            <Button onClick={() => setDrawerOpen(true)}>Open Drawer</Button>
 
-            <Drawer anchor='right' open={open} onClose={() => setOpen(false)}>
+            <Drawer anchor='right' open={drawerOpen} onClose={() => setDrawerOpen(false)}>
                 <Box sx={{ width: 250, p: 2 }}>
                     <Typography variant='h6'>Slide-Out Panel</Typography>
                     <List>
+
                         <Checkbox label="GEP Requirements" defaultChecked />
-                        <Autocomplete multiple limitTags={3} options={['Major 1', 'Major 2']} />
-                        <Autocomplete options={['Minor 1', 'Minor 2']} />
-                        <Autocomplete options={['Starttime 1', 'Starttime 2']} ></Autocomplete>
-                        <Autocomplete options={['Endtime 1', 'Endtime 2']} />
-                        <Button variant='outlined' sx={{ width: '100%' }}>Search</Button>
+                        <Autocomplete
+                            id="major_selector"
+                            options={major_options}
+                            value={selectedMajor}
+                            onChange={(_, value) => setSelectedMajor(value)}
+                            renderInput={(params) => <TextField {...params} label="Major" />}
+                        />
+                        <Autocomplete
+                            id="minor_selector"
+                            options={minor_options}
+                            value={selectedMinor}
+                            onChange={(_, value) => setSelectedMinor(value)}
+                            renderInput={(params) => <TextField {...params} label="Minor" />}
+                        />
+                        <Autocomplete
+                            id="subplan_selector"
+                            options={subplanOptions}
+                            value={selectedSubplan}
+                            onChange={(_, value) => setSelectedSubplan(value)}
+                            renderInput={(params) => <TextField {...params} label="Subplan" />}
+                        />
+                        <Button
+                            variant='outlined'
+                            sx={{ width: '100%' }}
+                            onClick={handleSearch}
+                        >
+                            Search
+                        </Button>
+                        {requirementsList}
                         <ListItem>
                             <ListItemText primary='Item 1' />
                         </ListItem>
@@ -36,7 +125,7 @@ export default function SlideOutDrawer() {
                             <ListItemText primary='Item 2' />
                         </ListItem>
                     </List>
-                    <Button onClick={() => setOpen(false)}>Close</Button>
+                    <Button onClick={() => setDrawerOpen(false)}>Close</Button>
                 </Box>
             </Drawer>
         </Box>

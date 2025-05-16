@@ -76,7 +76,45 @@ export function waitForScheduleTable(): Promise<Element> {
         observer.observe(document.documentElement, {childList: true, subtree: true});
     });
 }
-
+export function ensureOverlayContainer() : HTMLDivElement {
+    let overlayRootElement = document.getElementById('extension-overlay-root');
+    if (!overlayRootElement) {
+      overlayRootElement = document.createElement('div');
+      overlayRootElement.id = 'extension-overlay-root';
+      document.body.appendChild(overlayRootElement);
+  
+      // Add any necessary initial styles to the container
+      overlayRootElement.style.position = 'fixed';
+      overlayRootElement.style.top = '0';
+      overlayRootElement.style.left = '0';
+      overlayRootElement.style.width = '100%';
+      overlayRootElement.style.height = '100%';
+      overlayRootElement.style.zIndex = '1000'; // Ensure it's on top
+      overlayRootElement.style.pointerEvents = 'none'; // Allow clicks through initially
+  
+      // Create a content area within the overlay for your drawer
+      const drawerContainer = document.createElement('div');
+      drawerContainer.id = 'slide-out-drawer-container';
+      overlayRootElement.appendChild(drawerContainer);
+  
+      // Style the drawer container
+      drawerContainer.style.position = 'absolute';
+      drawerContainer.style.top = '0';
+      drawerContainer.style.right = '0px'; // Start off-screen
+      drawerContainer.style.width = '300px';
+      drawerContainer.style.height = '100%';
+     
+      
+      drawerContainer.style.transition = 'right 0.3s ease-in-out';
+      drawerContainer.style.zIndex = '1001'; // Above the overlay background
+      overlayRootElement.style.pointerEvents = 'auto'; // Enable events on the overlay and its content
+    }
+    const el = document.getElementById('slide-out-drawer-container');
+    if (!el) {
+      throw new Error("slide-out-drawer-container not found");
+    }
+    return el as HTMLDivElement;
+  }
 /**
  * Waits for the planner/cart table ('#classSearchTable') within the enroll wizard container in an iframe.
  * @returns {Promise<Element>} A promise that resolves with the '#classSearchTable' element.

@@ -1,54 +1,75 @@
-# React + TypeScript + Vite
+# MyPack Course Picker Extension
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**MyPack Course Picker** is a browser extension that enhances the course selection experience for NCSU students. It integrates historical grade data and RateMyProfessor ratings directly into the MyPack Portal, making it easier to choose courses and instructors.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## Expanding the ESLint configuration
+- **Integrated Course Data:** View historical grade distributions and professor ratings alongside course listings.
+- **Modern UI:** Uses React, TypeScript, and Vite for a fast, maintainable, and extensible codebase.
+- **Smart Caching:** Caches API results for fast, efficient lookups.
+- **Customizable Drawer:** Slide-out panel for filtering and searching courses.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+## Getting Started
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Prerequisites
+- Node.js (v18+ recommended)
+- npm
 
-```js
-// eslintrc.cjs
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Installation
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+1. **Clone the repository:**
+   ```sh
+   git clone <your-repo-url>
+   cd MyPackExt
+   ```
+2. **Install dependencies:**
+   ```sh
+   npm install
+   ```
+3. **Run in development mode:**
+   ```sh
+   npm run dev
+   ```
+   This starts Vite's dev server. For extension development, you may need to build and load the extension in your browser.
+4. **Build for production:**
+   ```sh
+   npm run build
+   ```
+   The output will be in the `dist/` directory.
+
+---
+
+## Loading the Extension
+
+1. Build the project (`npm run build`).
+2. Open your browser's extensions page (e.g., `chrome://extensions`).
+3. Enable "Developer mode".
+4. Click "Load unpacked" and select the `dist/` directory.
+
+---
+
+## Project Structure
+
+- `src/` – Main source code (React components, hooks, services, types, utils)
+- `public/` – Static assets and manifest
+- `dist/` – Build output (after running `npm run build`)
+- `package.json` – Project metadata and scripts
+
+---
+
+## Development Notes
+
+- Uses Vite for fast builds and HMR.
+- ESLint and TypeScript for code quality.
+- Main entry: `src/popup.tsx` (popup UI), `src/content.tsx` (content script).
+- API and caching logic in `src/services/` and `src/cache/`.
+
+---
+
+## License
+
+MIT (or specify your license)

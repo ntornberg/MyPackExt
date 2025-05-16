@@ -1,0 +1,597 @@
+academic_plan_id;academic_subplan;academic_plan_requirement_group;academic_plan_requirement_desc;min_units_per_req;course_id;course_abr;course_descrip
+11AECM;NOSUBPLAN;024922;Required Courses;7;002040;AEC;Ecology
+11AECM;NOSUBPLAN;024922;Required Courses;7;031960;AEC;Applied Ecology
+11AECM;NOSUBPLAN;024931;Minor Electives;6;;;Minor Electives
+11AECM;NOSUBPLAN;024932;Research Experience;3;;;Research Experience
+11AGECM;NOSUBPLAN;022109;Required Courses;0;;;Ecology
+11AGECM;NOSUBPLAN;022109;Required Courses;0;004115;CS;Intro Agroecology
+11AGECM;NOSUBPLAN;022109;Required Courses;0;004137;CS;Advan Agroecology
+11AGECM;NOSUBPLAN;026307;Elective Courses;0;;;Elective Courses
+11AGENTM;NOSUBPLAN;028248;Required Courses;0;032754;ARE;Prin Agribus Entreprenership
+11AGENTM;NOSUBPLAN;028248;Required Courses;0;032755;ARE;Agbus. New Venture Dev.
+11AGENTM;NOSUBPLAN;028248;Required Courses;0;032756;ARE;Agbus. Entrepreneurship Skills
+11AGENTM;NOSUBPLAN;028249;Elective Courses;0;;;Advised Electives
+11AGLDM;NOSUBPLAN;022020;Required Courses;0;000267;AEE;Ldrship in AG & Life Sci
+11AGLDM;NOSUBPLAN;022020;Required Courses;0;;;Restricted Electives
+11AMM;NOSUBPLAN;023977;Required Courses;0;;;ARE 201 or EC 201
+11AMM;NOSUBPLAN;023977;Required Courses;0;;;ARE Breadth Requirement
+11AMM;NOSUBPLAN;026111;Elective Courses;0;;;ARE Elective
+11AMM;NOSUBPLAN;026111;Elective Courses;0;;;Elective Course
+11ANM;NOSUBPLAN;021876;Required Courses;0;000512;ANS;Introduction to Animal Science
+11ANM;NOSUBPLAN;021876;Required Courses;0;;;Required Courses
+11ANM;NOSUBPLAN;025151;Elective Courses;0;;;Elective Courses
+11BAETM;NOSUBPLAN;029718;Required Course;3;;;Required Course
+11BAETM;NOSUBPLAN;029719;Elective Courses;12;;;Elective Courses
+11BIM;NOSUBPLAN;021891;Preparatory Classes;0;000449;BIO;Intro Bio Cell/Mol
+11BIM;NOSUBPLAN;021891;Preparatory Classes;0;003297;CH;Org Chem II
+11BIM;NOSUBPLAN;030875;BIM Related Labs;0;;;Group B
+11BIM;NOSUBPLAN;030875;BIM Related Labs;0;;;Group C Biotech Module Pairs
+11BIM;NOSUBPLAN;021893;BIM Research Experience;0;;;Group D
+11BIM;NOSUBPLAN;021894;BIM Ethics Requirement;0;;;Group E
+11BSTM;NOSUBPLAN;029109;Required Courses;0;032674;BBS;Brewing Science and Technology
+11BSTM;NOSUBPLAN;029109;Required Courses;0;032892;BBS;Brewing Practices and Analyses
+11BSTM;NOSUBPLAN;029109;Required Courses;0;032979;BBS;Brewing Operations
+11BSTM;NOSUBPLAN;029110;Elective Courses;6;;;Elective Courses
+11CSM;NOSUBPLAN;026305;Required Course;0;004112;CS;Crop Science
+11CSM;NOSUBPLAN;026305;Required Course;0;004114;CS;Crop Science Lab
+11CSM;NOSUBPLAN;030341;Elective Courses;0;;;Elective Courses
+11ENM;NOSUBPLAN;022054;Required Course;0;;;ENT 425 or ENT 402
+11ENM;NOSUBPLAN;025547;Elective Courses;0;;;Restricted Electives
+11ENM;NOSUBPLAN;025554;ENT Courses;0;;;ENT courses
+11EXTEDM;NOSUBPLAN;028800;Required Courses;0;000261;AEE;Intro Coop Exten
+11EXTEDM;NOSUBPLAN;028800;Required Courses;0;000268;AEE;Deliver Nonfor EDU
+11EXTEDM;NOSUBPLAN;028801;Elective Courses;0;;;Elective Courses
+11FDM;NOSUBPLAN;022074;Required Courses;0;010630;FS;Intro to Food Science
+11FDM;NOSUBPLAN;022074;Required Courses;0;;;Restricted Electives
+11FDM;NOSUBPLAN;022075;Elective Courses;0;;;Electives
+11FEM;NOSUBPLAN;031191;Required Courses;0;;;Required Courses
+11FEM;NOSUBPLAN;031192;Elective Courses;0;;;Elective Courses
+11FSQM;NOSUBPLAN;030578;Required Courses;0;;;FS 250 or FS 416
+11FSQM;NOSUBPLAN;030578;Required Courses;0;;;FS 405 or FS 453
+11FSQM;NOSUBPLAN;030579;Elective Courses;0;;;Electives
+11HSM;NOSUBPLAN;031702;Required Courses;0;012181;HS;The World of Horticulture
+11HSM;NOSUBPLAN;031702;Required Courses;0;;;HS 301 or HS 203
+11HSM;NOSUBPLAN;028889;Elective Courses;0;;;Elective Courses
+11NTM;NOSUBPLAN;026376;Required Courses;0;;;NTR 301, ANS 225 or ANS 230
+11NTM;NOSUBPLAN;026377;Elective Courses;0;;;400-Level Electives
+11NTM;NOSUBPLAN;026377;Elective Courses;0;;;Elective Courses
+11PBM;NOSUBPLAN;031195;Required Course;0;;;PB 200 or 250
+11PBM;NOSUBPLAN;031196;Elective Courses;0;;;Elective Courses
+11POM;NOSUBPLAN;031682;Required Courses;0;017523;PO;Poultry Sci & Prod
+11POM;NOSUBPLAN;031682;Required Courses;0;031662;PO;Poultry Sci and Prod Lab
+11POM;NOSUBPLAN;031682;Required Courses;0;017527;PO;Poultry Seminar
+11POM;NOSUBPLAN;031683;Elective Courses;0;;;Elective Courses
+11RSAM;NOSUBPLAN;030822;Required Core Courses;0;032605;CS;Intro Reg. Sci. in Ag.
+11RSAM;NOSUBPLAN;030822;Required Core Courses;0;032929;CS;Advanced Regulatory Science
+11RSAM;NOSUBPLAN;030823;Restricted Elective Courses;0;;;Restricted Elective Courses
+11RSAM;NOSUBPLAN;030823;Restricted Elective Courses;0;008564;ENG;Commun Engr & Tech
+11SSM;NOSUBPLAN;026089;Required Courses;0;020087;SSC;Soil Science
+11SSM;NOSUBPLAN;026089;Required Courses;0;031459;SSC;Soil Science Laboratory
+11SSM;NOSUBPLAN;026090;Restricted Elective Courses;0;;;Restricted Elective Courses
+11TFGM;NOSUBPLAN;022282;Required Courses;0;004108;CS;Intro Turf Mgmt
+11TFGM;NOSUBPLAN;022282;Required Courses;0;004128;CS;Turf Cultural Syst
+11TFGM;NOSUBPLAN;022282;Required Courses;0;;;Soil Science
+11TFGM;NOSUBPLAN;022283;Elective Courses;0;;;Electives
+12DNM;NOSUBPLAN;030398;Elective Courses;0;;;Elective Courses
+12GDM;NOSUBPLAN;023264;Please See Your Advisor;0;;;Please See Your Design Advisor
+12IDM;NOSUBPLAN;025087;Minor in Industrial Design;0;;;Please See Your Design Advisor
+12LND;12LNDARC;028174;Elective Courses;0;;;Elective Courses
+12LND;12LNDARC;028174;Elective Courses;0;;;Elective Courses
+12LND;12LNDNON;028173;Elective Courses;0;;;Elective Courses
+13GCM;NOSUBPLAN;022976;Required Course;0;;;Required Course
+13GCM;NOSUBPLAN;022977;Elective Courses;0;;;Elective Courses
+13TEM;NOSUBPLAN;023063;Required Courses;0;010836;GC;Found of Graphics
+13TEM;NOSUBPLAN;023063;Required Courses;0;021030;TDE;Mat Process Tech
+13TEM;NOSUBPLAN;023064;Elective Courses;0;;;Elective Courses
+14BTECM;NOSUBPLAN;029235;Prerequisite Courses;0;003237;CH;Chem Molecular Sci
+14BTECM;NOSUBPLAN;029235;Prerequisite Courses;0;000449;BIO;Intro Bio Cell/Mol
+14BTECM;NOSUBPLAN;029235;Prerequisite Courses;0;003292;CH;Org Chem I
+14BTECM;NOSUBPLAN;029235;Prerequisite Courses;0;003297;CH;Org Chem II
+14BTECM;NOSUBPLAN;029239;Biomanufacturing Core;0;023407;BEC;Bioman Careers
+14BTECM;NOSUBPLAN;029239;Biomanufacturing Core;0;;;Basic Microbiology Lab
+14BTECM;NOSUBPLAN;029239;Biomanufacturing Core;0;001728;BEC;Ferm Recomb Mcro
+14BTECM;NOSUBPLAN;029239;Biomanufacturing Core;0;023410;BEC;Prin Appli Bioseps
+14BTECM;NOSUBPLAN;029239;Biomanufacturing Core;0;;;BEC 426 or BEC 436
+14BTECM;NOSUBPLAN;029239;Biomanufacturing Core;0;;;BEC 480 or BEC 485
+14BTECM;NOSUBPLAN;029240;Electives;0;;;Electives
+14CMM;NOSUBPLAN;022087;Required Courses;0;003541;CHE;Chem Proc Princs
+14CMM;NOSUBPLAN;022087;Required Courses;0;003543;CHE;Chem Eng Analysis
+14CMM;NOSUBPLAN;022087;Required Courses;0;003548;CHE;Transport Proc I
+14CMM;NOSUBPLAN;022087;Required Courses;0;003552;CHE;Chem Proc Thermo
+14CMM;NOSUBPLAN;022087;Required Courses;0;003554;CHE;Ther Chem Phase Eq
+14CMM;NOSUBPLAN;022087;Required Courses;0;003576;CHE;Des Anly Chem Reac
+14CPM;NOSUBPLAN;021970;Prerequisites for CSC Courses;0;005161;E;Computing Environ
+14CPM;NOSUBPLAN;021970;Prerequisites for CSC Courses;0;013594;MA;Calculus I
+14CPM;NOSUBPLAN;028986;Required Courses;0;004339;CSC;Intro Comp - Java
+14CPM;NOSUBPLAN;028986;Required Courses;0;004362;CSC;SW Development Fundamentals
+14CPM;NOSUBPLAN;028986;Required Courses;0;032846;CSC;SW Development Fundamentals La
+14CPM;NOSUBPLAN;028986;Required Courses;0;004367;CSC;Discrete Math
+14CPM;NOSUBPLAN;028986;Required Courses;0;004370;CSC;C/Software Tools
+14CPM;NOSUBPLAN;028986;Required Courses;0;004375;CSC;Operating Systems
+14CPM;NOSUBPLAN;028986;Required Courses;0;004417;CSC;Data Struct CSC
+14ENEDM;NOSUBPLAN;030356;Minor Requirements;0;033198;EED;Teaching Undergrad Engineers
+14ENEDM;NOSUBPLAN;030356;Minor Requirements;0;;;Elective Courses
+14HPM;NOSUBPLAN;027158;Required Courses;0;031140;ET;Intro to Environ. Regulations
+14HPM;NOSUBPLAN;027158;Required Courses;0;016166;NE;Rad Srcs,Intrct,De
+14HPM;NOSUBPLAN;027158;Required Courses;0;;;NE 290: Intro Health Physics
+14HPM;NOSUBPLAN;027158;Required Courses;0;032384;MEA;Intro Atmospheric Sciences
+14HPM;NOSUBPLAN;027158;Required Courses;0;001337;BAET;Water Management
+14HPM;NOSUBPLAN;027158;Required Courses;0;020211;ST;Prob & Stat-Engr
+14HPM;NOSUBPLAN;027158;Required Courses;0;016174;NE;Rad Safety&Shlding
+14HPM;NOSUBPLAN;027158;Required Courses;0;015271;MEA;Atmospheric Physic
+14HPM;NOSUBPLAN;027158;Required Courses;0;016347;NR;Environ Impact
+14HPM;NOSUBPLAN;027158;Required Courses;0;016220;NE;Nuclear Waste Mgmt
+14HPM;NOSUBPLAN;027158;Required Courses;0;;;NE 490: Health Phys/Radiol ER
+14IEM;NOSUBPLAN;022081;Required Courses;0;012670;ISE;Engr Econ Analysis
+14IEM;NOSUBPLAN;022081;Required Courses;0;;;Any 400 level ISE course
+14IEM;NOSUBPLAN;022082;Elective Courses;0;;;Elective Courses
+14MTM;NOSUBPLAN;031666;Required Coursework;0;;;MSE 200 or MSE 201
+14MTM;NOSUBPLAN;031666;Required Coursework;0;031127;MSE;Structure Materials Nanoscale
+14MTM;NOSUBPLAN;031666;Required Coursework;0;;;MSE 301 or CHE 316
+14MTM;NOSUBPLAN;023545;Elective Courses;0;;;Elective Courses
+14NEM;NOSUBPLAN;022028;Required Courses;0;016165;NE;Intro to Nucl Engr
+14NEM;NOSUBPLAN;022028;Required Courses;0;016166;NE;Rad Srcs,Intrct,De
+14NEM;NOSUBPLAN;022028;Required Courses;0;016168;NE;Fund of Nucl Engr
+14NEM;NOSUBPLAN;022029;Elective Courses;0;;;Elective Courses
+14NSTM;NOSUBPLAN;023666;Nano-Science and Technology;0;031881;E;Intro to Nano Sci and Tech
+14NSTM;NOSUBPLAN;023666;Nano-Science and Technology;0;;;Technical Electives
+14NSTM;NOSUBPLAN;023666;Nano-Science and Technology;0;;;General Education Electives
+14SCEM;NOSUBPLAN;028318;Minor Requirements;0;032898;ISE;Supply Chain Economics
+14SCEM;NOSUBPLAN;028318;Minor Requirements;0;;;Group A Electives
+14SCEM;NOSUBPLAN;028318;Minor Requirements;0;;;Group B Electives
+14SCEM;NOSUBPLAN;028318;Minor Requirements;0;;;Elective Course
+14TISSEGRM;NOSUBPLAN;031684;Required Courses;0;001725;BIT;Manip Recomb DNA
+14TISSEGRM;NOSUBPLAN;031684;Required Courses;0;031305;BME;Tissue Eng Tech
+14TISSEGRM;NOSUBPLAN;031684;Required Courses;0;031236;BME;Tissue Eng Fund
+14TISSEGRM;NOSUBPLAN;031684;Required Courses;0;001943;BME;Ug Research in BME
+14TISSEGRM;NOSUBPLAN;031684;Required Courses;0;;;Thermodynamics
+14TISSEGRM;NOSUBPLAN;031684;Required Courses;0;;;Restricted Course
+15EEDM;NOSUBPLAN;031704;Required Courses;0;032752;EMS;Teaching Env Ed
+15EEDM;NOSUBPLAN;031704;Required Courses;0;032776;PRT;EnviroEd in Practice
+15EEDM;NOSUBPLAN;029443;Elective Courses;0;;;Natural Sciences
+15EEDM;NOSUBPLAN;029443;Elective Courses;0;;;Teaching & Facilitation
+15EEDM;NOSUBPLAN;029443;Elective Courses;0;;;Environmental Perspectives
+15ETMM;NOSUBPLAN;030352;Required Courses;0;031140;ET;Intro to Environ. Regulations
+15ETMM;NOSUBPLAN;030352;Required Courses;0;009630;ET;Environ Monit Anly
+15ETMM;NOSUBPLAN;030352;Required Courses;0;009631;ET;Air Pollution
+15ETMM;NOSUBPLAN;030353;Elective Courses;0;;;GIS 280 or FOR 353
+15ETMM;NOSUBPLAN;030353;Elective Courses;0;;;ET 455 or ET Lab Electives
+15EVM;NOSUBPLAN;028588;Environmental Science Core;0;;;Environmental Science Courses
+15EVM;NOSUBPLAN;028593;Elective Courses;0;;;Elective Courses
+15FGM;15FGMOPTA;028732;Elective Courses;6;;;Elective Courses
+15FGM;15FGMOPTA;028733;Required Courses;0;010218;FOR;For Sys Map Men I
+15FGM;15FGMOPTA;028733;Required Courses;0;024095;FOR;Dendrology
+15FGM;15FGMOPTA;028733;Required Courses;0;010232;FOR;Intro Forest Sci
+15FGM;15FGMOPTB;022138;Required Courses;0;010218;FOR;For Sys Map Men I
+15FGM;15FGMOPTB;022138;Required Courses;0;010224;FOR;Dendrology
+15FGM;15FGMOPTB;022139;Forestry Summer Camp;0;010221;FOR;Silviculture
+15FGM;15FGMOPTB;022139;Forestry Summer Camp;0;010235;FOR;Forest Communities
+15FGM;15FGMOPTB;022139;Forestry Summer Camp;0;010237;FOR;Forest Wildlife
+15FGM;15FGMOPTB;022139;Forestry Summer Camp;0;010238;FOR;Fire Management
+15FGM;15FGMOPTB;022139;Forestry Summer Camp;0;010240;FOR;For Sys Map Men II
+15PPM;NOSUBPLAN;022083;Required Courses;0;022490;PSE;Pulp & Paper Tech
+15PPM;NOSUBPLAN;022083;Required Courses;0;022500;PSE;Paper Properties
+15PPM;NOSUBPLAN;022084;Elective Courses;0;;;Elective Courses
+15PRM;NOSUBPLAN;026929;Required Courses;0;019307;PRT;Intro to Recreation Management
+15PRM;NOSUBPLAN;026929;Required Courses;0;019324;PRT;Recreation Program Planning
+15PRM;NOSUBPLAN;026931;Elective Courses;0;;;Elective Courses
+15REAM;NOSUBPLAN;026790;Required Courses;0;031823;ET;Intro Renew Energy Assess
+15REAM;NOSUBPLAN;026790;Required Courses;0;031968;ET;Solar Assessment
+15REAM;NOSUBPLAN;026790;Required Courses;0;031842;ET;HydroWindBioenergy
+15REAM;NOSUBPLAN;026790;Required Courses;0;031824;ET;Renew Energy Adoption
+15REAM;NOSUBPLAN;026790;Required Courses;0;031451;ES;Energy and Environment
+15SMTM;NOSUBPLAN;023565;Minor Courses;0;031532;WPS;Green Housing
+15SMTM;NOSUBPLAN;023565;Minor Courses;0;022511;SMT;Industrial Ecology
+15SMTM;NOSUBPLAN;023565;Minor Courses;0;031772;PSE;Environ LCA
+15SMTM;NOSUBPLAN;023565;Minor Courses;0;;;Elective Courses
+15WAM;NOSUBPLAN;030580;Required Courses;0;;;FOR 401 or PB 220
+15WAM;NOSUBPLAN;030580;Required Courses;0;010288;FOR;Wtrshed Wet Hydrol
+15WAM;NOSUBPLAN;030580;Required Courses;0;020099;SSC;Wetland Soils
+15WAM;NOSUBPLAN;030580;Required Courses;0;016346;NR;Wet Sci Mgmnt
+15WAM;NOSUBPLAN;030580;Required Courses;0;;;AEC 409 or AEC 419 or FW 495
+15WSCIM;NOSUBPLAN;025899;Required Courses;0;010229;FW;Conserve of Nat Resources
+15WSCIM;NOSUBPLAN;025899;Required Courses;0;;;Ecology
+15WSCIM;NOSUBPLAN;025899;Required Courses;0;010796;FW;Wildlife Managemen
+15WSCIM;NOSUBPLAN;025900;Elective Courses;0;;;Elective Courses
+16ALM;NOSUBPLAN;028213;Requirements;0;;;400-Level Elective
+16ALM;NOSUBPLAN;028213;Requirements;0;;;300/400-Level Electives
+16ALM;NOSUBPLAN;028213;Requirements;0;;;Elective Course
+16ARTM;NOSUBPLAN;030753;Minor Area Electives;0;;;Interdisciplinary Arts
+16ARTM;NOSUBPLAN;030753;Minor Area Electives;0;;;History, Analysis & Criticism
+16ARTM;NOSUBPLAN;030753;Minor Area Electives;0;;;Studio/Production/Performance
+16ASM;NOSUBPLAN;031680;Required Courses;0;021594;AFS;African Civilization
+16ASM;NOSUBPLAN;031680;Required Courses;0;000361;AFS;Intro African American Studies
+16ASM;NOSUBPLAN;031680;Required Courses;0;000369;AFS;Introduction African Diaspora
+16ASM;NOSUBPLAN;031680;Required Courses;0;032677;AFS;Black Feminist Theory
+16ASM;NOSUBPLAN;022012;Elective Courses;0;;;Elective Courses
+16AYM;NOSUBPLAN;021951;Required Course;0;000731;ANT;Cultural Anthropology
+16AYM;NOSUBPLAN;021952;Elective Courses;0;;;ANT 200 Level Course
+16AYM;NOSUBPLAN;021952;Elective Courses;0;;;ANT 300 Level Course
+16AYM;NOSUBPLAN;021952;Elective Courses;0;;;ANT 400 Level Course
+16AYM;NOSUBPLAN;021952;Elective Courses;0;;;Elective Course
+16CIM;NOSUBPLAN;030961;Required Courses;0;009824;WLCH;Intermed Chinese I
+16CIM;NOSUBPLAN;030961;Required Courses;0;009826;WLCH;Intermediate Chinese II
+16CIM;NOSUBPLAN;030961;Required Courses;0;009829;WLCH;Interm Chinese III
+16CIM;NOSUBPLAN;030961;Required Courses;0;009831;WLCH;Interm Chinese IV
+16CIM;NOSUBPLAN;021985;Elective Courses;0;;;Elective Courses
+16CLM;NOSUBPLAN;021905;Required Coures;0;019446;SOC;Princ of Sociology
+16CLM;NOSUBPLAN;021905;Required Coures;0;019468;SOC;Social Deviance
+16CLM;NOSUBPLAN;021905;Required Coures;0;019518;SOC;Criminology
+16CLM;NOSUBPLAN;021905;Required Coures;0;019501;SOC;Soc Research Meth
+16CLM;NOSUBPLAN;021906;Elective Coures;0;;;Elective Courses
+16CNM;NOSUBPLAN;031207;Cognitive Science Minor;0;;;Electives Pick 3 of 5 Subjects
+16CNM;NOSUBPLAN;031207;Cognitive Science Minor;0;004424;CSC;Automata Gram Comp
+16CNM;NOSUBPLAN;031207;Cognitive Science Minor;0;;;Additional Electives
+16CNM;NOSUBPLAN;031207;Cognitive Science Minor;0;;;Required Courses
+16CSM;16CSMCC;026008;16CSMCC Required Core;0;;;Classical Culture Core Course
+16CSM;16CSMCC;026009;16CSMCC Elective Courses;0;;;Additional Culture I
+16CSM;16CSMCC;026009;16CSMCC Elective Courses;0;;;Additional Culture II
+16CSM;16CSMCC;026009;16CSMCC Elective Courses;0;;;Language/Culture Electives
+16CSM;16CSMGRK;023233;Greek Concentration Core;0;011166;WLGR;Intermediate Greek I
+16CSM;16CSMGRK;023233;Greek Concentration Core;0;011167;WLGR;Intermediate Greek II
+16CSM;16CSMGRK;023234;Greek Concetration Electives;0;;;Greek Concentration Electives
+16CSM;16CSMLAT;023235;Latin Concentration Core;0;013519;WLLA;Intermediate Latin I
+16CSM;16CSMLAT;023235;Latin Concentration Core;0;013520;WLLA;Intermediate Latin II
+16CSM;16CSMLAT;023236;Latin Concetration Electives;0;;;Latin Concentration Electives
+16CWM;NOSUBPLAN;022035;Required Courses;0;;;400 level or above
+16CWM;NOSUBPLAN;022035;Required Courses;0;;;Restricted Electives
+16ENGLM;NOSUBPLAN;021955;Humanities & Social Sciences;0;;;400 Level or above
+16ENGLM;NOSUBPLAN;021955;Humanities & Social Sciences;0;;;300 Level or above
+16ENGLM;NOSUBPLAN;021955;Humanities & Social Sciences;0;008564;ENG;Commun Engr & Tech
+16ENGLM;NOSUBPLAN;021956;Elective Courses;0;;;200 Level or above
+16ETHM;NOSUBPLAN;026609;Required Courses;0;;;Intro Ethics
+16ETHM;NOSUBPLAN;026610;Elective Courses;0;;;Restricted Electives
+16ETHM;NOSUBPLAN;026610;Elective Courses;0;;;Additional Elective
+16FRNCHM;NOSUBPLAN;021990;Required Courses;0;;;FLF 201 or FLF 212
+16FRNCHM;NOSUBPLAN;021990;Required Courses;0;009865;WLFR;Intermediate French II
+16FRNCHM;NOSUBPLAN;021991;Elective Courses;0;;;Film, Literature, Civilization
+16FRNCHM;NOSUBPLAN;021991;Elective Courses;0;;;Elective Courses
+16FSM;NOSUBPLAN;022038;Required Courses;0;008493;ENG;Introduction to Film
+16FSM;NOSUBPLAN;022038;Required Courses;0;;;ENG/COM 364 or ENG/COM 374
+16FSM;NOSUBPLAN;027529;Elective Courses;0;;;Elective Courses
+16GRM;NOSUBPLAN;025514;Required Courses;0;;;Required Courses
+16GRM;NOSUBPLAN;025514;Required Courses;0;;;WLGE 202 or WLGE 212
+16GRM;NOSUBPLAN;030383;Elective Courses;9;;;Elective Courses
+16HIM;NOSUBPLAN;028503;Required Courses;0;;;200-level HI or HA
+16HIM;NOSUBPLAN;028503;Required Courses;0;011459;HI;The World Since 1750
+16HIM;NOSUBPLAN;028504;Elective Courses;0;;;400-level HI or HA
+16HIM;NOSUBPLAN;028504;Elective Courses;0;;;300/400-level HI or HA
+16HINDIM;NOSUBPLAN;031102;Required Courses;0;010057;WLHU;20th C Hindi & Urdu Fiction
+16HINDIM;NOSUBPLAN;031102;Required Courses;0;010059;WLHU;Modern Hindi & Urdu Poetry
+16HINDIM;NOSUBPLAN;022101;Elective Courses;0;;;Elective Courses
+16HMM;NOSUBPLAN;022111;Required Course;0;;;Bio-Medical Ethics
+16HMM;NOSUBPLAN;030384;Elective Courses;0;;;Group I Electives
+16HMM;NOSUBPLAN;030384;Elective Courses;0;;;Group II
+16ISM;NOSUBPLAN;031101;Required Courses;0;031469;IS;Intro to International Studies
+16ISM;NOSUBPLAN;031101;Required Courses;0;013242;IS;Theories of Globalization
+16ISM;NOSUBPLAN;031101;Required Courses;0;;;World Language 202
+16ISM;NOSUBPLAN;022546;Elective Courses;0;011459;HI;The World Since 1750
+16ISM;NOSUBPLAN;022546;Elective Courses;0;;;Group B
+16ISM;NOSUBPLAN;022546;Elective Courses;0;;;Group A & B
+16ISM;NOSUBPLAN;022546;Elective Courses;0;;;Max. 1 200-lvl Course Allowed
+16ITM;NOSUBPLAN;031104;Required Courses;0;010001;WLIT;Intermed Ital I
+16ITM;NOSUBPLAN;031104;Required Courses;0;010005;WLIT;Intermed Ital II
+16ITM;NOSUBPLAN;021966;Elective Courses;0;;;Elective Courses
+16ITM;NOSUBPLAN;021966;Elective Courses;0;;;Film, Literature, Civilization
+16JOM;NOSUBPLAN;029193;Required Courses;0;008424;ENG;Intro to Editing
+16JOM;NOSUBPLAN;029193;Required Courses;0;;;ENG 316 or ENG 281
+16JOM;NOSUBPLAN;029193;Required Courses;0;008538;ENG;Adv News Art Writ
+16JOM;NOSUBPLAN;029194;Elective Courses;0;;;Group I
+16JOM;NOSUBPLAN;029194;Elective Courses;0;;;Group II
+16JPM;NOSUBPLAN;031103;Required Courses;0;010022;WLJA;Interm Japanese I
+16JPM;NOSUBPLAN;031103;Required Courses;0;010023;WLJA;Interm Japanese II
+16JPM;NOSUBPLAN;031103;Required Courses;0;010028;WLJA;Inter Japanese III
+16JPM;NOSUBPLAN;031103;Required Courses;0;010029;WLJA;Interm Japanese IV
+16JPM;NOSUBPLAN;031103;Required Courses;0;010031;WLJA;Advan Japanese I
+16JSM;NOSUBPLAN;029597;Required Courses;0;;;Required Course
+16JSM;NOSUBPLAN;029598;Elective Courses;0;;;Upper-Level Electives
+16JSM;NOSUBPLAN;029598;Elective Courses;0;;;Electives
+16JSTM;NOSUBPLAN;027237;Minor Electives;0;;;Minor Electives
+16LIM;NOSUBPLAN;030630;Required Courses;0;008423;ENG;Intro Lang & Ling
+16LIM;NOSUBPLAN;030630;Required Courses;0;;;Area II
+16LIM;NOSUBPLAN;030630;Required Courses;0;;;Area III
+16LIM;NOSUBPLAN;030630;Required Courses;0;;;Area IV Electives
+16LIM;NOSUBPLAN;030630;Required Courses;0;;;Foreign Language 201 level
+16LJM;NOSUBPLAN;030788;Required Coursework;0;;;400+level Elective
+16LJM;NOSUBPLAN;030788;Required Coursework;0;;;Minor Elective Courses
+16LOGM;NOSUBPLAN;026601;Requirements;0;013572;LOG;Symbolic Logic
+16LOGM;NOSUBPLAN;026601;Requirements;0;;;PHI 331 or LOG 400 level
+16LOGM;NOSUBPLAN;026601;Requirements;0;;;Philosophy of Science
+16LOGM;NOSUBPLAN;026601;Requirements;0;;;Restricted Electives
+16MLESTM;NOSUBPLAN;030802;Middle Eastern Language;0;;;WLAR 201 or WLPE 201
+16MLESTM;NOSUBPLAN;025605;Elective Courses;0;;;Elective Requirement
+16NAMSTM;NOSUBPLAN;023062;Requirements;0;;;Requirements
+16NPM;NOSUBPLAN;021902;Required Courses;0;018001;PS;Intro-Nonprofits
+16NPM;NOSUBPLAN;021902;Required Courses;0;003912;COM;Nonprofit Leadersh
+16NPM;NOSUBPLAN;021902;Required Courses;0;011583;HI;History of Nonprofits
+16NPM;NOSUBPLAN;021902;Required Courses;0;;;Internship
+16NPM;NOSUBPLAN;021902;Required Courses;0;016335;NPS;Capstone in NPS
+16NPM;NOSUBPLAN;027482;Elective Courses;0;;;Elective Courses
+16OSM;NOSUBPLAN;031693;Required Coursework;0;;;Advanced Electives
+16OSM;NOSUBPLAN;031693;Required Coursework;0;;;Discipline Elective
+16OSM;NOSUBPLAN;031693;Required Coursework;0;;;Seminar Course Requirement
+16PCM;NOSUBPLAN;026011;Foundational Courses;0;018448;PSY;Intro to Psych
+16PCM;NOSUBPLAN;026011;Foundational Courses;0;031200;PSY;Intro Psy Research
+16PCM;NOSUBPLAN;026012;Core & Elective Courses;0;;;Core Courses
+16PCM;NOSUBPLAN;026012;Core & Elective Courses;0;;;Elective Course
+16PHM;NOSUBPLAN;026605;Required Courses;0;;;History of Philosophy
+16PHM;NOSUBPLAN;026605;Required Courses;0;;;Normative Philosophy
+16PHM;NOSUBPLAN;026605;Required Courses;0;;;Restricted Elective
+16PHM;NOSUBPLAN;026606;Elective Courses;0;;;Elective Courses
+16PHM;NOSUBPLAN;028985;300-level Minor Requirement;0;;;9 credits at 300lvl or Higher
+16PORTM;NOSUBPLAN;030821;Required Courses;0;010067;WLPO;Intermed Portug 1
+16PORTM;NOSUBPLAN;030821;Required Courses;0;;;Special Topics WL 295
+16PORTM;NOSUBPLAN;030821;Required Courses;0;;;WLPO or WL 295
+16PORTM;NOSUBPLAN;025053;Elective Courses;0;;;Electives
+16RSM;NOSUBPLAN;026607;Religious Studies Core;0;;;Historical Methods Requirement
+16RSM;NOSUBPLAN;026607;Religious Studies Core;0;;;Textual Methods Requirement
+16RSM;NOSUBPLAN;026607;Religious Studies Core;0;;;Critical/Theoretical Methods
+16RSM;NOSUBPLAN;026608;Electives;0;;;Electives
+16RSM;NOSUBPLAN;021936;Religious Studies Co-requisite;0;;;Western Religious Traditions
+16RSM;NOSUBPLAN;021936;Religious Studies Co-requisite;0;;;Non-Western Religious Traditio
+16RUM;NOSUBPLAN;031061;Required Courses;0;010073;WLRU;Interm Russian I
+16RUM;NOSUBPLAN;031061;Required Courses;0;010074;WLRU;Interm Russian II
+16RUM;NOSUBPLAN;031061;Required Courses;0;010075;WLRU;Rus Lit Trans 19th
+16RUM;NOSUBPLAN;031061;Required Courses;0;010076;WLRU;Rus Lit Trans 20th
+16RUM;NOSUBPLAN;022146;Elective Courses;0;;;Elective Courses
+16SCM;NOSUBPLAN;030791;Required Coursework;0;032584;COM;Science Com & Engagement
+16SCM;NOSUBPLAN;030791;Required Coursework;0;;;Capstone Course
+16SCM;NOSUBPLAN;028193;Elective Courses;0;019869;COM;Public Speaking
+16SCM;NOSUBPLAN;028193;Elective Courses;0;;;Group II Elective
+16SCM;NOSUBPLAN;028193;Elective Courses;0;;;Group III Elective
+16SCM;NOSUBPLAN;030792;Certification Requirement;0;;;6hrs 300/400lvl Electives
+16SOM;NOSUBPLAN;021898;Required Courses;0;019446;SOC;Princ of Sociology
+16SOM;NOSUBPLAN;021898;Required Courses;0;019501;SOC;Soc Research Meth
+16SOM;NOSUBPLAN;021899;Elective Courses;0;;;SOC 300 Level Courses
+16SOM;NOSUBPLAN;021899;Elective Courses;0;;;SOC 400 Level Courses
+16SPM;NOSUBPLAN;028225;Prerequisite Course;0;;;Prerequisite Courses
+16SPM;NOSUBPLAN;021859;Required Courses;0;010105;WLSP;Interm Spanish II
+16SPM;NOSUBPLAN;021859;Required Courses;0;;;WLSP 331 or WLSP 335
+16SPM;NOSUBPLAN;021859;Required Courses;0;024079;WLSP;Span Oral Wrtn II
+16SPM;NOSUBPLAN;029328;Elective Courses;0;;;Elective Courses
+16STM;NOSUBPLAN;022041;Required Course;0;015009;STS;Intro Sci Tech Soc
+16STM;NOSUBPLAN;022042;Elective Courses;0;;;Group I
+16STM;NOSUBPLAN;022042;Elective Courses;0;;;Group II
+16STM;NOSUBPLAN;022042;Elective Courses;0;;;Group III
+16STM;NOSUBPLAN;022042;Elective Courses;0;;;Additional Elective
+16SWM;NOSUBPLAN;022023;Required Courses;0;020525;SW;Introduction to Social Work
+16SWM;NOSUBPLAN;022023;Required Courses;0;020530;SW;Development of Social Welfare
+16SWM;NOSUBPLAN;022023;Required Courses;0;020533;SW;Soc Wel Analysis & Advocacy
+16SWM;NOSUBPLAN;022023;Required Courses;0;020537;SW;Human Behavior for SW
+16SWM;NOSUBPLAN;022024;Elective Course;0;;;Elective Course
+16TEFLM;NOSUBPLAN;031696;Required Courses;0;009774;WL;Linguistics for MLs
+16TEFLM;NOSUBPLAN;031696;Required Courses;0;006548;WL;Methods/Materials in TESOL
+16TEFLM;NOSUBPLAN;031696;Required Courses;0;009777;WL;Advocate Multilingual Learners
+16TEFLM;NOSUBPLAN;031696;Required Courses;0;006557;WL;Practicum in TESOL
+16TEFLM;NOSUBPLAN;031696;Required Courses;0;;;WL 437 or Elective Course
+16TSM;NOSUBPLAN;029088;Required Courses;0;;;Group I
+16TSM;NOSUBPLAN;029088;Required Courses;0;;;Group II
+16TSM;NOSUBPLAN;029089;Elective Courses;0;008564;ENG;Commun Engr & Tech
+16WGM;NOSUBPLAN;025207;Required Courses;0;012372;WGS;Intro Women Gender Sex Study
+16WGM;NOSUBPLAN;025207;Required Courses;0;;;WGS 300 or WGS 380
+16WGM;NOSUBPLAN;025207;Required Courses;0;015100;WGS;Theory Women Gender Sex Study
+16WGM;NOSUBPLAN;025206;Elective Courses;0;;;Electives
+16WLM;NOSUBPLAN;031681;World Literatures & Cultures;0;;;World Literatures&Culture 300+
+16WLM;NOSUBPLAN;031681;World Literatures & Cultures;0;;;World Literatures & Cultures
+16WLM;NOSUBPLAN;028587;Related Cultural Course;0;;;Related Cultural Course
+17BLM;NOSUBPLAN;023780;Required Courses;0;000447;BIO;Intro Bio Ecol/Div
+17BLM;NOSUBPLAN;023780;Required Courses;0;000449;BIO;Intro Bio Cell/Mol
+17BLM;NOSUBPLAN;030325;Electives;0;032442;BIO;Science of Dinosaurs
+17BLM;NOSUBPLAN;030325;Electives;0;;;Additional Electives
+17ETM;NOSUBPLAN;029325;Required Courses;0;021265;TOX;Princp Toxicology
+17ETM;NOSUBPLAN;029325;Required Courses;0;021267;TOX;Environ Tox & Chem
+17ETM;NOSUBPLAN;029325;Required Courses;0;033019;TOX;Undergrad Toxicology Seminar
+17ETM;NOSUBPLAN;029326;Elective Courses;0;;;Foundational Course
+17ETM;NOSUBPLAN;029326;Elective Courses;0;;;Elective Courses
+17EVOM;NOSUBPLAN;026796;Required Courses;0;011014;GN;Princ of Genetics
+17EVOM;NOSUBPLAN;026796;Required Courses;0;031142;GN;Elem Genetics Lab
+17EVOM;NOSUBPLAN;026796;Required Courses;0;022758;BIO;Evolutionary Biol
+17EVOM;NOSUBPLAN;026797;Elective Courses;0;;;Elective Courses
+17EVOM;NOSUBPLAN;026797;Elective Courses;0;032442;BIO;Science of Dinosaurs
+17FSCM;NOSUBPLAN;026793;Required Course;0;031550;PCC;Introduction to Forensic Sci
+17FSCM;NOSUBPLAN;026794;Foundational Requirements;0;;;Natural Sciences
+17FSCM;NOSUBPLAN;026794;Foundational Requirements;0;020211;ST;Prob & Stat-Engr
+17FSCM;NOSUBPLAN;026794;Foundational Requirements;0;;;Ethics
+17FSCM;NOSUBPLAN;026795;Electives;6;;;Electives
+17GM;NOSUBPLAN;029096;Geology Minor Courses;0;;;Gateway Course
+17GM;NOSUBPLAN;029096;Geology Minor Courses;0;015215;MEA;Geology I Laborat
+17GM;NOSUBPLAN;029096;Geology Minor Courses;0;015234;MEA;Geology II Histor
+17GM;NOSUBPLAN;029096;Geology Minor Courses;0;015240;MEA;Geology II Laborat
+17GM;NOSUBPLAN;029097;Elective Courses;0;;;Elective Courses
+17GNM;NOSUBPLAN;030381;Core Courses;0;011014;GN;Princ of Genetics
+17GNM;NOSUBPLAN;030381;Core Courses;0;031142;GN;Elem Genetics Lab
+17GNM;NOSUBPLAN;030381;Core Courses;0;;;GN 421 or BCH 453
+17GNM;NOSUBPLAN;030382;Elective Courses;0;;;Category A Electives
+17GNM;NOSUBPLAN;030382;Elective Courses;0;;;Category B Electives
+17MAM;NOSUBPLAN;021897;Required Courses;0;;;Restricted Electives
+17MAM;NOSUBPLAN;021897;Required Courses;0;013712;MA;Intro Lin Algebra
+17MBM;NOSUBPLAN;031073;Required Courses;0;014814;MB;Gen Microbiology
+17MBM;NOSUBPLAN;031073;Required Courses;0;;;Microbiology Lab
+17MBM;NOSUBPLAN;031073;Required Courses;0;014824;MB;Medical Microbiol
+17MBM;NOSUBPLAN;031074;Elective Courses;0;;;Lab Electives
+17MBM;NOSUBPLAN;031074;Elective Courses;0;;;Elective Courses
+17MRM;NOSUBPLAN;026791;Required Courses;0;015229;MEA;Intro Oceanography
+17MRM;NOSUBPLAN;026791;Required Courses;0;015238;MEA;Oceanography Lab
+17MRM;NOSUBPLAN;026791;Required Courses;0;015248;MEA;Intro Coastal Envi
+17MRM;NOSUBPLAN;026792;Elective Courses;0;;;Elective Courses
+17MYM;NOSUBPLAN;027016;Required Courses;0;032384;MEA;Intro Atmospheric Sciences
+17MYM;NOSUBPLAN;027016;Required Courses;0;015254;MEA;Atmos Thermodyn
+17MYM;NOSUBPLAN;027016;Required Courses;0;015276;MEA;Atmos Dynamics I
+17MYM;NOSUBPLAN;022975;Elective Courses;0;;;Elective Courses
+17PALM;NOSUBPLAN;031193;Required Courses;0;033039;BIO;Intro to Evolution
+17PALM;NOSUBPLAN;031193;Required Courses;0;032976;BIO;Paleoecology
+17PALM;NOSUBPLAN;031193;Required Courses;0;015264;MEA;Principles of Paleontology
+17PALM;NOSUBPLAN;031194;Elective Courses;0;;;Electives List A
+17PALM;NOSUBPLAN;031194;Elective Courses;0;032442;BIO;Science of Dinosaurs
+17PALM;NOSUBPLAN;031194;Elective Courses;0;;;Electives List B
+17PYSM;NOSUBPLAN;021980;Required Courses;0;018981;PY;Physics Engr I
+17PYSM;NOSUBPLAN;021980;Required Courses;0;019002;PY;Physics Engr I Lab
+17PYSM;NOSUBPLAN;021980;Required Courses;0;019006;PY;Physics Egr II
+17PYSM;NOSUBPLAN;021980;Required Courses;0;019026;PY;Physics Engr II Lab
+17PYSM;NOSUBPLAN;021980;Required Courses;0;;;PY 407 or PY 203
+17PYSM;NOSUBPLAN;021981;Elective Courses;0;;;Elective Courses
+17STM;NOSUBPLAN;030539;Introductory Statistics;0;;;Introductory Statistics
+17STM;NOSUBPLAN;030539;Introductory Statistics;0;020211;ST;Prob & Stat-Engr
+17STM;NOSUBPLAN;030540;Statistical Programming in SAS;0;032221;ST;Intro Stat Programming- SAS
+17STM;NOSUBPLAN;030541;Statistics Electives;9;;;Statistics Electives
+17ZOM;NOSUBPLAN;026940;Required Coursework;0;022705;ZO;Animal Anat Phys
+17ZOM;NOSUBPLAN;026940;Required Coursework;0;;;ZO 350 or ZO 402
+17ZOM;NOSUBPLAN;026941;Electives;0;;;Elective Courses
+18NONWOVM;NOSUBPLAN;029599;Required Courses;0;020958;TE;Fiber Science
+18NONWOVM;NOSUBPLAN;029599;Required Courses;0;021385;TT;Intro Nonwoven Products & Proc
+18NONWOVM;NOSUBPLAN;029599;Required Courses;0;021367;TT;Adv Nonwoven Proc
+18NONWOVM;NOSUBPLAN;029600;Elective Courses;6;;;Electives
+18PCCM;NOSUBPLAN;031021;Polymer and Color Chemistry Minor;0;016853;PCC;Tech Dyeing Fin
+18PCCM;NOSUBPLAN;031021;Polymer and Color Chemistry Minor;0;031327;PCC;Intro Color Sci Ap
+18PCCM;NOSUBPLAN;031021;Polymer and Color Chemistry Minor;0;031231;PCC;Color Science Lab
+18PCCM;NOSUBPLAN;031021;Polymer and Color Chemistry Minor;0;016866;PCC;Chemistry of Polymeric Mat
+18PCCM;NOSUBPLAN;031021;Polymer and Color Chemistry Minor;0;;;Advised Electives
+18POLYM;NOSUBPLAN;025156;Required Courses;0;;;PCC 106 or TE 200
+18POLYM;NOSUBPLAN;025156;Required Courses;0;016866;PCC;Chemistry of Polymeric Mat
+18POLYM;NOSUBPLAN;025156;Required Courses;0;031232;PCC;Polymer Phys Properties
+18POLYM;NOSUBPLAN;025157;Elective Courses;0;;;Elective Courses
+18TTM;NOSUBPLAN;026391;Required Courses;0;021343;TT;Intro Text Tech
+18TTM;NOSUBPLAN;026391;Required Courses;0;021160;TMS;Intro Fiber Sci
+18TTM;NOSUBPLAN;026391;Required Courses;0;031975;TT;Yarn Production and Properties
+18TTM;NOSUBPLAN;030276;Elective Courses;0;;;Electives
+20AM;NOSUBPLAN;026928;Required Accounting Courses;0;000012;ACC;Concepts Fin Repor
+20AM;NOSUBPLAN;026928;Required Accounting Courses;0;;;ACC 200 or ACC 220
+20AM;NOSUBPLAN;022033;Elective Courses;0;;;Elective Courses
+20BEM;NOSUBPLAN;030757;Required Coursework;0;033303;MIE;Survey of Entrepreneurship
+20BEM;NOSUBPLAN;030757;Required Coursework;0;033302;MIE;Entrepreneurship Skills
+20BEM;NOSUBPLAN;030760;Elective & Practicum Sequence;0;;;Advised Elective
+20BEM;NOSUBPLAN;030760;Elective & Practicum Sequence;0;;;Advised Practicum Sequence I
+20BEM;NOSUBPLAN;030760;Elective & Practicum Sequence;0;;;Advised Practicum Sequence II
+20BMM;NOSUBPLAN;026927;Required Coursework;0;002312;MIE;Introduction to Business
+20BMM;NOSUBPLAN;026927;Required Coursework;0;005667;EC;Fund of Econ
+20BMM;NOSUBPLAN;026927;Required Coursework;0;;;200-Level Accounting
+20BMM;NOSUBPLAN;026927;Required Coursework;0;;;Minor Electives
+20BMM;NOSUBPLAN;031824;Graduation Requirement;12;;;12 hours NC State Courses
+20BMM;NOSUBPLAN;031824;Graduation Requirement;12;005667;EC;Fund of Econ
+20ECM;NOSUBPLAN;021976;Required Courses;0;005667;EC;Fund of Econ
+20ECM;NOSUBPLAN;021976;Required Courses;0;005687;EC;Intermed Microecon
+20ECM;NOSUBPLAN;021976;Required Courses;0;005691;EC;Intermed Macroecon
+20ECM;NOSUBPLAN;021978;Elective Courses;0;;;Elective Courses
+23GOHM;NOSUBPLAN;031695;Required Courses;0;033422;GOH;Fdtns of Global One Health
+23GOHM;NOSUBPLAN;031695;Required Courses;0;033423;GOH;Global One Health Applications
+23GOHM;NOSUBPLAN;031694;Electives;0;;;Human/Animal Health Persp.
+23GOHM;NOSUBPLAN;031694;Electives;0;;;Sust. Food Syst & Plant Health
+23GOHM;NOSUBPLAN;031694;Electives;0;;;Ecosystem Health/Climate Sci.
+23UDSBM;NOSUBPLAN;030784;Required Coursework;0;;;Data Communication
+23UDSBM;NOSUBPLAN;030784;Required Coursework;0;;;Ethics, Policy, & Privacy
+23UDSBM;NOSUBPLAN;030784;Required Coursework;0;033258;DSA;Intro to R/Python for Data Sci
+23UDSBM;NOSUBPLAN;030784;Required Coursework;0;;;Machine Learning and AI
+23UDSBM;NOSUBPLAN;030784;Required Coursework;0;;;Electives/Internship/Capstones
+23UDSBM;NOSUBPLAN;030784;Required Coursework;0;;;DSC Electives
+23UDSBM;NOSUBPLAN;030785;Required Depth Coursework;0;032463;BUS;Intro to Bus Analytics
+23UDSBM;NOSUBPLAN;030785;Required Depth Coursework;0;;;BUS Depth Electives
+23UDSGEDM;NOSUBPLAN;031177;Required Courses;1;;;Data Communication
+23UDSGEDM;NOSUBPLAN;031177;Required Courses;1;;;Ethics, Policy, & Privacy
+23UDSGEDM;NOSUBPLAN;031177;Required Courses;1;033258;DSA;Intro to R/Python for Data Sci
+23UDSGEDM;NOSUBPLAN;031177;Required Courses;1;;;Machine Learning and AI
+23UDSGEDM;NOSUBPLAN;031177;Required Courses;1;;;Electives or Internships & Cap
+23UDSGEDM;NOSUBPLAN;031177;Required Courses;1;033261;DSA;Explore Data Analysis Big Data
+23UDSGEDM;NOSUBPLAN;031178;Required Depth Courses;9;021693;GD;Adv Graphic Design Studio
+23UDSGEDM;NOSUBPLAN;031178;Required Depth Courses;9;;;Required Depth Elective
+23UDSISEM;NOSUBPLAN;031173;Required Courses;1;025000;ELECT;Data Communication
+23UDSISEM;NOSUBPLAN;031173;Required Courses;1;;;Ethics, Policy, & Privacy
+23UDSISEM;NOSUBPLAN;031173;Required Courses;1;033261;DSA;Explore Data Analysis Big Data
+23UDSISEM;NOSUBPLAN;031173;Required Courses;1;025000;ELECT;Machine Learning and AI
+23UDSISEM;NOSUBPLAN;031173;Required Courses;1;033258;DSA;Intro to R/Python for Data Sci
+23UDSISEM;NOSUBPLAN;031173;Required Courses;1;025000;ELECT;DSA Required Elective
+23UDSISEM;NOSUBPLAN;031176;Depth Electives;0;025000;ELECT;Depth Electives
+23UDSISEM;NOSUBPLAN;031176;Depth Electives;0;025000;ELECT;Depth Electives
+23UDSISEM;NOSUBPLAN;031176;Depth Electives;0;025000;ELECT;Depth Electives
+23UDSMAM;NOSUBPLAN;030782;Required Coursework;0;;;Data Communication
+23UDSMAM;NOSUBPLAN;030782;Required Coursework;0;;;Ethics, Policy, & Privacy
+23UDSMAM;NOSUBPLAN;030782;Required Coursework;0;033261;DSA;Explore Data Analysis Big Data
+23UDSMAM;NOSUBPLAN;030782;Required Coursework;0;;;Machine Learning and AI
+23UDSMAM;NOSUBPLAN;030782;Required Coursework;0;;;Electives/Internships/Capstone
+23UDSMAM;NOSUBPLAN;030782;Required Coursework;0;;;DSC Elective
+23UDSMAM;NOSUBPLAN;030783;Required Depth Courses;0;013712;MA;Intro Lin Algebra
+23UDSMAM;NOSUBPLAN;030783;Required Depth Courses;0;033306;MA;Math Found of Data Science I
+23UDSMAM;NOSUBPLAN;030783;Required Depth Courses;0;;;Data-Focused Math Elective
+23UIADSM;NOSUBPLAN;031287;Required DSC Courses;0;033258;DSA;Intro to R/Python for Data Sci
+23UIADSM;NOSUBPLAN;031287;Required DSC Courses;0;;;Data Communication
+23UIADSM;NOSUBPLAN;031287;Required DSC Courses;0;;;Ethics, Policy, & Privacy
+23UIADSM;NOSUBPLAN;031287;Required DSC Courses;0;;;Machine Learning and AI
+23UIADSM;NOSUBPLAN;031287;Required DSC Courses;0;;;Electives, Internships & Capst
+23UIADSM;NOSUBPLAN;031287;Required DSC Courses;0;033261;DSA;Explore Data Analysis Big Data
+23UIADSM;NOSUBPLAN;031286;Required Depth Coursework;0;;;Required Depth Courses
+23UIADSM;NOSUBPLAN;031286;Required Depth Coursework;0;004339;CSC;Intro Comp - Java
+24CAM;NOSUBPLAN;026935;Required Courses;0;017108;HESM;Coaching Practicum
+24CAM;NOSUBPLAN;026935;Required Courses;0;032440;HESM;Sport Coaching Instruction
+24CAM;NOSUBPLAN;026935;Required Courses;0;017111;HESM;Coaching Concepts
+24CAM;NOSUBPLAN;026936;Elective Courses;0;;;Sports Science Electives
+24CAM;NOSUBPLAN;026936;Elective Courses;0;;;Sports Coaching Electives
+24DANM;NOSUBPLAN;030342;Required Courses;0;032192;DAN;Movement Improvisation
+24DANM;NOSUBPLAN;030342;Required Courses;0;032245;DAN;Dance and Society
+24DANM;NOSUBPLAN;030343;Elective Courses;0;;;Performance Technique Analysis
+24DANM;NOSUBPLAN;030343;Elective Courses;0;;;Dance Composition
+24DANM;NOSUBPLAN;030343;Elective Courses;0;;;Additional Study
+24DANM;NOSUBPLAN;030343;Elective Courses;0;;;Capstone Experience
+24DANSTUDM;NOSUBPLAN;030304;Required Courses;0;032192;DAN;Movement Improvisation
+24DANSTUDM;NOSUBPLAN;030304;Required Courses;0;032245;DAN;Dance and Society
+24DANSTUDM;NOSUBPLAN;030305;Elective Courses;0;;;Elective Courses
+24EMAM;NOSUBPLAN;030825;Core Courses;0;031723;EMA;Foundations Arts E-ship
+24EMAM;NOSUBPLAN;030825;Core Courses;0;031724;EMA;Practical Arts E-ship
+24EMAM;NOSUBPLAN;030825;Core Courses;0;031725;EMA;Understanding Arts Economies
+24EMAM;NOSUBPLAN;030825;Core Courses;0;031726;EMA;Cap Ex Arts Entrepreneurship
+24EMAM;NOSUBPLAN;030825;Core Courses;0;033373;EMA;Problem Solving Arts Entrepren
+24GLM;NOSUBPLAN;031726;Required Courses;0;032118;SLC;CriticalCreativeDecisionModels
+24GLM;NOSUBPLAN;031726;Required Courses;0;032607;SLC;SLC 475 Capstone
+24GLM;NOSUBPLAN;031713;Additional Courses Abroad;9;;;Additional Courses Abroad
+24HLTHM;NOSUBPLAN;024037;Required Courses;0;017136;HESM;Personal Health
+24HLTHM;NOSUBPLAN;024037;Required Courses;0;017141;HESM;Hlth Plan/Program
+24HLTHM;NOSUBPLAN;024037;Required Courses;0;017142;HESM;Methd Health Promo
+24HLTHM;NOSUBPLAN;024037;Required Courses;0;017143;HESM;Practicum in Health
+24HLTHM;NOSUBPLAN;024038;Elective Courses;0;;;Elective Courses
+24HLTHM;NOSUBPLAN;024038;Elective Courses;0;002238;BIO;Bio Modern World
+24HLTHM;NOSUBPLAN;024038;Elective Courses;0;001626;BIO;Bio Mod World Lab
+24MSASM;NOSUBPLAN;024039;Required Courses;0;;;300 and 400 level courses
+24MSASM;NOSUBPLAN;024039;Required Courses;0;;;Restricted Electives
+24MSMSM;NOSUBPLAN;030831;Military Science Core;0;;;Military Science Courses
+24MSMSM;NOSUBPLAN;030832;Military History;0;;;Military History
+24MSNSM;NOSUBPLAN;024041;Required Courses;0;;;300 and 400 level courses
+24MSNSM;NOSUBPLAN;024041;Required Courses;0;;;Restricted Electives
+24MUM;NOSUBPLAN;029480;Music Studies;0;016067;MUS;Theory I
+24MUM;NOSUBPLAN;029480;Music Studies;0;031067;MUS;Theory Lab I
+24MUM;NOSUBPLAN;029480;Music Studies;0;016044;MUS;Undstnd Mus Glob Persp
+24MUM;NOSUBPLAN;029616;Electives;0;;;Electives
+24MUSPM;NOSUBPLAN;029479;Required Courses;0;;;MUS 103 or MUS 153
+24MUSPM;NOSUBPLAN;029479;Required Courses;0;031067;MUS;Theory Lab I
+24MUSPM;NOSUBPLAN;029479;Required Courses;0;016021;MUS;Keyboard Skills I
+24MUSPM;NOSUBPLAN;029479;Required Courses;0;;;MUS 193 & Ensemble Elective
+24MUSPM;NOSUBPLAN;029479;Required Courses;0;;;MUS 193 & Ensemble Elective
+24MUSPM;NOSUBPLAN;029479;Required Courses;0;;;MUS 293 & Ensemble Elective
+24MUSPM;NOSUBPLAN;029479;Required Courses;0;;;MUS 293 & Ensemble Elective
+24MUSPM;NOSUBPLAN;029479;Required Courses;0;;;MUS 393 & Ensemble Elective
+24MUSPM;NOSUBPLAN;029479;Required Courses;0;;;Musical Culture Elective
+24OLM;NOSUBPLAN;029436;Required Courses;0;017144;HESM;Foundations in Outdoor Leader
+24OLM;NOSUBPLAN;029436;Required Courses;0;017075;HESM;Challenge Course Facilitation
+24OLM;NOSUBPLAN;029436;Required Courses;0;017146;HESM;Outdoor Education Pedagogy
+24OLM;NOSUBPLAN;029436;Required Courses;0;017148;HESM;Prac Outdoor Proc
+24OLM;NOSUBPLAN;029437;Elective Courses;0;;;OLM Elective
+24OLM;NOSUBPLAN;029437;Elective Courses;0;;;OLM Elective
+24OLM;NOSUBPLAN;029437;Elective Courses;0;;;OLM Elective
+24OLM;NOSUBPLAN;029437;Elective Courses;0;;;OLM Elective
+24OLM;NOSUBPLAN;029437;Elective Courses;0;;;OLM Elective
+24SLCM;NOSUBPLAN;025992;Required Minor Course;0;032118;SLC;CriticalCreativeDecisionModels
+24SLCM;NOSUBPLAN;030789;Elective Courses;0;;;Cross-Functioning Teams
+24SLCM;NOSUBPLAN;030789;Elective Courses;0;;;Values/Ethics
+24SLCM;NOSUBPLAN;030789;Elective Courses;0;;;Leadership
+24SLCM;NOSUBPLAN;030789;Elective Courses;0;;;Cross Disciplinary Elective
+24SLCM;NOSUBPLAN;030789;Elective Courses;0;;;Certification Requirement
+24SPSM;NOSUBPLAN;030786;Required Courses;0;017126;HESM;Prin of Exer Prog
+24SPSM;NOSUBPLAN;030786;Required Courses;0;;;HESM 286 or NTR 301
+24SPSM;NOSUBPLAN;030786;Required Courses;0;017122;HESM;Sports Sci Pract
+24SPSM;NOSUBPLAN;030786;Required Courses;0;017112;HESM;Exercise Phys and Sports Sci
+24SPSM;NOSUBPLAN;030786;Required Courses;0;032433;BIO;Principles Hum Anat & Phys (A)
+24SPSM;NOSUBPLAN;030787;Elective Courses;3;;;Elective Courses
+24TEAM;NOSUBPLAN;029216;Required Coursework;0;033080;HON;Intro. to Inter. Bio Teamwork
+24TEAM;NOSUBPLAN;029216;Required Coursework;0;;;HON 298
+24TEAM;NOSUBPLAN;029216;Required Coursework;0;;;HON 498
+24TEAM;NOSUBPLAN;029216;Required Coursework;0;;;HON 499
+24TEAM;NOSUBPLAN;029216;Required Coursework;0;032951;CBS;Team Science
+24TEAM;NOSUBPLAN;029216;Required Coursework;0;033002;SLC;Team Leadership Biomedical
+24TEAM;NOSUBPLAN;029216;Required Coursework;0;033081;HON;Inter. BioMed Research Cap.

@@ -1,4 +1,5 @@
-import {waitForCart, waitForScheduleTable} from "./utils/dom.ts";
+import {waitForCart, waitForScheduleTable, ensureOverlayContainer} from "./utils/dom.ts";
+import { createRoot } from 'react-dom/client';
 
 declare global {
     interface Window {
@@ -15,6 +16,7 @@ import {AppLogger} from "./utils/logger.ts";
 import {scrapePlanner, scrapeScheduleTable} from "./services/scraper.ts";
 import {debounce} from "./utils/common.ts";
 import {setupListener} from "./services/siteResponseStorage.ts";
+import SlideOutDrawer from "./components/MainPopupCard.tsx";
 // Stores courses from the main schedule table// Stores courses from the planner/cart
 
 
@@ -79,6 +81,10 @@ observer.observe(document.body, { childList: true, subtree: true });
             return;
         }
         window.__mypackEnhancerInitialized = true;
+        AppLogger.info("Initializing MyPack Drawer");
+        const overlayElement = ensureOverlayContainer();
+        const root = createRoot(overlayElement);
+        root.render(<SlideOutDrawer />);
         const scheduleElement = await waitForScheduleTable();
         scrapeScheduleTable(scheduleElement);
         const initialIframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe');
