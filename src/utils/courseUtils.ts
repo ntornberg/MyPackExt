@@ -3,7 +3,21 @@ import * as cheerio from 'cheerio';
 import { TermIdByName } from '../Data/TermID';
 import { SubjectMenuValues } from '../Data/SubjectSearchValues';
 import { AppLogger } from '../utils/logger';
-
+import type { GridColDef } from '@mui/x-data-grid';
+export const OpenCourseSectionsColumn: GridColDef[] = [
+    { field: 'id', headerName: 'ID', hideable: true },
+    { field: 'section', headerName: 'Section', width: 150 },
+    { field: 'component', headerName: 'Component', width: 150 },
+    { field: 'classNumber', headerName: 'Class Number', width: 150 },
+    { field: 'availability', headerName: 'Availability', width: 150 },
+    { field: 'enrollment', headerName: 'Enrollment', width: 150 },
+    { field: 'dayTime', headerName: 'Day Time', width: 150 },
+    { field: 'location', headerName: 'Location', width: 150 },
+    { field: 'instructor', headerName: 'Instructor', width: 150 },
+    { field: 'dates', headerName: 'Dates', width: 150 },
+    { field: 'notes', headerName: 'Notes', width: 150 },
+    { field: 'requisites', headerName: 'Requisites', width: 150 },
+  ];
 export interface CourseSection {
     section: string;
     component: string;

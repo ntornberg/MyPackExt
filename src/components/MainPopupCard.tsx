@@ -11,6 +11,7 @@ import {
     Collapse,
     TextField,
 } from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
 import Autocomplete from '@mui/material/Autocomplete';
 import { majorPlans } from '../Data/MajorPlans'
 import { minorPlans } from '../Data/MinorPlans';
@@ -19,6 +20,8 @@ import type { Course, MajorPlan, Subplan, Requirement } from '../types/Plans';
 import { TermIdByName } from '../Data/TermID';
 import { AppLogger } from '../utils/logger';
 import { searchOpenCourses } from '../services/courseService';
+import type { CourseData } from '../utils/courseUtils';
+import { OpenCourseSectionsColumn } from '../utils/courseUtils';
 
 export default function SlideOutDrawer() {
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -33,7 +36,7 @@ export default function SlideOutDrawer() {
     const [searchTerm, setSearchTerm] = useState<string | null>(null);
     //const [searchMinor, setSearchMinor] = useState<string | null>(null);
     const [searchSubplan, setSearchSubplan] = useState<string | null>(null);
-    const [openCourses, setOpenCourses] = useState<Record<string, any>>({});
+    const [openCourses, setOpenCourses] = useState<Record<string, CourseData>>({});
 
     const subplanOptions = selectedMajor
         ? Object.keys(majorPlans[selectedMajor as keyof typeof majorPlans]?.subplans || {})
@@ -46,20 +49,20 @@ export default function SlideOutDrawer() {
         setSearchTerm(selectedTerm);
 
         // Call the async logic
-        fetchOpenCourses();
+        fetchOpenCourses(selectedMajor, selectedSubplan, selectedTerm);
     };
 
-    const fetchOpenCourses = async () => {
-        if (searchMajor && searchSubplan) {
-            const major_data = majorPlans[searchMajor as keyof typeof majorPlans] as MajorPlan;
-            const subplan_data = major_data?.subplans[selectedSubplan as keyof typeof major_data.subplans] as Subplan | undefined;
+    const fetchOpenCourses = async (major: string | null, subplan: string | null, term: string | null) => {
+        if (major && subplan && term) {
+            const major_data = majorPlans[major as keyof typeof majorPlans] as MajorPlan;
+            const subplan_data = major_data?.subplans[subplan as keyof typeof major_data.subplans] as Subplan | undefined;
             const requirements = subplan_data?.requirements ?? {};
             const newOpenCourses: Record<string, any> = {};
 
             for (const rq of Object.values(requirements) as Requirement[]) {
                 for (const course of rq.courses as Course[]) {
                     if (!course.course_abr || !course.course_id) continue;
-                    const response = await searchOpenCourses(searchTerm ?? "", course);
+                    const response = await searchOpenCourses(term ?? "", course);
                     AppLogger.info('searchOpenCourses response (Promise)', response);
                     if (response) {
                         newOpenCourses[`${course.course_abr}-${course.catalog_num}`] = response;
@@ -90,7 +93,7 @@ export default function SlideOutDrawer() {
         //        AppLogger.info('Course in requirement', course);
         //    }
         //}
-       
+
         if (subplan_data) {
             requirementsList = (
                 <List>
@@ -105,9 +108,12 @@ export default function SlideOutDrawer() {
                                     {requirements[requirementKey].courses.map((course: Course) => (
                                         <ListItem key={course.course_abr} sx={{ pl: 4 }}>
                                             <ListItemText
-                                                primary={`${course.course_descrip} ${course.course_abr} ${parseInt(course.catalog_num)}` }
+                                                primary={`${course.course_descrip} ${course.course_abr} ${parseInt(course.catalog_num)}`}
                                                 secondary={`${course.course_abr} ${course.catalog_num}`}
                                             />
+                                            <DataGrid rows={openCourses[`${course.course_abr}-${course.catalog_num}`].sections} columns={OpenCourseSectionsColumn} columnVisibilityModel={{
+                                                id: false,
+                                            }} />
                                         </ListItem>
                                     ))}
                                 </List>
@@ -121,7 +127,7 @@ export default function SlideOutDrawer() {
 
     return (
         <Box sx={{ p: 2 }}>
-            
+
             <Button onClick={() => setDrawerOpen(true)}>Open Drawer</Button>
 
             <Drawer anchor='right' open={drawerOpen} onClose={() => setDrawerOpen(false)}>
@@ -166,12 +172,7 @@ export default function SlideOutDrawer() {
                             Search
                         </Button>
                         {requirementsList}
-                        {Object.entries(openCourses).map(([courseKey, courseData]) => (
-                            <div key={courseKey}>
-                                <h4>{courseKey}</h4>
-                                <pre>{JSON.stringify(courseData, null, 2)}</pre>
-                            </div>
-                        ))}
+
                         <ListItem>
                             <ListItemText primary='Item 1' />
                         </ListItem>
