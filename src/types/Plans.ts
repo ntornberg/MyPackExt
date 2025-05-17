@@ -1,30 +1,31 @@
 export type Course = {
-  course_id: string;
-  course_abr: string;
-  course_descrip: string;
+  readonly course_id: string;
+  readonly course_abr: string;
+  readonly course_descrip: string;
+  readonly catalog_num: string;
 };
 
 export type Requirement = {
-  id: string;
-  min_units: number;
-  courses: Course[];
+  readonly id: string;
+  readonly min_units: number;
+  readonly courses: readonly Course[];
 };
 
 export type Subplan = {
-  id: string;
-  requirements: Record<string, Requirement>;
+  readonly id: string;
+  readonly requirements: Record<string, Requirement>;
 };
 
 export type MajorPlan = {
-  id: string;
-  subplans: Record<string, Subplan>;
+  readonly id: string;
+  readonly subplans: Record<string, Subplan>;
 };
 
 export type MajorPlans = Record<string, MajorPlan>;
 
 export type MinorPlan = {
-  id: string;
-  requirements: Record<string, Requirement>;
+  readonly id: string;
+  readonly requirements: Record<string, Requirement>;
 };
 
 export type MinorPlans = Record<string, MinorPlan>; 

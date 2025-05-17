@@ -3,9 +3,9 @@
   "name": "MyPack Course Picker",
   "version": "1.0",
   "description": "Improved course selection UI with integrated tools",
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage"],
   "host_permissions": [
-    "https://*.acs.ncsu.edu/*"
+    "https://*.acs.ncsu.edu/*","https://webappprd.acs.ncsu.edu/*"
   ],
   "action": {
     "default_popup": "./public/popup.html",
