@@ -32,7 +32,21 @@ export default function SlideOutDrawer() {
     const subplanOptions = selectedMajor
         ? Object.keys(majorPlans[selectedMajor]?.subplans || {})
         : [];
-
+    function formCourseURL(course_abr: string, course_id: string) {
+        const formData = new URLSearchParams();
+        formData.append("2258", "2258");
+        formData.append("subject", "CSC - Computer Science");
+        formData.append("course-inequality", "=");
+        formData.append("course-number", "316");
+        formData.append("course-career", "");
+        formData.append("session", "");
+        formData.append("start-time-inequality", "<=");
+        formData.append("start-time", "");
+        formData.append("end-time-inequality", "<=");
+        formData.append("end-time", "");
+        formData.append("instructor-name", "");
+        formData.append("current_strm", "2258");
+    }
     const handleSearch = () => {
         setSearchMajor(selectedMajor);
         //setSearchMinor(selectedMinor);
@@ -50,6 +64,12 @@ export default function SlideOutDrawer() {
     if (searchMajor && searchSubplan) {
         const major_data = majorPlans[searchMajor as keyof MajorPlans];
         const subplan_data = major_data?.subplans[searchSubplan as keyof typeof major_data.subplans];
+        for (const [key, rq] of Object.entries(subplan_data.requirements)) {
+            console.log(key, rq);
+            for (const course of rq.courses) {
+                console.log(course);
+            }
+        }
         if (subplan_data) {
             requirementsList = (
                 <List>
@@ -64,7 +84,7 @@ export default function SlideOutDrawer() {
                                     {subplan_data.requirements[requirementKey].courses.map((course) => (
                                         <ListItem key={course.course_abr} sx={{ pl: 4 }}>
                                             <ListItemText
-                                                primary={course.course_descrip}
+                                                primary={`${course.course_descrip} ${course.course_abr} ${parseInt(course.course_id)}` }
                                                 secondary={`${course.course_abr} ${course.course_id}`}
                                             />
                                         </ListItem>
