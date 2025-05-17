@@ -1,6 +1,13 @@
 ﻿import React, { useState } from 'react';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+  },
+});
 import {
-    Drawer,
     Box,
     Typography,
     Button,
@@ -10,6 +17,9 @@ import {
     ListSubheader,
     Collapse,
     TextField,
+    Dialog,
+    DialogTitle,
+    DialogContent,
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import Autocomplete from '@mui/material/Autocomplete';
@@ -22,6 +32,7 @@ import { AppLogger } from '../utils/logger';
 import { searchOpenCourses } from '../services/courseService';
 import type { CourseData } from '../utils/courseUtils';
 import { OpenCourseSectionsColumn } from '../utils/courseUtils';
+import { generateCacheKey, getGenericCache, setGenericCache } from '../cache/CourseRetrieval';
 
 export default function SlideOutDrawer() {
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -33,7 +44,7 @@ export default function SlideOutDrawer() {
     const [selectedMinor, setSelectedMinor] = useState<string | null>(null);
     const [selectedSubplan, setSelectedSubplan] = useState<string | null>(null);
     const [searchMajor, setSearchMajor] = useState<string | null>(null);
-    const [searchTerm, setSearchTerm] = useState<string | null>(null);
+    const [_, setSearchTerm] = useState<string | null>(null);
     //const [searchMinor, setSearchMinor] = useState<string | null>(null);
     const [searchSubplan, setSearchSubplan] = useState<string | null>(null);
     const [openCourses, setOpenCourses] = useState<Record<string, CourseData>>({});
@@ -53,12 +64,18 @@ export default function SlideOutDrawer() {
     };
 
     const fetchOpenCourses = async (major: string | null, subplan: string | null, term: string | null) => {
+        AppLogger.info('fetchOpenCourses', { major, subplan, term });
         if (major && subplan && term) {
             const major_data = majorPlans[major as keyof typeof majorPlans] as MajorPlan;
             const subplan_data = major_data?.subplans[subplan as keyof typeof major_data.subplans] as Subplan | undefined;
             const requirements = subplan_data?.requirements ?? {};
             const newOpenCourses: Record<string, any> = {};
-
+            const cacheKey = await generateCacheKey(major + " " + subplan + " " + term);
+            const cachedOpenCourses = await getGenericCache("openCourses", cacheKey);
+            if (cachedOpenCourses) {
+                setOpenCourses(JSON.parse(cachedOpenCourses.combinedData));
+                return;
+            }
             for (const rq of Object.values(requirements) as Requirement[]) {
                 for (const course of rq.courses as Course[]) {
                     if (!course.course_abr || !course.course_id) continue;
@@ -70,6 +87,8 @@ export default function SlideOutDrawer() {
                 }
             }
             AppLogger.info('newOpenCourses', newOpenCourses);
+           
+            setGenericCache("openCourses", cacheKey, JSON.stringify(newOpenCourses));
             setOpenCourses(newOpenCourses);
         }
     };
@@ -106,14 +125,23 @@ export default function SlideOutDrawer() {
                                 <List component="div" disablePadding>
                                     <ListSubheader>Courses</ListSubheader>
                                     {requirements[requirementKey].courses.map((course: Course) => (
-                                        <ListItem key={course.course_abr} sx={{ pl: 4 }}>
+                                        <ListItem alignItems="flex-start" key={course.course_abr} sx={{ pl: 4 }}>
+                                             <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                                            
                                             <ListItemText
                                                 primary={`${course.course_descrip} ${course.course_abr} ${parseInt(course.catalog_num)}`}
                                                 secondary={`${course.course_abr} ${course.catalog_num}`}
                                             />
-                                            <DataGrid rows={openCourses[`${course.course_abr}-${course.catalog_num}`].sections} columns={OpenCourseSectionsColumn} columnVisibilityModel={{
-                                                id: false,
-                                            }} />
+                                              <Box sx={{ height: 200, mt: 2 }}>
+                                            {openCourses[`${course.course_abr}-${course.catalog_num}`]?.sections && (
+                                                <DataGrid
+                                                    rows={openCourses[`${course.course_abr}-${course.catalog_num}`].sections}
+                                                    columns={OpenCourseSectionsColumn}
+                                                    columnVisibilityModel={{ id: false }}
+                                                />
+                                            )}
+                                            </Box>
+                                            </Box>
                                         </ListItem>
                                     ))}
                                 </List>
@@ -126,12 +154,16 @@ export default function SlideOutDrawer() {
     }
 
     return (
-        <Box sx={{ p: 2 }}>
+        <ThemeProvider theme={darkTheme}>
+            <CssBaseline />
+            <Box sx={{ p: 2 }}>
 
             <Button onClick={() => setDrawerOpen(true)}>Open Drawer</Button>
 
-            <Drawer anchor='right' open={drawerOpen} onClose={() => setDrawerOpen(false)}>
-                <Box sx={{ width: 250, p: 2 }}>
+            <Dialog fullScreen open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+            <DialogTitle>Course Search</DialogTitle>
+            <DialogContent>
+                <Box sx={{ width: '100%', p: 2 }}>
                     <Typography variant='h6'>Slide-Out Panel</Typography>
                     <List>
 
@@ -182,7 +214,9 @@ export default function SlideOutDrawer() {
                     </List>
                     <Button onClick={() => setDrawerOpen(false)}>Close</Button>
                 </Box>
-            </Drawer>
+            </DialogContent>
+        </Dialog>
         </Box>
+        </ThemeProvider>
     );
 }

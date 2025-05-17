@@ -19,6 +19,7 @@ export const OpenCourseSectionsColumn: GridColDef[] = [
     { field: 'requisites', headerName: 'Requisites', width: 150 },
   ];
 export interface CourseSection {
+    id: string;
     section: string;
     component: string;
     classNumber: string;
@@ -89,6 +90,7 @@ export function parseHTMLContent(html: string): CourseData | null {
         const requisites = requisitesLink.attr('data-content') || null;
         AppLogger.info('Course section', { section, component, classNumber, availability, enrollment, dayTime, location, instructor, dates, notes, requisites });
         sections.push({
+          id: `${code}-${section}`,
           section,
           component,
           classNumber,
