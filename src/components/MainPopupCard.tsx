@@ -1,4 +1,5 @@
 ﻿import React, { useState } from 'react';
+import * as cheerio from 'cheerio';
 import {
     Drawer,
     Box,
@@ -15,7 +16,9 @@ import Autocomplete from '@mui/material/Autocomplete';
 import { majorPlans } from '../Data/MajorPlans'
 import { minorPlans } from '../Data/MinorPlans';
 import Checkbox from '@mui/joy/Checkbox';
-import type { MajorPlans } from '../types/Plans';
+import type { Course, MajorPlans } from '../types/Plans';
+import { TermIdByName } from '../Data/TermID';
+import { AppLogger } from '../utils/logger';
 
 export default function SlideOutDrawer() {
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -23,21 +26,137 @@ export default function SlideOutDrawer() {
     const major_options = Object.keys(majorPlans);
     const minor_options = Object.keys(minorPlans);
     const [selectedMajor, setSelectedMajor] = useState<string | null>(null);
+    const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
     const [selectedMinor, setSelectedMinor] = useState<string | null>(null);
     const [selectedSubplan, setSelectedSubplan] = useState<string | null>(null);
     const [searchMajor, setSearchMajor] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState<string | null>(null);
     //const [searchMinor, setSearchMinor] = useState<string | null>(null);
     const [searchSubplan, setSearchSubplan] = useState<string | null>(null);
 
     const subplanOptions = selectedMajor
         ? Object.keys(majorPlans[selectedMajor]?.subplans || {})
         : [];
-    function formCourseURL(course_abr: string, course_id: string) {
+        interface CourseSection {
+            section: string;
+            component: string;
+            classNumber: string;
+            availability: string;
+            enrollment: string;
+            dayTime: string;
+            location: string;
+            instructor: {
+              name: string;
+              link: string | null;
+            };
+            dates: string;
+            notes: string | null;
+            requisites: string | null;
+          }
+          
+          interface CourseData {
+            code: string;
+            title: string;
+            units: string;
+            description: string;
+            prerequisite: string | null;
+            sections: CourseSection[];
+          }
+    function parseHTMLContent(html: string): CourseData | null {
+            const $ = cheerio.load(html);
+          
+            const $courseSection = $('section.course');
+            if ($courseSection.length === 0) {
+              console.error("Could not find course section.");
+              return null;
+            }
+          
+            const code = $courseSection.find('h1').contents().first().text().trim();
+            const title = $courseSection.find('h1 small').text().trim();
+            const units = $courseSection.find('h1 .units').text().replace('Units:', '').trim();
+            const description = $courseSection.find('p').first().text().trim();
+            const prerequisite = $courseSection.find('p').eq(1).text().trim(); // Assuming prerequisite is the second paragraph
+          
+            const sections: CourseSection[] = [];
+          
+            // Select all table rows within the section table body, excluding the footer row
+            $courseSection.find('table.section-table tbody tr').each((_, element) => {
+              const $row = $(element);
+              const $cells = $row.find('td');
+          
+              if ($cells.length >= 8) { // Ensure there are enough cells for required data
+                const section = $cells.eq(0).text().trim();
+                const component = $cells.eq(1).text().trim();
+                const classNumber = $cells.eq(2).text().trim();
+          
+                const availabilityHtml = $cells.eq(3).html() || '';
+                const availabilityMatch = availabilityHtml.match(/<span.*?>(.*?)<\/span>/);
+                const availability = availabilityMatch ? availabilityMatch[1].trim() : $cells.eq(3).text().trim();
+          
+                const enrollmentMatch = $cells.eq(3).text().match(/\d+\/\d+/);
+                const enrollment = enrollmentMatch ? enrollmentMatch[0] : '';
+          
+                // Clean up day/time by removing hidden elements and extra whitespace
+                const dayTimeHtml = $cells.eq(4).html() || '';
+                const $dayTime = $('<div>').html(dayTimeHtml); // Load HTML into a temporary element
+                $dayTime.find('.hidden-xs').remove(); // Remove elements with hidden-xs class
+                $dayTime.find('.screen-reader-only-text').remove(); // Remove screen-reader-only-text
+                const dayTime = $dayTime.text().replace(/\s+/g, ' ').trim();
+          
+          
+                const location = $cells.eq(5).text().trim();
+          
+                const $instructorLink = $cells.eq(6).find('a.instructor-link');
+                const instructorName = $instructorLink.text().trim();
+                const instructorLink = $instructorLink.attr('href') || null;
+                const instructor = { name: instructorName, link: instructorLink };
+          
+                const dates = $cells.eq(7).text().trim();
+          
+                // Extract Notes and Requisites from popover data-content in the last cell
+                const $lastCell = $cells.eq(9); // Index 9 for the last td with class 'screen-only'
+          
+                const notesLink = $lastCell.find('[data-toggle="popover"][id^="notes-"]');
+                const notes = notesLink.attr('data-content') || null;
+          
+                const requisitesLink = $lastCell.find('[data-toggle="popover"][id^="reqs-"]');
+                const requisites = requisitesLink.attr('data-content') || null;
+          
+          
+                sections.push({
+                  section,
+                  component,
+                  classNumber,
+                  availability,
+                  enrollment,
+                  dayTime,
+                  location,
+                  instructor,
+                  dates,
+                  notes,
+                  requisites,
+                });
+              }
+            });
+          
+            return {
+              code,
+              title,
+              units,
+              description,
+              prerequisite,
+              sections,
+            };
+          }
+    
+    function formCourseURL(term :string, course_abr: string, course_id: string) {
         const formData = new URLSearchParams();
-        formData.append("2258", "2258");
-        formData.append("subject", "CSC - Computer Science");
+        formData.append("term", term);
+        const subject = TermIdByName[course_abr]
+        formData.append("subject", subject);
         formData.append("course-inequality", "=");
-        formData.append("course-number", "316");
+        const course_number = parseInt(course_id);
+        formData.append("course-number", course_number.toString());
         formData.append("course-career", "");
         formData.append("session", "");
         formData.append("start-time-inequality", "<=");
@@ -45,14 +164,30 @@ export default function SlideOutDrawer() {
         formData.append("end-time-inequality", "<=");
         formData.append("end-time", "");
         formData.append("instructor-name", "");
-        formData.append("current_strm", "2258");
+        formData.append("current_strm", term);
+        return formData.toString();
     }
     const handleSearch = () => {
         setSearchMajor(selectedMajor);
         //setSearchMinor(selectedMinor);
         setSearchSubplan(selectedSubplan);
+        setSearchTerm(selectedTerm);
     };
-
+    const searchOpenCourses = async (term : string,course : Course)  => {
+        AppLogger.info('Calling searchOpenCourses', { term, course });
+        try {
+            const formData = formCourseURL(term, course.course_abr, course.course_id);
+            const response = await fetch("https://webappprd.acs.ncsu.edu/php/coursecat/search.php", {
+                method: "POST",
+                body: formData // Content-Type set automatically
+            });
+            const text = await response.text();
+            AppLogger.info('Received response text', text);
+            parseHTMLContent(text);
+        } catch (error) {
+            AppLogger.error('Error in searchOpenCourses', error);
+        }
+    }
     const handleClick = (requirementKey: string) => {
         setOpen((prevState) => ({
             ...prevState,
@@ -65,9 +200,16 @@ export default function SlideOutDrawer() {
         const major_data = majorPlans[searchMajor as keyof MajorPlans];
         const subplan_data = major_data?.subplans[searchSubplan as keyof typeof major_data.subplans];
         for (const [key, rq] of Object.entries(subplan_data.requirements)) {
-            console.log(key, rq);
+            AppLogger.info('Requirement', { key, requirement: rq });
             for (const course of rq.courses) {
-                console.log(course);
+                AppLogger.info('Course in requirement', course);
+            }
+        }
+        for (const [_, rq] of Object.entries(subplan_data.requirements)) {
+            for (const course of Object.values(rq.courses)) {
+                AppLogger.info('Searching open courses for', { searchTerm, course });
+                const response = searchOpenCourses(searchTerm ?? "",course);
+                AppLogger.info('searchOpenCourses response (Promise)', response);
             }
         }
         if (subplan_data) {
@@ -109,6 +251,13 @@ export default function SlideOutDrawer() {
                     <List>
 
                         <Checkbox label="GEP Requirements" defaultChecked />
+                        <Autocomplete
+                            id="term_selector"
+                            options={Object.keys(TermIdByName)}
+                            value={selectedTerm}
+                            onChange={(_, value) => setSelectedTerm(value)}
+                            renderInput={(params) => <TextField {...params} label="Term" />}
+                        />
                         <Autocomplete
                             id="major_selector"
                             options={major_options}
