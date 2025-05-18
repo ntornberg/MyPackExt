@@ -6,17 +6,17 @@ import { AppLogger } from '../utils/logger';
 import type { GridColDef } from '@mui/x-data-grid';
 export const OpenCourseSectionsColumn: GridColDef[] = [
     { field: 'id', headerName: 'ID', hideable: true },
-    { field: 'section', headerName: 'Section', width: 150 },
-    { field: 'component', headerName: 'Component', width: 150 },
-    { field: 'classNumber', headerName: 'Class Number', width: 150 },
-    { field: 'availability', headerName: 'Availability', width: 150 },
-    { field: 'enrollment', headerName: 'Enrollment', width: 150 },
-    { field: 'dayTime', headerName: 'Day Time', width: 150 },
-    { field: 'location', headerName: 'Location', width: 150 },
-    { field: 'instructor', headerName: 'Instructor', width: 150 },
-    { field: 'dates', headerName: 'Dates', width: 150 },
-    { field: 'notes', headerName: 'Notes', width: 150 },
-    { field: 'requisites', headerName: 'Requisites', width: 150 },
+    { field: 'section', headerName: 'Section', flex: 2 },
+    { field: 'component', headerName: 'Component', flex: 2 },
+    { field: 'classNumber', headerName: 'Class Number', flex: 2 },
+    { field: 'availability', headerName: 'Availability', flex: 2 },
+    { field: 'enrollment', headerName: 'Enrollment', flex: 2 },
+    { field: 'dayTime', headerName: 'Day Time', flex: 6 },
+    { field: 'location', headerName: 'Location', flex: 6 },
+    { field: 'instructor', headerName: 'Instructor', flex: 6 },
+    { field: 'dates', headerName: 'Dates', flex: 2 },
+    { field: 'notes', headerName: 'Notes', flex: 2 },
+    { field: 'requisites', headerName: 'Requisites', flex: 2 },
   ];
 export interface CourseSection {
     id: string;
@@ -87,7 +87,10 @@ export function parseHTMLContent(html: string): CourseData | null {
         const notesLink = $lastCell.find('[data-toggle="popover"][id^="notes-"]');
         const notes = notesLink.attr('data-content') || null;
         const requisitesLink = $lastCell.find('[data-toggle="popover"][id^="reqs-"]');
-        const requisites = requisitesLink.attr('data-content') || null;
+        let requisites = requisitesLink.attr('data-content') || null;
+        if (requisites) {
+            requisites = requisites.replace(/^<p>/, '');
+        }
         AppLogger.info('Course section', { section, component, classNumber, availability, enrollment, dayTime, location, instructor, dates, notes, requisites });
         sections.push({
           id: `${code}-${section}`,

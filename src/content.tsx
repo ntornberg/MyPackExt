@@ -24,7 +24,33 @@ import SlideOutDrawer from "./components/MainPopupCard.tsx";
 
 AppLogger.info("MyPack Enhancer script started.");
 
+import createCache from '@emotion/cache';
+import { CacheProvider } from "@emotion/react";
 
+export function createEmotionCache() {
+    // Target a specific element in the host's <head> that appears AFTER their main CSS.
+    // Using the ID of a link tag visible in your screenshot as an example insertion point.
+    const insertionPoint = document.querySelector('#PTGP_HOME_TILE_FL_1_CSS');
+  
+    const emotionCache = createCache({
+      key: 'mui-styles', // Keep your unique key
+  
+      // --- Use insertionPoint to inject styles immediately AFTER the selected element ---
+      insertionPoint: insertionPoint as HTMLElement | undefined,
+      // --------------------------------------------------------------------------------
+  
+      // Remove or comment out the prepend line
+      // prepend: false,
+    });
+  
+    // Optional: Add a warning if the insertion point is not found
+    if (!insertionPoint) {
+        console.warn("Emotion insertion point (#PTGP_HOME_TILE_FL_1_CSS) not found in <head>. Styles may not be injected in the desired location.");
+    }
+  
+    return emotionCache;
+  }
+const myEmotionCache = createEmotionCache();
 function debounceScraper(scrapePlanner: (plannerTableElement: Element) => Promise<void>) {
     // Debounce time of 100ms
     return debounce(async () => {
@@ -82,9 +108,19 @@ observer.observe(document.body, { childList: true, subtree: true });
         }
         window.__mypackEnhancerInitialized = true;
         AppLogger.info("Initializing MyPack Drawer");
-        const overlayElement = ensureOverlayContainer();
-        const root = createRoot(overlayElement);
-        root.render(<SlideOutDrawer />);
+        // 1. Ensure the container element exists in the DOM
+                const overlayElement = ensureOverlayContainer();
+        // 2. Create the React root for that container
+        const root = createRoot(overlayElement);
+
+        // 3. Render your root component (<SlideOutDrawer />) wrapped with CacheProvider
+        // SlideOutDrawer itself should contain your AppTheme/ThemeProvider inside it,
+        // like shown in the previous corrected code for SlideOutDrawer.
+        root.render(
+            <CacheProvider value={myEmotionCache}>
+                <SlideOutDrawer />
+            </CacheProvider>
+        );
         const scheduleElement = await waitForScheduleTable();
         scrapeScheduleTable(scheduleElement);
         const initialIframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe');
@@ -131,13 +167,3 @@ if (__psDefine) {
         configurable: true
     });
 }
-
-
-
-
-
-
-
-
-
-

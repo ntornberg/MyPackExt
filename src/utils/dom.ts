@@ -107,7 +107,7 @@ export function ensureOverlayContainer() : HTMLDivElement {
       
       drawerContainer.style.transition = 'right 0.3s ease-in-out';
       drawerContainer.style.zIndex = '1001'; // Above the overlay background
-      overlayRootElement.style.pointerEvents = 'auto'; // Enable events on the overlay and its content
+      //overlayRootElement.style.pointerEvents = 'auto'; // Enable events on the overlay and its content
     }
     const el = document.getElementById('slide-out-drawer-container');
     if (!el) {

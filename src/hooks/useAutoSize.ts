@@ -8,7 +8,7 @@ export function useAutoSize(min = 180, aspect = 0.75) {
         if (!ref.current) return;
         const obs = new ResizeObserver(([entry]) => {
             const w = Math.max(entry.contentRect.width, min);
-            setSize({w, h: w * aspect});      // keep a 4 × 3 feel
+            setSize({w, h: w * aspect});
         });
         obs.observe(ref.current);
         return () => obs.disconnect();
