@@ -9,7 +9,7 @@ import { getGenericCache, setGenericCache, generateCacheKey } from "../cache/Cou
 import type { RequiredCourse, Requirement } from '../types/Plans.ts';
 import type { CourseData } from '../utils/CourseSearch/ParseRegistrarUtil.ts';
 import { searchOpenCourses } from './courseService.ts';
-import { mergeData } from '../utils/CourseSearch/MergeDataUtil.ts';
+import { mergeData, type MergedCourseData } from '../utils/CourseSearch/MergeDataUtil.ts';
 // Interface for combined API response
 interface SingleCourseDataResponse {
   CourseData: {
@@ -112,38 +112,44 @@ async function fetchSingleCourseData(course: Course): Promise<SingleCourseDataRe
  * @param {string} term - The term to fetch data for.
  * @returns {Promise<Record<string, CourseData>>} - A promise that resolves with the course data.
  */
-// @ts-ignore
 export async function fetchCourseSearchData(requirements : Requirement[],term: string){
-  const cached_courses : CourseData[] = []
+  const cached_courses :  Record<string, MergedCourseData> = {}
   const new_courses : Record<string, CourseData> = {}
-    for(const rq of Object.values(requirements) as Requirement[]){
-      for(const course of rq.courses as RequiredCourse[]){
-        const courseKey = `${course.course_abr}-${course.catalog_num}`;
-        // Generate a cache key for this course
   
-        
-        const cacheKey = await generateCacheKey(courseKey + ' ' + term);
-        // Try to get cached data for this course
-        const cachedCourse = await getGenericCache("openCourses", cacheKey);
-        if (cachedCourse) {
-            cached_courses.push(JSON.parse(cachedCourse.combinedData));
-            continue;
-        }
-        const response = await searchOpenCourses(term ?? "", course);
-       
-        if(response){
-          new_courses[courseKey] = response;
-         
-        }
-        
+  // Create a map of course keys to RequiredCourse objects for passing course_id to sections
+  const courseInfoMap: Record<string, RequiredCourse> = {};
+  
+  for(const rq of Object.values(requirements) as Requirement[]){
+    for(const course of rq.courses as RequiredCourse[]){
+      const courseKey = `${course.course_abr}-${course.catalog_num}`;
+      
+      
+      AppLogger.info("Fetching course data for:", courseKey + ' ' + term);
+      const cacheKey = await generateCacheKey(courseKey + ' ' + term); 
+      courseInfoMap[cacheKey] = course; 
+      const cachedCourse = await getGenericCache("openCourses", cacheKey);
+      if (cachedCourse) {
+          cached_courses[cacheKey] = JSON.parse(cachedCourse.combinedData);
+          continue;
       }
+      const response = await searchOpenCourses(term ?? "", course);
+     
+      if(response){
+        new_courses[cacheKey] = response;
+       
+      }
+      
     }
-    // @ts-ignore
+  }
+  if(Object.keys(new_courses).length > 0){
     const courses_to_fetch = Object.entries(new_courses).flatMap(([_, course]) => {
-      return course.sections.map((section) => {
-          return {course_title: course.code, instructor_name: section.instructor_name[0]}
-      })
-  })
+      return course.sections
+        .filter(section => section.instructor_name.length > 0 && course.code.length > 0)
+        .map(section => ({
+          course_title: course.code,
+          instructor_name: section.instructor_name[0]
+        }));
+    });
   const url = `https://app-gradefetchbackend.azurewebsites.net/api/user/allCourses`;
     const response = await fetch(url, {
       method: 'POST',
@@ -157,14 +163,19 @@ export async function fetchCourseSearchData(requirements : Requirement[],term: s
       AppLogger.error("Error fetching combined data:", response.status, response.statusText);
       return null;
     }
-    // @ts-ignore
+
     const combinedData = await response.json() as BatchDataRequestResponse
-    const mergedData = mergeData(new_courses, combinedData);
-    for(const [courseKey, course] of Object.entries(mergedData)){
-      const cacheKey = await generateCacheKey(courseKey + ' ' + term);
+    const mergedData = mergeData(new_courses, combinedData, courseInfoMap);
+  
+    for(const [cacheKey, course] of Object.entries(mergedData)){
       await setGenericCache("openCourses", cacheKey, JSON.stringify(course));
     }
-    return mergedData;
+    for(const [cacheKey, course] of Object.entries(cached_courses)){
+      mergedData[cacheKey] = course;
+    }
+  }
+
+    return cached_courses;
 }
 
 /**

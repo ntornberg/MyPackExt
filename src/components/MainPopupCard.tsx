@@ -114,7 +114,9 @@ export default function SlideOutDrawer() {
                             })}
                         >
                             <ListItem component="button" onClick={() => handleClick(requirementKey)}>
-                                <ListItemText primary={requirementKey} slotProps={{ primary: { fontWeight: 700, fontSize: '1.2rem' } }} />
+                                <ListItemText primary={requirementKey} slotProps={{ primary: { fontWeight: 700, fontSize: '1.2rem' } }}  sx={(theme) => ({
+                                    backgroundColor: (theme.vars || theme).palette.background.paper,
+                                })} />
                             </ListItem>
                             <Collapse in={open[requirementKey]} timeout="auto" unmountOnExit>
                                 <List component="div" disablePadding>

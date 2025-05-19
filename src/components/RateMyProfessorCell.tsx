@@ -1,8 +1,8 @@
 import { Box, Typography, Rating } from '@mui/material';
 import type { GridRenderCellParams } from '@mui/x-data-grid';
-
+import type { MatchedRateMyProf } from '../types';
 export const RateMyProfessorCell = (params: GridRenderCellParams) => {
-  const { professor_rating  } = params.row;
+  const { professor_rating} : { professor_rating: MatchedRateMyProf } = params.row;
   
   if (!professor_rating || !professor_rating.avgRating) {
     return <Typography variant="body2">No rating available</Typography>;
