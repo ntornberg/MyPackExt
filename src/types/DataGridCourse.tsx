@@ -1,10 +1,10 @@
 import type { GridColDef } from "@mui/x-data-grid";
 import { RateMyProfessorCell } from "../components/RateMyProfessorCell";
 import { GradeDistributionCell } from "../components/GradeDistributionCell";
-
+import { CourseAvailibilityCell } from "../components/CourseAvailibilityCell";
 export const OpenCourseSectionsColumn: GridColDef[] = [
     { field: 'id', headerName: 'ID', hideable: true },
-    { field: 'availability', headerName: 'Availability', flex: 2 },
+    { field: 'availability', headerName: 'Availability', flex: 2,renderCell: CourseAvailibilityCell },
     { field: 'section', headerName: 'Section', flex: 2 },
     { field: 'component', headerName: 'Component', flex: 2 }, 
     { field: 'enrollment', headerName: 'Enrollment', flex: 2 },

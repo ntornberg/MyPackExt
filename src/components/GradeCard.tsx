@@ -4,12 +4,12 @@ import { useAutoSize } from '../hooks/useAutoSize';
 import type {GradeData} from '../types';
 
 export const GradeCard: React.FC<GradeData> = (props) => {
-    const {aAverage, bAverage, cAverage, dAverage, fAverage,
-        classAverageMin, classAverageMax
+    const {a_average, b_average, c_average, d_average, f_average,
+        class_avg_min, class_avg_max
     } = props;
 
     const [wrapRef, {w, h}] = useAutoSize();
-    const total = aAverage + bAverage + cAverage + dAverage + fAverage;
+    const total = a_average + b_average + c_average + d_average + f_average;
     if (!total) return null;                            // skip empty cards
 
     const colors = ['#2ecc71', '#a3e635', '#facc15', '#f97316', '#ef4444'];
@@ -48,11 +48,11 @@ export const GradeCard: React.FC<GradeData> = (props) => {
                         `${id}: ${(value / total * 100).toFixed(0)}%`,
                     arcLabelMinAngle: 15,
                     data: [
-                        {id: 'A', value: aAverage, label: 'A', color: colors[0]},
-                        {id: 'B', value: bAverage, label: 'B', color: colors[1]},
-                        {id: 'C', value: cAverage, label: 'C', color: colors[2]},
-                        {id: 'D', value: dAverage, label: 'D', color: colors[3]},
-                        {id: 'F', value: fAverage, label: 'F', color: colors[4]},
+                        {id: 'A', value: a_average, label: 'A', color: colors[0]},
+                        {id: 'B', value: b_average, label: 'B', color: colors[1]},
+                        {id: 'C', value: c_average, label: 'C', color: colors[2]},
+                        {id: 'D', value: d_average, label: 'D', color: colors[3]},
+                        {id: 'F', value: f_average, label: 'F', color: colors[4]},
                     ],
                 }]}
                 sx={{[`& .${pieArcLabelClasses.root}`]: {fontWeight: 'bold'}}}
@@ -60,7 +60,7 @@ export const GradeCard: React.FC<GradeData> = (props) => {
 
             <h4 style={{color: '#666', margin: '.5rem 0 0', textAlign: 'center'}}>
                 Class Average &nbsp;
-                <strong>{classAverageMin}% – {classAverageMax}%</strong>
+                <strong>{class_avg_min}% – {class_avg_max}%</strong>
             </h4>
         </div>
     );

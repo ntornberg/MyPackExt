@@ -131,10 +131,11 @@ export async function fetchCourseSearchData(requirements : Requirement[],term: s
         }
         const response = await searchOpenCourses(term ?? "", course);
        
-        if (response) {
+        if(response){
           new_courses[courseKey] = response;
-          await setGenericCache("openCourses", cacheKey, JSON.stringify(response));
+         
         }
+        
       }
     }
     // @ts-ignore
@@ -159,7 +160,10 @@ export async function fetchCourseSearchData(requirements : Requirement[],term: s
     // @ts-ignore
     const combinedData = await response.json() as BatchDataRequestResponse
     const mergedData = mergeData(new_courses, combinedData);
-
+    for(const [courseKey, course] of Object.entries(mergedData)){
+      const cacheKey = await generateCacheKey(courseKey + ' ' + term);
+      await setGenericCache("openCourses", cacheKey, JSON.stringify(course));
+    }
     return mergedData;
 }
 
@@ -195,16 +199,16 @@ function createGradeCard(course: Course, data: SingleCourseDataResponse): HTMLDi
 
   // Prepare grade data for the component
   const gradeData: GradeData = {
-    courseName: courseData.course_name ?? course.abr,
+    course_name: courseData.course_name ?? course.abr,
     subject: courseData.subject ?? "",
-    instructorName: courseData.instructor_name ?? course.instructor,
-    aAverage: a,
-    bAverage: b,
-    cAverage: c,
-    dAverage: d,
-    fAverage: f,
-    classAverageMin: courseData.class_avg_min ? parseFloat(courseData.class_avg_min) : 0,
-    classAverageMax: courseData.class_avg_max ? parseFloat(courseData.class_avg_max) : 0,
+    instructor_name: courseData.instructor_name ?? course.instructor,
+    a_average: a,
+    b_average: b,
+    c_average: c,
+    d_average: d,
+    f_average: f,
+    class_avg_min: courseData.class_avg_min ? parseFloat(courseData.class_avg_min) : 0,
+    class_avg_max: courseData.class_avg_max ? parseFloat(courseData.class_avg_max) : 0,
   };
 
   // Render the grade card component

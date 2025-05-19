@@ -158,7 +158,7 @@ export default function SlideOutDrawer() {
             <CssBaseline enableColorScheme />
             <Box sx={{ p: 2, pointerEvents: 'auto' }}>
 
-                <Button onClick={() => setDrawerOpen(true)}>Open Drawer</Button>
+                <Button onClick={() => setDrawerOpen(true)}>Course Search</Button>
 
                 <Dialog fullWidth maxWidth='lg' open={drawerOpen} onClose={() => setDrawerOpen(false)} sx={(theme) => ({
                     '& .MuiDialog-paper': {

@@ -10,6 +10,7 @@ import {
 import { PieChart } from '@mui/x-charts/PieChart';
 import type { GridRenderCellParams } from '@mui/x-data-grid';
 import type { GradeData } from '../types';
+import { AppLogger } from '../utils/logger';
 
 export const GradeDistributionCell = (params: GridRenderCellParams) => {
   const [open, setOpen] = useState(false);
@@ -18,7 +19,8 @@ export const GradeDistributionCell = (params: GridRenderCellParams) => {
   if (!grade_distribution) {
     return <Typography variant="body2">No grade data</Typography>;
   }
-  
+  AppLogger.info("Grade distribution: ", grade_distribution);
+  AppLogger.info("Grade distribution row: ", params.row);
   const handleOpen = () => {
     setOpen(true);
   };
@@ -28,23 +30,23 @@ export const GradeDistributionCell = (params: GridRenderCellParams) => {
   };
   
   const { 
-    aAverage, 
-    bAverage, 
-    cAverage, 
-    dAverage, 
-    fAverage, 
-    courseName,
-    instructorName 
+    a_average, 
+    b_average, 
+    c_average, 
+    d_average, 
+    f_average, 
+    course_name,
+    instructor_name 
   } = grade_distribution as GradeData;
   
-  const total = aAverage + bAverage + cAverage + dAverage + fAverage;
+  const total = a_average + b_average + c_average + d_average + f_average;
   
   const pieData = [
-    { id: 0, value: (aAverage / total) * 100, label: 'A', color: '#4caf50' },
-    { id: 1, value: (bAverage / total) * 100, label: 'B', color: '#8bc34a' },
-    { id: 2, value: (cAverage / total) * 100, label: 'C', color: '#ffeb3b' },
-    { id: 3, value: (dAverage / total) * 100, label: 'D', color: '#ff9800' },
-    { id: 4, value: (fAverage / total) * 100, label: 'F', color: '#f44336' },
+    { id: 0, value: (a_average / total) * 100, label: 'A', color: '#4caf50' },
+    { id: 1, value: (b_average / total) * 100, label: 'B', color: '#8bc34a' },
+    { id: 2, value: (c_average / total) * 100, label: 'C', color: '#ffeb3b' },
+    { id: 3, value: (d_average / total) * 100, label: 'D', color: '#ff9800' },
+    { id: 4, value: (f_average / total) * 100, label: 'F', color: '#f44336' },
   ];
   
   return (
@@ -65,9 +67,9 @@ export const GradeDistributionCell = (params: GridRenderCellParams) => {
         fullWidth
       >
         <DialogTitle>
-          Grade Distribution for {courseName}
+          Grade Distribution for {course_name}
           <Typography variant="subtitle2" color="text.secondary">
-            Instructor: {instructorName}
+            Instructor: {instructor_name}
           </Typography>
         </DialogTitle>
         <DialogContent>

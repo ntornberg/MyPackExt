@@ -17,16 +17,16 @@ export type MatchedRateMyProf = {
 };
 
 export type GradeData = {
-    courseName: string;
+    course_name: string;
     subject: string;
-    instructorName: string;
-    aAverage: number;
-    bAverage: number;
-    cAverage: number;
-    dAverage: number;
-    fAverage: number;
-    classAverageMin: number;
-    classAverageMax: number;
+    instructor_name: string;
+    a_average: number;
+    b_average: number;
+    c_average: number;
+    d_average: number;
+    f_average: number;
+    class_avg_min: number;
+    class_avg_max: number;
 };
 
 declare global {

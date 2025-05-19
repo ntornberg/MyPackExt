@@ -29,7 +29,6 @@ export async function searchOpenCourses(term: string, course: RequiredCourse) {
         } else if (response_string && response_string.error) {
             AppLogger.error('Error in background fetch:', response_string.error);
         }
-        AppLogger.info('Received response text', response_string);
         if (response_string != null && !response_string.error) {
             return parseHTMLContent(response_string);
         }
