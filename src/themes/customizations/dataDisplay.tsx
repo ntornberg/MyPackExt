@@ -76,6 +76,7 @@ export const dataDisplayCustomizations: Components<Theme> = {
         padding: theme.spacing(1, 2),
         fontSize: '1.1rem',
         fontWeight: 700,
+        position: 'static',
         color: theme.palette.primary.main,
         borderBottom: `1px solid ${theme.palette.divider}`,
         marginBottom: theme.spacing(1.5),

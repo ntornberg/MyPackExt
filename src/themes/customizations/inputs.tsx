@@ -575,4 +575,36 @@ export const inputsCustomizations: Components<Theme> = {
       }),
     },
   },
+  
+  // InputLabel customization to only remove transform for specific states
+  MuiInputLabel: {
+    styleOverrides: {
+      root: ({ theme }) => ({
+        // Only modify transforms when the label is shrunk/focused
+        '&.MuiInputLabel-shrink': {
+          transform: 'none',
+          position: 'relative',
+          top: 0,
+          left: 0,
+          fontWeight: theme.typography.fontWeightMedium,
+          marginBottom: 4,
+          fontSize: theme.typography.pxToRem(14),
+          color: theme.palette.text.primary,
+        },
+      }),
+      // Override specific variants when shrunk
+      outlined: {
+        '&.MuiInputLabel-shrink': {
+          transform: 'none',
+          position: 'relative',
+          fontSize: 'inherit',
+        }
+      },
+      standard: {
+        '&.MuiInputLabel-shrink': {
+          transform: 'none',
+        }
+      },
+    },
+  },
 };

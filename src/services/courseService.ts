@@ -1,8 +1,8 @@
 import { AppLogger } from '../utils/logger';
-import { parseHTMLContent, formCourseURL } from '../utils/courseUtils';
-import type { Course } from '../types/Plans';
+import { parseHTMLContent, formCourseURL } from '../utils/CourseSearch/ParseRegistrarUtil';
+import type { RequiredCourse } from '../types/Plans';
 
-export async function searchOpenCourses(term: string, course: Course) {
+export async function searchOpenCourses(term: string, course: RequiredCourse) {
     try {
         AppLogger.info('Searching open courses for', { term, course });
         const formData = formCourseURL(term, course.course_abr, course.catalog_num);

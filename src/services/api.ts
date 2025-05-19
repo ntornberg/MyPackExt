@@ -6,9 +6,12 @@ import { GradeCard } from '../components/GradeCard';
 import { ProfRatingCard } from '../components/ProfRatingCard';
 import React from "react";
 import { getGenericCache, setGenericCache, generateCacheKey } from "../cache/CourseRetrieval.tsx";
-
+import type { RequiredCourse, Requirement } from '../types/Plans.ts';
+import type { CourseData } from '../utils/CourseSearch/ParseRegistrarUtil.ts';
+import { searchOpenCourses } from './courseService.ts';
+import { mergeData } from '../utils/CourseSearch/MergeDataUtil.ts';
 // Interface for combined API response
-interface CombinedApiResponse {
+interface SingleCourseDataResponse {
   CourseData: {
     unique_hash: string | null;
     subject: string | null;
@@ -32,16 +35,21 @@ interface CombinedApiResponse {
     id: string | null;
   };
 }
+export interface BatchDataRequestResponse {
+  courses?: GradeData[];
+  profs?: MatchedRateMyProf[];
+}
+
 
 // Cache map to store course data in memory
-const courseDataCache = new Map<string, CombinedApiResponse>();
+const courseDataCache = new Map<string, SingleCourseDataResponse>();
 
 /**
  * Fetches combined course and professor data from the backend API.
  * @param {Course} course - The course to fetch details for.
- * @returns {Promise<CombinedApiResponse>} - A promise that resolves with the combined data.
+ * @returns {Promise<SingleCourseDataResponse>} - A promise that resolves with the combined data.
  */
-async function fetchCombinedData(course: Course): Promise<CombinedApiResponse | null> {
+async function fetchSingleCourseData(course: Course): Promise<SingleCourseDataResponse | null> {
   // Generate a cache key for this course
   const cacheKey = await generateCacheKey(course.abr + " " + course.instructor );
   
@@ -58,7 +66,7 @@ async function fetchCombinedData(course: Course): Promise<CombinedApiResponse | 
   const persistentCache = await getGenericCache("courseList", hash);
   if (persistentCache && persistentCache.combinedData) {
     try {
-      const cachedData = JSON.parse(persistentCache.combinedData) as CombinedApiResponse;
+      const cachedData = JSON.parse(persistentCache.combinedData) as SingleCourseDataResponse;
       AppLogger.info("Persistent cache hit for:", cacheKey);
       
       // Store in memory cache for faster access next time
@@ -74,7 +82,7 @@ async function fetchCombinedData(course: Course): Promise<CombinedApiResponse | 
   // Fetch from API if not in cache
   try {
     AppLogger.info("Fetching combined data from API for:", course);
-    const url = `https://app-gradefetchbackend.azurewebsites.net/api/FetchGradeData?courseName=${encodeURIComponent(course.abr)}&professorName=${encodeURIComponent(course.instructor)}`;
+    const url = `https://app-gradefetchbackend.azurewebsites.net/api/user/singleCourse?courseName=${encodeURIComponent(course.abr)}&professorName=${encodeURIComponent(course.instructor)}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -82,7 +90,7 @@ async function fetchCombinedData(course: Course): Promise<CombinedApiResponse | 
       return null;
     }
     
-    const combinedData = await response.json() as CombinedApiResponse;
+    const combinedData = await response.json() as SingleCourseDataResponse;
     
     // Store in memory cache
     courseDataCache.set(cacheKey, combinedData);
@@ -99,12 +107,69 @@ async function fetchCombinedData(course: Course): Promise<CombinedApiResponse | 
 }
 
 /**
+ * Fetches course search data from the backend API.
+ * @param {Requirement[]} requirements - The requirements to fetch data for.
+ * @param {string} term - The term to fetch data for.
+ * @returns {Promise<Record<string, CourseData>>} - A promise that resolves with the course data.
+ */
+// @ts-ignore
+export async function fetchCourseSearchData(requirements : Requirement[],term: string){
+  const cached_courses : CourseData[] = []
+  const new_courses : Record<string, CourseData> = {}
+    for(const rq of Object.values(requirements) as Requirement[]){
+      for(const course of rq.courses as RequiredCourse[]){
+        const courseKey = `${course.course_abr}-${course.catalog_num}`;
+        // Generate a cache key for this course
+  
+        
+        const cacheKey = await generateCacheKey(courseKey + ' ' + term);
+        // Try to get cached data for this course
+        const cachedCourse = await getGenericCache("openCourses", cacheKey);
+        if (cachedCourse) {
+            cached_courses.push(JSON.parse(cachedCourse.combinedData));
+            continue;
+        }
+        const response = await searchOpenCourses(term ?? "", course);
+       
+        if (response) {
+          new_courses[courseKey] = response;
+          await setGenericCache("openCourses", cacheKey, JSON.stringify(response));
+        }
+      }
+    }
+    // @ts-ignore
+    const courses_to_fetch = Object.entries(new_courses).flatMap(([_, course]) => {
+      return course.sections.map((section) => {
+          return {course_title: course.code, instructor_name: section.instructor_name[0]}
+      })
+  })
+  const url = `https://app-gradefetchbackend.azurewebsites.net/api/user/allCourses`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(courses_to_fetch)
+    });
+    
+    if (!response.ok) {
+      AppLogger.error("Error fetching combined data:", response.status, response.statusText);
+      return null;
+    }
+    // @ts-ignore
+    const combinedData = await response.json() as BatchDataRequestResponse
+    const mergedData = mergeData(new_courses, combinedData);
+
+    return mergedData;
+}
+
+/**
  * Creates a grade card component from course data.
  * @param {Course} course - The course to create the grade card for.
- * @param {CombinedApiResponse} data - The data to use for the card.
+ * @param {SingleCourseDataResponse} data - The data to use for the card.
  * @returns {HTMLDivElement} - The HTML element containing the grade card.
  */
-function createGradeCard(course: Course, data: CombinedApiResponse): HTMLDivElement {
+function createGradeCard(course: Course, data: SingleCourseDataResponse): HTMLDivElement {
   const { host: wrapper, container } = createShadowHost("mypack-extension-data-grade");
   wrapper.style.marginTop = "0.5rem";
   wrapper.style.overflow = 'visible';
@@ -152,10 +217,10 @@ function createGradeCard(course: Course, data: CombinedApiResponse): HTMLDivElem
 /**
  * Creates a professor rating card component from course data.
  * @param {Course} course - The course to create the rating card for.
- * @param {CombinedApiResponse} data - The data to use for the card.
+ * @param {SingleCourseDataResponse} data - The data to use for the card.
  * @returns {HTMLDivElement} - The HTML element containing the rating card.
  */
-function createProfessorCard(course: Course, data: CombinedApiResponse): HTMLDivElement {
+function createProfessorCard(course: Course, data: SingleCourseDataResponse): HTMLDivElement {
   const wrapper = document.createElement("div");
   wrapper.id = "mypack-extension-data-prof";
   wrapper.style.marginTop = "0.5rem";
@@ -207,7 +272,7 @@ export async function getCourseAndProfessorDetails(course: Course): Promise<Cour
   AppLogger.info("Getting combined data for:", course.abr, course.instructor);
   
   try {
-    const combinedData = await fetchCombinedData(course);
+    const combinedData = await fetchSingleCourseData(course);
     
     let gradeElement: HTMLDivElement;
     let professorElement: HTMLDivElement;

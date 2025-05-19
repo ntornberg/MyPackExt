@@ -1,4 +1,4 @@
-export type Course = {
+export type RequiredCourse = {
   readonly course_id: string;
   readonly course_abr: string;
   readonly course_descrip: string;
@@ -8,7 +8,7 @@ export type Course = {
 export type Requirement = {
   readonly id: string;
   readonly min_units: number;
-  readonly courses: readonly Course[];
+  readonly courses: readonly RequiredCourse[];
 };
 
 export type Subplan = {
