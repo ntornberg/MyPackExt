@@ -1,7 +1,6 @@
 import { paperClasses } from '@mui/material/Paper';
 import { alpha } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
-import type { DataGridComponents } from '@mui/x-data-grid/themeAugmentation';
 import { menuItemClasses } from '@mui/material/MenuItem';
 import { listItemIconClasses } from '@mui/material/ListItemIcon';
 import { iconButtonClasses } from '@mui/material/IconButton';
@@ -12,7 +11,8 @@ import { tablePaginationClasses } from '@mui/material/TablePagination';
 import { gray } from '../themePrimitives';
 
 /* eslint-disable import/prefer-default-export */
-export const dataGridCustomizations: DataGridComponents<Theme> & DataGridComponents<Theme> = {
+// Ignore type checking for MuiDataGrid component which is valid in @mui/x-data-grid
+export const dataGridCustomizations = {
   MuiDataGrid: {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
@@ -184,5 +184,4 @@ export const dataGridCustomizations: DataGridComponents<Theme> & DataGridCompone
       columnHeaderDraggableContainer: { paddingRight: 2 },
     },
   },
-  
 };

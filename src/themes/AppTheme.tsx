@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import type { ThemeOptions } from '@mui/material/styles';
+import type { Components } from '@mui/material/styles';
+import type { Theme, ThemeOptions } from '@mui/material/styles';
 import { inputsCustomizations } from './customizations/inputs';
 import { dataDisplayCustomizations } from './customizations/dataDisplay';
 import { dataGridCustomizations } from './customizations/dataGrid';
@@ -8,7 +9,7 @@ import { feedbackCustomizations } from './customizations/feedback';
 import { navigationCustomizations } from './customizations/navigation';
 import { surfacesCustomizations } from './customizations/surfaces';
 import { colorSchemes, typography, shadows, shape } from './themePrimitives';
-
+import { AppLogger } from '../utils/logger';
 
 interface AppThemeProps {
   children: React.ReactNode;
@@ -22,6 +23,8 @@ interface AppThemeProps {
 export default function AppTheme(props: AppThemeProps) {
   const { children, disableCustomTheme, themeComponents } = props;
   const theme = React.useMemo(() => {
+    AppLogger.info("Creating theme with MUI components");
+    
     return disableCustomTheme
       ? {}
       : createTheme({
@@ -35,15 +38,15 @@ export default function AppTheme(props: AppThemeProps) {
           shadows,
           shape,
           components: {
+            ...dataGridCustomizations,
             ...inputsCustomizations,
             ...dataDisplayCustomizations,
-            ...dataGridCustomizations,
             ...feedbackCustomizations,
             ...navigationCustomizations,
             ...surfacesCustomizations,
             ...themeComponents,
             
-          },
+          } as Components<Theme>,
         });
   }, [disableCustomTheme, themeComponents]);
   if (disableCustomTheme) {

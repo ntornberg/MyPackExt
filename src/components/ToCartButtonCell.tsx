@@ -2,6 +2,7 @@ import { Button } from "@mui/material";
 import type { GridRenderCellParams } from "@mui/x-data-grid";
 import { AppLogger } from "../utils/logger";
 import { generateScriptContentUrl } from "../services/ToCartService";
+import { ToCartAlert } from "./AddToCartAlert";
 
 export const ToCartButtonCell = (params: GridRenderCellParams) => {
     const section = params.row;
@@ -64,12 +65,12 @@ export const ToCartButtonCell = (params: GridRenderCellParams) => {
   } else {
     AppLogger.warn("Server returned:", data);
   }
+  return ToCartAlert(data);
 }
     
     return (
         <Button 
             variant="contained" 
-            color="primary" 
             onClick={handleAddToCart}
             size="small"
         >

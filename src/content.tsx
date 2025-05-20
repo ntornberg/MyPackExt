@@ -28,29 +28,22 @@ import createCache from '@emotion/cache';
 import { CacheProvider } from "@emotion/react";
 
 export function createEmotionCache() {
-    // Target a specific element in the host's <head> that appears AFTER their main CSS.
-    // Using the ID of a link tag visible in your screenshot as an example insertion point.
-    const insertionPoint = document.querySelector('#PTGP_HOME_TILE_FL_1_CSS');
+  AppLogger.info("Creating emotion cache");
   
-    const emotionCache = createCache({
-      key: 'mui-styles', // Keep your unique key
-  
-      // --- Use insertionPoint to inject styles immediately AFTER the selected element ---
-      insertionPoint: insertionPoint as HTMLElement | undefined,
-      // --------------------------------------------------------------------------------
-  
-      // Remove or comment out the prepend line
-      // prepend: false,
+  try {
+    return createCache({
+      key: 'mypack-css'
+      // No insertionPoint, let Emotion handle it automatically
     });
-  
-    // Optional: Add a warning if the insertion point is not found
-    if (!insertionPoint) {
-        console.warn("Emotion insertion point (#PTGP_HOME_TILE_FL_1_CSS) not found in <head>. Styles may not be injected in the desired location.");
-    }
-  
-    return emotionCache;
+  } catch (error) {
+    AppLogger.error("Error creating emotion cache:", error);
+    return createCache({
+      key: 'mypack-css'
+    });
   }
-const myEmotionCache = createEmotionCache();
+}
+
+export const myEmotionCache = createEmotionCache();
 function debounceScraper(scrapePlanner: (plannerTableElement: Element) => Promise<void>) {
     // Debounce time of 100ms
     return debounce(async () => {

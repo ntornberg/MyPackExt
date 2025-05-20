@@ -31,8 +31,7 @@ export interface CourseData {
 
 
 export function parseHTMLContent(html: string): CourseData | null {
-  AppLogger.info("Parsing HTML content");
-  AppLogger.info(html);
+ 
   const parsed = JSON.parse(html);
   const html_parse = parsed.html
   const $ = cheerio.load(html_parse);

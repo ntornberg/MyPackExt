@@ -10,6 +10,7 @@ import type { RequiredCourse, Requirement } from '../types/Plans.ts';
 import type { CourseData } from '../utils/CourseSearch/ParseRegistrarUtil.ts';
 import { searchOpenCourses } from './courseService.ts';
 import { mergeData, type MergedCourseData } from '../utils/CourseSearch/MergeDataUtil.ts';
+
 // Interface for combined API response
 interface SingleCourseDataResponse {
   CourseData: {
@@ -123,24 +124,30 @@ export async function fetchCourseSearchData(requirements : Requirement[],term: s
     for(const course of rq.courses as RequiredCourse[]){
       const courseKey = `${course.course_abr}-${course.catalog_num}`;
       
-      
       AppLogger.info("Fetching course data for:", courseKey + ' ' + term);
-      const cacheKey = await generateCacheKey(courseKey + ' ' + term); 
-      courseInfoMap[cacheKey] = course; 
-      const cachedCourse = await getGenericCache("openCourses", cacheKey);
+      const cacheKey = courseKey + ' ' + term; 
+      courseInfoMap[courseKey] = course; // Store with readable key for later lookup
+      
+      // Generate hash for persistent cache lookup
+      const hashKey = await generateCacheKey(cacheKey);
+      
+      const cachedCourse = await getGenericCache("openCourses", hashKey);
       if (cachedCourse) {
-          cached_courses[cacheKey] = JSON.parse(cachedCourse.combinedData);
+          AppLogger.info("Cache hit for:", cacheKey);
+          cached_courses[courseKey] = JSON.parse(cachedCourse.combinedData);
           continue;
       }
+      
+      AppLogger.info("Cache miss for:", cacheKey, "fetching from API");
       const response = await searchOpenCourses(term ?? "", course);
-     
+      
       if(response){
-        new_courses[cacheKey] = response;
-       
+        new_courses[courseKey] = response;
       }
       
     }
-  }
+    }
+
   if(Object.keys(new_courses).length > 0){
     const courses_to_fetch = Object.entries(new_courses).flatMap(([_, course]) => {
       return course.sections
@@ -167,14 +174,21 @@ export async function fetchCourseSearchData(requirements : Requirement[],term: s
     const combinedData = await response.json() as BatchDataRequestResponse
     const mergedData = mergeData(new_courses, combinedData, courseInfoMap);
   
-    for(const [cacheKey, course] of Object.entries(mergedData)){
-      await setGenericCache("openCourses", cacheKey, JSON.stringify(course));
+    // Store data in cache with consistent keys
+    for(const [courseKey, course] of Object.entries(mergedData)){
+      const cacheKey = courseKey + ' ' + term;
+      const hashKey = await generateCacheKey(cacheKey);
+      AppLogger.info("Storing in cache:", cacheKey, "with hash:", hashKey);
+      await setGenericCache("openCourses", hashKey, JSON.stringify(course));
     }
-    for(const [cacheKey, course] of Object.entries(cached_courses)){
-      mergedData[cacheKey] = course;
+    
+    for(const [courseKey, course] of Object.entries(cached_courses)){
+      mergedData[courseKey] = course;
     }
+    AppLogger.info('mergedData', mergedData);
+    return mergedData;
   }
-
+  AppLogger.info('cached_courses', cached_courses);
     return cached_courses;
 }
 

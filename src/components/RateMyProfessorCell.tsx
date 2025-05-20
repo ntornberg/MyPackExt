@@ -17,8 +17,16 @@ export const RateMyProfessorCell = (params: GridRenderCellParams) => {
         precision={0.1}
         readOnly
         size="small"
+        sx={{
+          color: '#FFD700', // gold
+          '& .MuiRating-iconFilled': {
+            color: '#FFD700',
+          },
+          '& .MuiRating-iconHover': {
+            color: '#FFD700',
+          },
+        }}
       />
-      <Typography variant="body2">{rating.toFixed(1)}/5.0</Typography>
     </Box>
   );
 }; 
