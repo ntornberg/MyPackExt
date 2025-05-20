@@ -19,7 +19,7 @@ import {
     Typography,
     Tab,
 } from '@mui/material';
-import { TabList, TabPanel } from '@mui/lab';
+import { TabContext, TabList, TabPanel } from '@mui/lab';
 import { DataGrid } from '@mui/x-data-grid';
 import Autocomplete from '@mui/material/Autocomplete';
 import { majorPlans } from '../Data/PlanSearch/MajorPlans'
@@ -33,6 +33,7 @@ import { CacheProvider } from '@emotion/react';
 import { myEmotionCache } from '../content';
 import { fetchCourseSearchData } from '../services/api';
 import type { MergedCourseData } from '../utils/CourseSearch/MergeDataUtil';
+import { DEPT_COURSES } from '../Data/CourseSearch/department_courses';
 
 
 
@@ -73,8 +74,9 @@ export default function SlideOutDrawer() {
     //const [searchMinor, setSearchMinor] = useState<string | null>(null);
     const [searchSubplan, setSearchSubplan] = useState<string | null>(null);
     const [openCourses, setOpenCourses] = useState<Record<string, MergedCourseData>>({});
-    
-    
+    const [searchSubject, setSearchSubject] = useState<string | null>(null);
+    const course_options = searchSubject ? DEPT_COURSES[searchSubject as keyof typeof DEPT_COURSES] : [];
+    const [searchCourse, setSearchCourse] = useState<string | null>(null);
     const [isLoaded, setIsLoaded] = useState(true);
     const [progress, setProgress] = useState(0);
     const [selectedTab, setSelectedTab] = useState(0);
@@ -259,33 +261,55 @@ export default function SlideOutDrawer() {
                         }
                     }}>
                         <DialogTitle>Course Search</DialogTitle>
+                        <TabContext value={selectedTab}>
                         <Box sx={{ width: '100%', p: 2 }}>
-                            <TabList value={selectedTab} onChange={handleTabChange}>
-                                <Tab value={0} label="Course Search" />
-                                <Tab value={1} label="Major Search" />
+                            <TabList onChange={handleTabChange}>
+                                <Tab value="0" label="Course Search" />
+                                <Tab value="1" label="Major Search" />
                             </TabList>
                         </Box>
-                        <TabPanel value={selectedTab} index={0}>
+                        <TabPanel value="0">
                             <DialogContent>
                                 <Box sx={{ width: '100%', p: 2 }}>
 
                                 </Box>
                             </DialogContent>
                         </TabPanel>
-                        <TabPanel value={selectedTab} index={1}>
+                        <TabPanel value="1">
                             <DialogContent>
                                 <Box sx={{ width: '100%', p: 2 }}>
- <Autocomplete
+                                    <List>
+                                    <Autocomplete
                                         sx={{ width: '50%' }}
-                                        id="term_selector"
-                                        options={Object.keys(TermIdByName)}
-                                        value={selectedTerm}
-                                        onChange={(_, value) => setSelectedTerm(value)}
+                                        id="subject_selector"
+                                        options={Object.keys(DEPT_COURSES)}
+                                        value={searchSubject}
+                                        onChange={(_, value) => setSearchSubject(value)}
                                         renderInput={(params) => <TextField {...params} label="Term" sx={{
                                             padding: '10px', // control internal spacing
                                         }} />}
                                     />
-
+<Autocomplete
+                                        sx={{ width: '50%' }}
+                                        id="subject_selector"
+                                        options={Object.keys(DEPT_COURSES)}
+                                        value={searchSubject}
+                                        onChange={(_, value) => setSearchSubject(value)}
+                                        renderInput={(params) => <TextField {...params} label="Term" sx={{
+                                            padding: '10px', // control internal spacing
+                                        }} />}
+                                    />
+                                    <Autocomplete
+                                        sx={{ width: '50%' }}
+                                        id="course_selector"
+                                        options={Object.entries(course_options).map(([id,desc]) => `${id} ${desc}`)}
+                                        value={searchCourse}
+                                        onChange={(_, value) => setSearchCourse(value)}
+                                        renderInput={(params) => <TextField {...params} label="Course" sx={{
+                                            padding: '10px', // control internal spacing
+                                        }} />}
+                                    />
+                                    </List>
                                 <List>
 
                                     <FormGroup>
@@ -302,6 +326,7 @@ export default function SlideOutDrawer() {
                                             padding: '10px', // control internal spacing
                                         }} />}
                                     />
+                                    
                                     <Autocomplete
                                         sx={{ width: '50%' }}
                                         id="major_selector"
@@ -348,6 +373,7 @@ export default function SlideOutDrawer() {
                             </Box>
                             </DialogContent>
                         </TabPanel>
+                        </TabContext>
                     </Dialog>
                 </Box>
 

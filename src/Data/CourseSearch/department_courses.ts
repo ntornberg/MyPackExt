@@ -1,4 +1,3 @@
-/* Auto-generated on 2025-05-20 */
 export type CourseList = Record<string, string>;
 
 export const DEPT_COURSES: Record<string, CourseList> = {
