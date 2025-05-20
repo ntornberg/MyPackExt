@@ -178,37 +178,80 @@ export default function PlanSearch() {
                           primary={`${course.course_descrip} ${course.course_abr} ${parseInt(course.catalog_num)}`}
                           secondary={`${course.course_abr} ${course.catalog_num}`}
                         />
-                        <Box sx={{ maxHeight: 400, mt: 2, display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
-                          <div style={{ width: '100%', height: '400px', overflow: 'visible' }}>
-                            {openCourses[`${course.course_abr}-${course.catalog_num}`]?.sections && (
-                              <div style={{ height: 'auto', width: '100%', display: 'flex' }}>
-                                <DataGrid
-                                  getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
-                                  rows={openCourses[`${course.course_abr}-${course.catalog_num}`].sections}
-                                  columns={OpenCourseSectionsColumn}
-                                  columnVisibilityModel={{ id: false }}
-                                  disableRowSelectionOnClick
-                                  pageSizeOptions={[5, 10, 25]}
-                                  initialState={{
-                                    pagination: {
-                                      paginationModel: {
-                                        pageSize: 5,
-                                      },
+                        <Box sx={{ 
+                          width: '100%', 
+                          mb: 4
+                        }}>
+                          {openCourses[`${course.course_abr}-${course.catalog_num}`]?.sections?.length > 0 ? (
+                            <Box sx={{ 
+                              height: 400,
+                              width: '100%',
+                              display: 'flex'
+                            }}>
+                              <DataGrid
+                                getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
+                                rows={openCourses[`${course.course_abr}-${course.catalog_num}`].sections}
+                                columns={OpenCourseSectionsColumn}
+                                columnVisibilityModel={{ id: false }}
+                                disableRowSelectionOnClick
+                                pageSizeOptions={[5, 10, 25]}
+                                initialState={{
+                                  pagination: {
+                                    paginationModel: {
+                                      pageSize: 5,
                                     },
-                                  }}
-                                  sx={{
-                                    width: '100%',
-                                    height: '100%',
-                                    '.MuiDataGrid-main': { overflow: 'visible' },
-                                    flex: 1
-                                  }}
-                                />
-                              </div>
-                            )}
-                            {!openCourses[`${course.course_abr}-${course.catalog_num}`]?.sections && (
-                              <div>No sections available</div>
-                            )}
-                          </div>
+                                  },
+                                }}
+                                sx={{
+                                  width: '100%',
+                                  '& .MuiDataGrid-main': { overflow: 'visible' },
+                                  '& .MuiDataGrid-columnHeaders': {
+                                    backgroundColor: (theme) => theme.palette.background.paper,
+                                    minHeight: '64px !important',
+                                    lineHeight: '24px !important',
+                                  },
+                                  '& .MuiDataGrid-columnHeaderTitle': {
+                                    fontWeight: 'bold',
+                                    overflow: 'visible',
+                                    lineHeight: '1.2 !important',
+                                    whiteSpace: 'normal',
+                                    textOverflow: 'clip',
+                                    fontSize: {
+                                      xs: '0.75rem',
+                                      sm: '0.875rem',
+                                      md: '1rem'
+                                    }
+                                  },
+                                  '& .MuiDataGrid-cell': {
+                                    whiteSpace: 'normal',
+                                    padding: '8px 16px',
+                                    fontSize: {
+                                      xs: '0.75rem',
+                                      sm: '0.875rem',
+                                      md: '0.925rem'
+                                    }
+                                  },
+                                  '& .MuiDataGrid-row': {
+                                    width: '100%'
+                                  },
+                                  '& .MuiDataGrid-virtualScroller': {
+                                    width: '100%'
+                                  },
+                                  '& .MuiButtonBase-root': {
+                                    fontSize: {
+                                      xs: '0.7rem',
+                                      sm: '0.8rem',
+                                      md: '0.875rem'
+                                    }
+                                  }
+                                }}
+                              />
+                            </Box>
+                          ) : (
+                            <Typography variant="body1" sx={{ p: 2 }}>
+                              No sections available
+                            </Typography>
+                          )}
                         </Box>
                       </Box>
                     </ListItem>
