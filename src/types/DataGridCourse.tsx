@@ -1,12 +1,12 @@
 import type { GridColDef } from "@mui/x-data-grid";
-import { RateMyProfessorCell } from "../components/RateMyProfessorCell";
-import { GradeDistributionCell } from "../components/GradeDistributionCell";
-import { CourseAvailibilityCell } from "../components/CourseAvailibilityCell";
-import { ClassNotesCell } from "../components/ClassNotesCell";
-import { PrereqCell } from "../components/PrereqCell";
-import { EnrollmentChipCell } from "../components/EnrollmentChipCell";
-import { ToCartButtonCell } from "../components/ToCartButtonCell";
-import { CourseInfoCell } from "../components/CourseInfoCell";
+import { RateMyProfessorCell } from "../components/DataGridCells/RateMyProfessorCell";
+import { GradeDistributionCell } from "../components/DataGridCells/GradeDistributionCell";
+import { CourseAvailibilityCell } from "../components/DataGridCells/CourseAvailibilityCell";
+import { ClassNotesCell } from "../components/DataGridCells/ClassNotesCell";
+import { PrereqCell } from "../components/DataGridCells/PrereqCell";
+import { EnrollmentChipCell } from "../components/DataGridCells/EnrollmentChipCell";
+import { ToCartButtonCell } from "../components/DataGridCells/ToCartButtonCell";
+import { CourseInfoCell } from "../components/DataGridCells/CourseInfoCell";
 
 export const OpenCourseSectionsColumn: GridColDef[] = [
     { field: 'id', headerName: 'ID', hideable: true, minWidth: 60 },

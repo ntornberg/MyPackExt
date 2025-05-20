@@ -1,6 +1,6 @@
 import { Box, Typography, Rating } from '@mui/material';
 import type { GridRenderCellParams } from '@mui/x-data-grid';
-import type { MatchedRateMyProf } from '../types';
+import type { MatchedRateMyProf } from '../../types';
 export const RateMyProfessorCell = (params: GridRenderCellParams) => {
   const { professor_rating} : { professor_rating: MatchedRateMyProf } = params.row;
   
@@ -18,12 +18,17 @@ export const RateMyProfessorCell = (params: GridRenderCellParams) => {
         readOnly
         size="small"
         sx={{
-          color: '#FFD700', // gold
-          '& .MuiRating-iconFilled': {
-            color: '#FFD700',
+          '& .MuiRating-iconFilled, & .MuiRating-iconFilled .MuiSvgIcon-root, & .MuiRating-iconFilled svg': {
+            color: '#FFD700 !important',
+            fill: '#FFD700 !important',
+          },
+          '& .MuiRating-iconEmpty, & .MuiRating-iconEmpty .MuiSvgIcon-root, & .MuiRating-iconEmpty svg': {
+            color: '#B0B0B0 !important',
+            fill: '#B0B0B0 !important',
           },
           '& .MuiRating-iconHover': {
-            color: '#FFD700',
+            color: '#FFD700 !important',
+            fill: '#FFD700 !important',
           },
         }}
       />

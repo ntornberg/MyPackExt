@@ -2,8 +2,8 @@
 import type { Course, GradeData, MatchedRateMyProf } from '../types';
 import { AppLogger } from '../utils/logger';
 import { createShadowHost } from '../utils/dom';
-import { GradeCard } from '../components/GradeCard';
-import { ProfRatingCard } from '../components/ProfRatingCard';
+import { GradeCard } from '../components/DegreeAuditCards/GradeCard.tsx';
+import { ProfRatingCard } from '../components/DegreeAuditCards/ProfRatingCard.tsx';
 import React from "react";
 import { getGenericCache, setGenericCache, generateCacheKey } from "../cache/CourseRetrieval.tsx";
 import type { RequiredCourse, Requirement } from '../types/Plans.ts';

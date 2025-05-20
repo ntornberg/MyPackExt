@@ -9,8 +9,8 @@ import {
 } from '@mui/material';
 import { PieChart } from '@mui/x-charts/PieChart';
 import type { GridRenderCellParams } from '@mui/x-data-grid';
-import type { GradeData } from '../types';
-import { AppLogger } from '../utils/logger';
+import type { GradeData } from '../../types';
+import { AppLogger } from '../../utils/logger';
 
 export const GradeDistributionCell = (params: GridRenderCellParams) => {
   const [open, setOpen] = useState(false);

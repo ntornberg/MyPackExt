@@ -15,7 +15,7 @@ delete window.__savedDefine;
 import {AppLogger} from "./utils/logger.ts";
 import {scrapePlanner, scrapeScheduleTable} from "./services/scraper.ts";
 import {debounce} from "./utils/common.ts";
-import {setupListener} from "./services/siteResponseStorage.ts";
+import {setupListener} from "./services/PreloadCache/siteResponseStorage.ts";
 import SlideOutDrawer from "./components/MainPopupCard.tsx";
 // Stores courses from the main schedule table// Stores courses from the planner/cart
 

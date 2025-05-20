@@ -17,11 +17,13 @@ import {
     Checkbox,
     FormControlLabel, CircularProgress,
     Typography,
+    Tab,
 } from '@mui/material';
+import { TabList, TabPanel } from '@mui/lab';
 import { DataGrid } from '@mui/x-data-grid';
 import Autocomplete from '@mui/material/Autocomplete';
-import { majorPlans } from '../Data/MajorPlans'
-import { minorPlans } from '../Data/MinorPlans';
+import { majorPlans } from '../Data/PlanSearch/MajorPlans'
+import { minorPlans } from '../Data/PlanSearch/MinorPlans';
 import type { RequiredCourse, MajorPlan, Subplan } from '../types/Plans';
 import { TermIdByName } from '../Data/TermID';
 import { AppLogger } from '../utils/logger';
@@ -75,7 +77,7 @@ export default function SlideOutDrawer() {
     
     const [isLoaded, setIsLoaded] = useState(true);
     const [progress, setProgress] = useState(0);
-      
+    const [selectedTab, setSelectedTab] = useState(0);
     
     const subplanOptions = selectedMajor
         ? Object.keys(majorPlans[selectedMajor as keyof typeof majorPlans]?.subplans || {})
@@ -141,7 +143,9 @@ export default function SlideOutDrawer() {
             }
         }
     };
-
+    const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+        setSelectedTab(newValue);
+    };
     const handleClick = (requirementKey: string) => {
         setOpen((prevState) => ({
             ...prevState,
@@ -255,8 +259,32 @@ export default function SlideOutDrawer() {
                         }
                     }}>
                         <DialogTitle>Course Search</DialogTitle>
-                        <DialogContent>
-                            <Box sx={{ width: '100%', p: 2 }}>
+                        <Box sx={{ width: '100%', p: 2 }}>
+                            <TabList value={selectedTab} onChange={handleTabChange}>
+                                <Tab value={0} label="Course Search" />
+                                <Tab value={1} label="Major Search" />
+                            </TabList>
+                        </Box>
+                        <TabPanel value={selectedTab} index={0}>
+                            <DialogContent>
+                                <Box sx={{ width: '100%', p: 2 }}>
+
+                                </Box>
+                            </DialogContent>
+                        </TabPanel>
+                        <TabPanel value={selectedTab} index={1}>
+                            <DialogContent>
+                                <Box sx={{ width: '100%', p: 2 }}>
+ <Autocomplete
+                                        sx={{ width: '50%' }}
+                                        id="term_selector"
+                                        options={Object.keys(TermIdByName)}
+                                        value={selectedTerm}
+                                        onChange={(_, value) => setSelectedTerm(value)}
+                                        renderInput={(params) => <TextField {...params} label="Term" sx={{
+                                            padding: '10px', // control internal spacing
+                                        }} />}
+                                    />
 
                                 <List>
 
@@ -318,7 +346,8 @@ export default function SlideOutDrawer() {
                                 </List>
                                 <Button onClick={() => setDrawerOpen(false)}>Close</Button>
                             </Box>
-                        </DialogContent>
+                            </DialogContent>
+                        </TabPanel>
                     </Dialog>
                 </Box>
 

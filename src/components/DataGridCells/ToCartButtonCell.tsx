@@ -1,8 +1,8 @@
 import { Button } from "@mui/material";
 import type { GridRenderCellParams } from "@mui/x-data-grid";
-import { AppLogger } from "../utils/logger";
-import { generateScriptContentUrl } from "../services/ToCartService";
-import { ToCartAlert } from "./AddToCartAlert";
+import { AppLogger } from "../../utils/logger";
+import { generateScriptContentUrl } from "../../services/ToCartService";
+import { ToCartAlert } from "../AddToCartAlert";
 
 export const ToCartButtonCell = (params: GridRenderCellParams) => {
     const section = params.row;

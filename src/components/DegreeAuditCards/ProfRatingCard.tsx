@@ -1,7 +1,7 @@
 ﻿import React from 'react';
 import { GaugeComponent } from 'react-gauge-component';
-import { useAutoSize } from '../hooks/useAutoSize';
-import type {MatchedRateMyProf} from '../types';
+import { useAutoSize } from '../../hooks/useAutoSize';
+import type {MatchedRateMyProf} from '../../types';
 
 export const ProfRatingCard: React.FC<MatchedRateMyProf> = ({
     master_name,
