@@ -9,12 +9,12 @@ import {
   CircularProgress,
   Typography
 } from '@mui/material';
-import { TermIdByName } from '../Data/TermID';
-import { DEPT_COURSES } from '../Data/CourseSearch/department_courses.typed';
-import { AppLogger } from '../utils/logger';
-import { fetchSingleCourseData } from '../services/api/CourseSearch/dataService';
-import type { MergedCourseData } from '../utils/CourseSearch/MergeDataUtil';
-import { OpenCourseSectionsColumn } from '../types/DataGridCourse';
+import { TermIdByName } from '../../Data/TermID';
+import { DEPT_COURSES } from '../../Data/CourseSearch/department_courses.typed';
+import { AppLogger } from '../../utils/logger';
+import { fetchSingleCourseData } from '../../services/api/CourseSearch/dataService';
+import type { MergedCourseData } from '../../utils/CourseSearch/MergeDataUtil';
+import { OpenCourseSectionsColumn } from '../../types/DataGridCourse';
 import { DataGrid } from '@mui/x-data-grid';
 
 export function CircularProgressWithLabel({ value }: { value: number }) {

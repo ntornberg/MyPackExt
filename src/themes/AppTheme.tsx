@@ -8,6 +8,7 @@ import { dataGridCustomizations } from './customizations/dataGrid';
 import { feedbackCustomizations } from './customizations/feedback';
 import { navigationCustomizations } from './customizations/navigation';
 import { surfacesCustomizations } from './customizations/surfaces';
+import { autocompleteCustomizations } from './customizations/dataGrid';
 import { colorSchemes, typography, shadows, shape } from './themePrimitives';
 import { AppLogger } from '../utils/logger';
 
@@ -28,6 +29,7 @@ export default function AppTheme(props: AppThemeProps) {
     return disableCustomTheme
       ? {}
       : createTheme({
+        
           // For more details about CSS variables configuration, see https://mui.com/material-ui/customization/css-theme-variables/configuration/
           cssVariables: {
             colorSchemeSelector: 'data-mui-color-scheme',
@@ -44,6 +46,7 @@ export default function AppTheme(props: AppThemeProps) {
             ...feedbackCustomizations,
             ...navigationCustomizations,
             ...surfacesCustomizations,
+            ...autocompleteCustomizations,
             ...themeComponents,
             
           } as Components<Theme>,

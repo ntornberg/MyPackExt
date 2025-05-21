@@ -149,3 +149,23 @@ export async function fetchCourseSearchData(
   
   return result;
 } 
+
+export async function fetchGEPCourseData(
+  courses: RequiredCourse[],
+  term: string
+): Promise<Record<string, MergedCourseData> | null> {
+  const result: Record<string, MergedCourseData> = {};
+  for (const course of courses) {
+    const courseData = await fetchSingleCourseData(
+      course.course_abr,
+      course.catalog_num,
+      course.course_id,
+      term
+    );
+    if (courseData) {
+      const courseKey = `${course.course_abr}-${course.catalog_num}`;
+      result[courseKey] = courseData;
+    }
+  }
+  return result;
+}

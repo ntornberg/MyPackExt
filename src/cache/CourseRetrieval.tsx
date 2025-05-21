@@ -56,6 +56,7 @@ async function openDatabase(): Promise<IDBDatabase> {
  */
 async function storeInIndexedDB(cacheCategory: string, hash: string, cacheEntry: CacheEntry): Promise<void> {
     try {
+        
         const db = await openDatabase();
         return new Promise((resolve, reject) => {
             const transaction = db.transaction([STORE_NAME], 'readwrite');

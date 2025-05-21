@@ -1,7 +1,9 @@
 import { Chip } from "@mui/material";
 import type { GridRenderCellParams } from "@mui/x-data-grid";
+import { AppLogger } from "../../utils/logger";
 
 function getEnrollmentColor(enrollment: string | undefined): string {
+    AppLogger.info("Enrollment:", enrollment);
     if (!enrollment) return '#bdbdbd'; // grey for unknown
     const match = enrollment.match(/(\d+)\/(\d+)/);
     if (!match) return '#bdbdbd';

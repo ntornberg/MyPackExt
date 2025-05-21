@@ -3,11 +3,9 @@ import {
   Autocomplete,
   Box,
   Button,
-  Checkbox,
   CircularProgress,
   DialogContent,
-  FormControlLabel,
-  FormGroup,
+  
   List,
   ListItem,
   ListItemText,
@@ -17,14 +15,14 @@ import {
   Collapse
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import { majorPlans } from '../Data/PlanSearch/MajorPlans';
-import { minorPlans } from '../Data/PlanSearch/MinorPlans';
-import { TermIdByName } from '../Data/TermID';
-import { AppLogger } from '../utils/logger';
-import { OpenCourseSectionsColumn } from '../types/DataGridCourse';
-import { fetchCourseSearchData } from '../services/api';
-import type { RequiredCourse, MajorPlan, Subplan } from '../types/Plans';
-import type { MergedCourseData } from '../utils/CourseSearch/MergeDataUtil';
+import { majorPlans } from '../../Data/PlanSearch/MajorPlans';
+import { minorPlans } from '../../Data/PlanSearch/MinorPlans';
+import { TermIdByName } from '../../Data/TermID';
+import { AppLogger } from '../../utils/logger';
+import { OpenCourseSectionsColumn } from '../../types/DataGridCourse';
+import { fetchCourseSearchData } from '../../services/api';
+import type { RequiredCourse, MajorPlan, Subplan } from '../../types/Plans';
+import type { MergedCourseData } from '../../utils/CourseSearch/MergeDataUtil';
 
 export function CircularProgressWithLabel({ value }: { value: number }) {
   return (
@@ -269,9 +267,6 @@ export default function PlanSearch() {
     <DialogContent>
       <Box sx={{ width: '100%', p: 2 }}>
         <List>
-          <FormGroup>
-            <FormControlLabel control={<Checkbox defaultChecked />} label="GEP Requirements" />
-          </FormGroup>
           
           <Autocomplete
             sx={{ width: '50%', mb: 2 }}
