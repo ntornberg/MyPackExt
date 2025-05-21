@@ -54,6 +54,8 @@ export function mergeData(
         const catalog_nbr = codeParts.length > 1 ? codeParts[1] : '';
         
         for (const section of course.sections) {
+            AppLogger.info("Section: ",section);
+            AppLogger.info("Batch data courses: ",batchData.courses);
             const batchCourse = batchData.courses?.find((gradeData) =>{
                 if (gradeData.instructor_name === section.instructor_name[0] &&
                     gradeData.course_name === course.code) {

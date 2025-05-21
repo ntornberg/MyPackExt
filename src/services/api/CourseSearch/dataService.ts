@@ -141,8 +141,8 @@ export async function fetchSingleCourseData(
         throw new Error(`API error: ${apiResponse.status} ${apiResponse.statusText}`);
       }
       
-      gradeProfData = await apiResponse.json() as BatchDataRequestResponse;
-      
+      const jsonResponse = await apiResponse.json();
+      gradeProfData = jsonResponse.data as BatchDataRequestResponse;
       // Cache grade/professor data
       await setGenericCache(CACHE_KEYS.GRADE_PROF, gradeProfHashKey, JSON.stringify(gradeProfData));
       onProgress?.(80, `Cached grade/professor data for ${courseKey}`);
@@ -341,7 +341,8 @@ export async function batchFetchCoursesData(
         throw new Error(`API error: ${apiResponse.status} ${apiResponse.statusText}`);
       }
       
-      batchGradeProfData = await apiResponse.json() as BatchDataRequestResponse;
+      const jsonResponse = await apiResponse.json();
+      batchGradeProfData = jsonResponse.data as BatchDataRequestResponse;
       
       // Store in the cache for each course
       onProgress?.(60, "Caching grade/professor data");
@@ -375,7 +376,7 @@ export async function batchFetchCoursesData(
   
   // Phase 5: Merge Data for Each Course
   onProgress?.(70, "Merging course data");
-  
+  AppLogger.info("Merging course data",openCoursesCache,gradeProfCache,courseKeyMapping,courseKeyToSections);
   for (const [courseKey, courseData] of Object.entries(openCoursesCache)) {
     // Skip null course data
     if (!courseData) continue;
