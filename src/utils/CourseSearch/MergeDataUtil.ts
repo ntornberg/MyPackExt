@@ -4,7 +4,7 @@ import type { RequiredCourse } from "../../types/Plans";
 import { AppLogger } from "../logger";
 import type { CourseData, CourseSection } from "./ParseRegistrarUtil";
 
-type ModifiedSection = CourseSection & {
+export type ModifiedSection = CourseSection & {
     grade_distribution?: GradeData;
     professor_rating?: MatchedRateMyProf;
     // Cart functionality fields
@@ -26,7 +26,7 @@ export type MergedCourseData = Omit<CourseData, "sections"> & {
 export function mergeData(
     courses: Record<string, CourseData>, 
     batchData: BatchDataRequestResponse,
-    courseInfoMap?: Record<string, RequiredCourse> // Map of course keys to RequiredCourse
+    courseInfoMap?: Record<string, RequiredCourse> // Map of course keys to RequiredCourse containing course_id
 ) {
     AppLogger.info("Merging data");
     AppLogger.info("Batch data: ", batchData);
@@ -35,8 +35,13 @@ export function mergeData(
     const mergedData: Record<string, MergedCourseData> = {};
     for (const [cacheKey, course] of Object.entries(courses)) {
         // Get the courseKey (e.g., "CSC-316")
-        const courseKey = cacheKey.split(' ')[0]; // Remove the term part if present
-        const reqCourse = courseInfoMap?.[courseKey];
+        const reqCourse = courseInfoMap?.[cacheKey];
+        if(!reqCourse){
+            AppLogger.warn("Required course not found for course: ",course);
+            AppLogger.warn("Course key: ",cacheKey);
+        }
+        AppLogger.info("Required course: ",reqCourse);
+        AppLogger.info("Course: ",cacheKey);
         
         const mergedCourse: MergedCourseData = {
             ...course,

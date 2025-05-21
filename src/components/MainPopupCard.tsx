@@ -85,7 +85,9 @@ export default function SlideOutDrawer() {
                         }}}
                     >
                         <TabContext value={selectedTab}>
-                            <Box sx={{ width: '100%', p: 2 }}>
+                            <Box sx={{ 
+                                
+                                width: '100%', p: 2 }}>
                                 <TabList onChange={handleTabChange}>
                                     <Tab value="0" label="Course Search" />
                                     <Tab value="1" label="GEP Search" />

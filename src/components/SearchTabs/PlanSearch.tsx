@@ -11,14 +11,15 @@ import {
   ListItemText,
   TextField,
   Typography,
-  Collapse
+  Collapse,
+  ButtonBase
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { majorPlans } from '../../Data/PlanSearch/MajorPlans';
 import { minorPlans } from '../../Data/PlanSearch/MinorPlans';
 import { TermIdByName } from '../../Data/TermID';
 import { AppLogger } from '../../utils/logger';
-import { OpenCourseSectionsColumn } from '../../types/DataGridCourse';
+import { OpenCourseSectionsColumn, sortSections } from '../../types/DataGridCourse';
 import { fetchCourseSearchData } from '../../services/api';
 import type { RequiredCourse, MajorPlan, Subplan } from '../../types/Plans';
 import type { MergedCourseData } from '../../utils/CourseSearch/MergeDataUtil';
@@ -180,33 +181,38 @@ export default function PlanSearch() {
 
     if (subplan_data) {
       requirementsList = (
-        <List>
+        <List >
           {Object.keys(requirements).map((requirementKey) => (
             <Box
               key={requirementKey}
               sx={(theme) => ({
                 border: '2px solid',
+                
                 borderColor: (theme.vars || theme).palette.divider,
-                backgroundColor: 'none',
+                'background-color': 'none',
                 position: 'relative',
                 zIndex: 0,
                 borderRadius: 2,
                 mb: 3,
-                boxShadow: 2,
+                
                 p: 2,
               })}
             >
-              <ListItem component="button" onClick={() => handleClick(requirementKey)}>
-                <ListItemText 
-                  primary={requirementKey} 
-                  slotProps={{ primary: { fontWeight: 700, fontSize: '1.2rem' } }} 
-                  sx={(theme) => ({
-                    backgroundColor: (theme.vars || theme).palette.background.paper,
+              <ListItem sx={{
+                'background-color': 'none',
+              }}>
+                <ButtonBase onClick={() => handleClick(requirementKey)}>
+                  <ListItemText 
+                    primary={requirementKey} 
+                    slotProps={{ primary: { fontWeight: 700, fontSize: '1.2rem' } }} 
+                  sx={() => ({
+                    'background-color': 'none',
                   })} 
                 />
+                </ButtonBase>
               </ListItem>
               <Collapse in={open[requirementKey]} timeout="auto" unmountOnExit>
-                <List component="div" disablePadding sx={{ backgroundColor: 'none' }}>
+                <List component="div" disablePadding sx={{ 'background-color': 'none' }}>
                  
                   {requirements[requirementKey].courses.map((course: RequiredCourse) => (
                     <ListItem alignItems="flex-start" key={course.course_abr} sx={{ pl: 4 }}>
@@ -227,7 +233,7 @@ export default function PlanSearch() {
                             }}>
                               <DataGrid
                                 getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
-                                rows={openCourses[`${course.course_abr}-${course.catalog_num}`].sections}
+                                rows={openCourses[`${course.course_abr}-${course.catalog_num}`].sections.sort(sortSections)}
                                 columns={OpenCourseSectionsColumn}
                                 columnVisibilityModel={{ id: false }}
                                 disableRowSelectionOnClick

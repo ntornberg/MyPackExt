@@ -6,7 +6,32 @@ import { PrereqCell } from "../components/DataGridCells/PrereqCell";
 import { ToCartButtonCell } from "../components/DataGridCells/ToCartButtonCell";
 import { CourseInfoCell } from "../components/DataGridCells/CourseInfoCell";
 import { StatusAndSlotsCell } from "../components/DataGridCells/StatusAndSlotsCell";
+import type { ModifiedSection } from "../utils/CourseSearch/MergeDataUtil";
 
+export function sortSections(v1: ModifiedSection, v2: ModifiedSection) {
+  // Order should be Open,Reserved,Waitlist,Closed
+  const order: Record<string, number> = { 
+    "Open": 3, 
+    "Reserved": 2, 
+    "Waitlist": 1, 
+    "Closed": 0 
+  };
+  
+
+  const v1Value = typeof v1.availability === 'string' ? order[v1.availability] ?? -1 : -1;
+  const v2Value = typeof v2.availability === 'string' ? order[v2.availability] ?? -1 : -1;
+  
+  const availabilityDiff = v2Value - v1Value;
+  
+  // If availability is equal, compare by professor rating
+  if (availabilityDiff === 0) {
+    const rating1 = v1.professor_rating?.avgRating || 0;
+    const rating2 = v2.professor_rating?.avgRating || 0;
+    return rating2 - rating1; // Higher rating first
+  }
+  
+  return availabilityDiff;
+}
 
 export const OpenCourseSectionsColumn: GridColDef[] = [
     { field: 'id', headerName: 'ID', hideable: true, minWidth: 60 },
@@ -25,35 +50,15 @@ export const OpenCourseSectionsColumn: GridColDef[] = [
       flex: 1.5, 
       minWidth: 150, 
       renderCell: StatusAndSlotsCell,
-      sortable: true,
-      sortComparator: (v1, v2, param1, param2) => {
-        // Order should be Open,Reserved,Waitlist,Closed
-        const order: Record<string, number> = { 
-          "Open": 0, 
-          "Reserved": 1, 
-          "Waitlist": 2, 
-          "Closed": 3 
-        };
-        
-        // Compare availability status first
-        const availabilityDiff = (order[String(v1)] || 4) - (order[String(v2)] || 4);
-        
-        // If availability is equal, compare by professor rating
-        if (availabilityDiff === 0) {
-          const rating1 = param1.api.getCellValue(param1.id, 'professor_rating')?.avgRating || 0;
-          const rating2 = param2.api.getCellValue(param2.id, 'professor_rating')?.avgRating || 0;
-          return rating2 - rating1; // Higher rating first
-        }
-        
-        return availabilityDiff;
-      },
+      sortable: false,
+
       filterable: false
     },
     { 
       field: 'section', 
       headerName: 'Course Info', 
       flex: 2, 
-      minWidth: 80, 
+      minWidth: 50, 
       renderCell: CourseInfoCell,
       sortable: false,
       filterable: false

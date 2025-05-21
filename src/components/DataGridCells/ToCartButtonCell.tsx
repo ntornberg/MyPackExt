@@ -1,4 +1,4 @@
-import { Button } from "@mui/material";
+import { Button, ButtonBase } from "@mui/material";
 import type { GridRenderCellParams } from "@mui/x-data-grid";
 import { AppLogger } from "../../utils/logger";
 import { generateScriptContentUrl } from "../../services/ToCartService";
@@ -25,8 +25,35 @@ export const ToCartButtonCell = (params: GridRenderCellParams) => {
     
     // Skip if missing required data
     if (!course_id || !classNumber || !catalog_nbr || !courseData || !unt_taken) {
+        AppLogger.warn("Missing required data for section: ",section);
+        if(!course_id) {
+            AppLogger.warn("Course ID is missing for section: ",section);
+        }
+        if(!classNumber) {
+            AppLogger.warn("Class number is missing for section: ",section);
+        } if(!catalog_nbr) {
+            AppLogger.warn("Catalog number is missing for section: ",section);
+        } if(!courseData) {
+            AppLogger.warn("Course data is missing for section: ",section);
+        } if(!unt_taken) {
+            AppLogger.warn("Units taken is missing for section: ",section);
+        }
+        AppLogger.warn("Section: ",section);
         return (
-            <Button variant="contained" disabled title="Missing required data">
+            <Button variant="contained" disabled title="Missing required data" sx={{
+                color: 'white',
+                backgroundColor: 'rgb(11, 14, 20)',
+                borderColor: 'rgb(51, 60, 77)',
+                backgroundImage: 'none',
+                fontSize: {
+                  xs: '0.7rem',
+                  sm: '0.8rem',
+                  md: '0.875rem',
+                },
+                '&:hover': {
+                  backgroundColor: 'rgb(20, 25, 35)',
+                },
+              }}>
                 Add to Cart
             </Button>
         );
@@ -69,12 +96,24 @@ export const ToCartButtonCell = (params: GridRenderCellParams) => {
 }
     
     return (
-        <Button 
-            variant='outlined'
+        <ButtonBase
+             
             onClick={handleAddToCart}
-            size="small"
-        >
-            Add to Cart
-        </Button>
+            sx={{
+                color: 'white',
+                backgroundColor: 'rgb(11, 14, 20)',
+                borderColor: 'rgb(51, 60, 77)',
+                backgroundImage: 'none',
+                fontSize: {
+                  xs: '0.7rem',
+                  sm: '0.8rem',
+                  md: '0.875rem',
+                },
+                '&:hover': {
+                  backgroundColor: 'rgb(20, 25, 35)',
+                },
+              }}
+        >Add to Cart
+        </ButtonBase>
     );
 }; 

@@ -11,6 +11,7 @@ import { OpenCourseSectionsColumn } from '../../types/DataGridCourse';
 import { DataGrid } from '@mui/x-data-grid';
 import type { RequiredCourse } from "../../types/Plans";
 import { styled } from '@mui/material/styles';
+import { sortSections } from '../../types/DataGridCourse';
 
 // Styled DialogContent with gradient background
 const StyledDialogContent = styled(DialogContent)(({ theme }) => ({
@@ -173,7 +174,7 @@ export default function GEPSearch() {
             }}>
               <DataGrid
                 getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
-                rows={courseData[`${course.course_abr}-${course.catalog_num}`].sections}
+                rows={courseData[`${course.course_abr}-${course.catalog_num}`].sections.sort(sortSections)}
                 columns={OpenCourseSectionsColumn}
                 columnVisibilityModel={{ id: false }}
                 disableRowSelectionOnClick

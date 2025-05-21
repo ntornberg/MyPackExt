@@ -14,7 +14,7 @@ import { DEPT_COURSES } from '../../Data/CourseSearch/department_courses.typed';
 import { AppLogger } from '../../utils/logger';
 import { fetchSingleCourseData } from '../../services/api/CourseSearch/dataService';
 import type { MergedCourseData } from '../../utils/CourseSearch/MergeDataUtil';
-import { OpenCourseSectionsColumn } from '../../types/DataGridCourse';
+import { OpenCourseSectionsColumn, sortSections } from '../../types/DataGridCourse';
 import { DataGrid } from '@mui/x-data-grid';
 
 export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
@@ -161,7 +161,7 @@ export default function CourseSearch() {
           }}>
             <DataGrid
               getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
-              rows={courseData.sections}
+              rows={courseData.sections.sort(sortSections)}
               columns={OpenCourseSectionsColumn}
               columnVisibilityModel={{ id: false }}
               disableRowSelectionOnClick
