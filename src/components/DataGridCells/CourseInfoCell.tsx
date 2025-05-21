@@ -21,6 +21,6 @@ export const CourseInfoCell = (params: GridRenderCellParams) => {
                     <InfoIcon fontSize="small" />
                 </IconButton>
             </Tooltip>
-        </Box>
+        </Box> 
     );
 };
