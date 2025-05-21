@@ -167,8 +167,8 @@ export default function PlanSearch() {
                 />
               </ListItem>
               <Collapse in={open[requirementKey]} timeout="auto" unmountOnExit>
-                <List component="div" disablePadding>
-                  <ListSubheader>Courses</ListSubheader>
+                <List component="div" disablePadding sx={{ backgroundColor: 'none' }}>
+                 
                   {requirements[requirementKey].courses.map((course: RequiredCourse) => (
                     <ListItem alignItems="flex-start" key={course.course_abr} sx={{ pl: 4 }}>
                       <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>

@@ -14,11 +14,8 @@ import { styled } from '@mui/material/styles';
 
 // Styled DialogContent with gradient background
 const StyledDialogContent = styled(DialogContent)(({ theme }) => ({
-  background: `
-    radial-gradient(80% 50% at 50% -20%, ${theme.palette.mode === 'dark' ? 'rgba(0, 41, 82, 0.5)' : 'rgba(0, 41, 82, 0.15)'}, transparent),
-    radial-gradient(40% 70% at 20% 110%, ${theme.palette.mode === 'dark' ? 'rgba(4, 50, 96, 0.3)' : 'rgba(4, 50, 96, 0.1)'}, transparent)
-  `,
-  backgroundColor: theme.palette.background.default,
+
+  backgroundColor: 'none',
   position: 'relative',
   overflow: 'auto',
   '& .MuiAutocomplete-popper': {
