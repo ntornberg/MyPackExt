@@ -26,7 +26,7 @@ export const ToCartButtonCell = (params: GridRenderCellParams) => {
     // Skip if missing required data
     if (!course_id || !classNumber || !catalog_nbr || !courseData || !unt_taken) {
         return (
-            <Button variant="contained" color="primary" disabled title="Missing required data">
+            <Button variant="contained" disabled title="Missing required data">
                 Add to Cart
             </Button>
         );
@@ -70,6 +70,7 @@ export const ToCartButtonCell = (params: GridRenderCellParams) => {
     
     return (
         <Button 
+            color="primary"
             variant="contained" 
             onClick={handleAddToCart}
             size="small"

@@ -185,3 +185,27 @@ export const dataGridCustomizations = {
     },
   },
 };
+
+// Add MuiAutocomplete customization
+export const autocompleteCustomizations = {
+  MuiAutocomplete: {
+    styleOverrides: {
+      popper: ({ theme }: { theme: Theme }) => ({
+        '& .MuiAutocomplete-listbox': {
+          '& .MuiAutocomplete-option': {
+            borderBottom: `1px solid ${(theme.vars || theme).palette.divider}`,
+            '&:last-child': {
+              borderBottom: 'none'
+            }
+          }
+        }
+      }),
+      option: ({ theme }: { theme: Theme }) => ({
+        transition: 'background-color 0.2s ease',
+        '&:hover': {
+          backgroundColor: alpha(theme.palette.primary.main, 0.1),
+        }
+      }),
+    }
+  }
+};
