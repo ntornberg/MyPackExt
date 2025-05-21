@@ -70,8 +70,7 @@ export const ToCartButtonCell = (params: GridRenderCellParams) => {
     
     return (
         <Button 
-            color="primary"
-            variant="contained" 
+            variant='outlined'
             onClick={handleAddToCart}
             size="small"
         >

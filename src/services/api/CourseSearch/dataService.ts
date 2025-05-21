@@ -172,7 +172,8 @@ export async function fetchCourseSearchData(
         course.course_abr, 
         course.catalog_num, 
         course.course_id,
-        term
+        term,
+        onProgress
       );
       
       // Update progress after each course
@@ -220,7 +221,8 @@ export async function fetchGEPCourseData(
       course.course_abr, 
       course.catalog_num, 
       course.course_id,
-      term
+      term,
+      onProgress
     );
     
     if (courseData) {

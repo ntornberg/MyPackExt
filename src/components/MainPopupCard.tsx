@@ -54,7 +54,7 @@ export default function SlideOutDrawer() {
             <AppTheme>
                 <CssBaseline enableColorScheme />
                 <Box sx={{ p: 2, pointerEvents: 'auto' }}>
-                    <Button onClick={() => setDrawerOpen(true)}>Course Search</Button>
+                    <Button variant='outlined' onClick={() => setDrawerOpen(true)}>Course Search</Button>
 
                     <Dialog 
                         fullWidth 
