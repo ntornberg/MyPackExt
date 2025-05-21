@@ -30,8 +30,9 @@ const StyledDialogContent = styled(DialogContent)(({ theme }) => ({
   }
 }));
 
-export function CircularProgressWithLabel({ value }: { value: number }) {
-    return (
+export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
+  return (
+    <Box sx={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
       <Box sx={{ position: 'relative', display: 'inline-flex' }}>
         <CircularProgress variant="determinate" value={value} />
         <Box
@@ -51,45 +52,76 @@ export function CircularProgressWithLabel({ value }: { value: number }) {
           </Typography>
         </Box>
       </Box>
-    );
-  }
+      {label && (
+        <Typography variant="caption" component="div" color="text.secondary" sx={{ mt: 1, textAlign: 'center', maxWidth: '200px' }}>
+          {label}
+        </Typography>
+      )}
+    </Box>
+  );
+}
+
 export default function GEPSearch() {
     const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
     const [searchSubject, setSearchSubject] = useState<string | null>(null);
     const [isLoaded, setIsLoaded] = useState(true);
     const [progress, setProgress] = useState(0);
+    const [progressLabel, setProgressLabel] = useState<string>('');
     const [courseData, setCourseData] = useState<Record<string, MergedCourseData> | null>(null);
     const [courses, setCourses] = useState<RequiredCourse[]>([]);
     const courseSearch = async () => {
       setProgress(10);
+      setProgressLabel('Initializing GEP course search...');
       setIsLoaded(false);
       AppLogger.info("Course search clicked with:", { selectedTerm, searchSubject });
-      // Implement course search logic here
-      // Mock progress updates
-      if (searchSubject && selectedTerm) {
-        const courseInfo = (GEP_COURSES as any)[searchSubject];
-        if(courseInfo) {
-    
-        const courses = Object.entries(courseInfo).map(([course_title, course_info]) => {
-          const title = course_title as string;
-          const course_entry = course_info as {course_title: string, course_id: string};
-          return {
-            course_id: course_entry.course_id,
-            course_abr: title.split('-')[0],
-            catalog_num: title.split('-')[1],
-            course_descrip: course_entry.course_title,
-            term: selectedTerm
-          };
-          
-        });
-        setCourses(courses);
-        const courseData = await fetchGEPCourseData(courses, selectedTerm);
-        setCourseData(courseData);
-      }
+      
+      try {
+        if (searchSubject && selectedTerm) {
+          const courseInfo = (GEP_COURSES as any)[searchSubject];
+          if(courseInfo) {
+            const courses = Object.entries(courseInfo).map(([course_title, course_info]) => {
+              const title = course_title as string;
+              const course_entry = course_info as {course_title: string, course_id: string};
+              return {
+                course_id: course_entry.course_id,
+                course_abr: title.split('-')[0],
+                catalog_num: title.split('-')[1],
+                course_descrip: course_entry.course_title,
+                term: selectedTerm
+              };
+            });
+            
+            setCourses(courses);
+            setProgressLabel(`Processing ${courses.length} GEP courses for ${searchSubject}`);
+            
+            // Use the progress callback with status message
+            const courseData = await fetchGEPCourseData(
+              courses, 
+              selectedTerm, 
+              (progressValue, statusMessage) => {
+                // Update progress state
+                setProgress(progressValue);
+                
+                // Update the progress label if status message is provided
+                if (statusMessage) {
+                  setProgressLabel(statusMessage);
+                }
+              }
+            );
+            
+            setCourseData(courseData);
+          }
+        }
+      } catch (error) {
+        AppLogger.error("Error fetching course data:", error);
+        setProgressLabel('Error fetching GEP course data');
+      } finally {
         setProgress(100);
+        setProgressLabel('Complete');
         setIsLoaded(true);
+      }
     };
-}
+
   
     return (
       <StyledDialogContent>
@@ -122,7 +154,7 @@ export default function GEPSearch() {
             >
               Search
             </Button>
-            {!isLoaded && <CircularProgressWithLabel value={progress} />}
+            {!isLoaded && <CircularProgressWithLabel value={progress} label={progressLabel} />}
           </List>
         </Box>
       <List>
@@ -212,4 +244,4 @@ export default function GEPSearch() {
       </StyledDialogContent>
      
     );
-  } 
+  }

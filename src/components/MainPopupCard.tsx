@@ -6,7 +6,6 @@ import {
     Button,
     CircularProgress,
     Dialog,
-    DialogTitle,
     Typography,
     Tab,
 } from '@mui/material';
@@ -77,7 +76,7 @@ export default function SlideOutDrawer() {
                               sx: {
                                 backgroundImage: `radial-gradient(80% 80% at 50% -15%, rgb(0, 41, 82), transparent)`,
                                 backgroundColor: "rgb(5, 7, 10)", // fallback for the rest of the dialog
-                                boxShadow: `0 0 20px 4px rgba(33, 150, 243, 0.6)`,
+                                boxShadow: `0 0 10px 4px rgba(33, 150, 243, 0.6)`,
                               color: "white",
                               border: "2px solid black",
                               borderRadius: 2,

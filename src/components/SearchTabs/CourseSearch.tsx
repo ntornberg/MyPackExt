@@ -17,26 +17,33 @@ import type { MergedCourseData } from '../../utils/CourseSearch/MergeDataUtil';
 import { OpenCourseSectionsColumn } from '../../types/DataGridCourse';
 import { DataGrid } from '@mui/x-data-grid';
 
-export function CircularProgressWithLabel({ value }: { value: number }) {
+export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
   return (
-    <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-      <CircularProgress variant="determinate" value={value} />
-      <Box
-        sx={{
-          top: 0,
-          left: 0,
-          bottom: 0,
-          right: 0,
-          position: 'absolute',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Typography variant="caption" component="div" color="text.secondary">
-          {`${Math.round(value)}%`}
-        </Typography>
+    <Box sx={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
+      <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+        <CircularProgress variant="determinate" value={value} />
+        <Box
+          sx={{
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            position: 'absolute',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Typography variant="caption" component="div" color="text.secondary">
+            {`${Math.round(value)}%`}
+          </Typography>
+        </Box>
       </Box>
+      {label && (
+        <Typography variant="caption" component="div" color="text.secondary" sx={{ mt: 1, textAlign: 'center', maxWidth: '200px' }}>
+          {label}
+        </Typography>
+      )}
     </Box>
   );
 }
@@ -47,25 +54,48 @@ export default function CourseSearch() {
   const [searchCourse, setSearchCourse] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [progressLabel, setProgressLabel] = useState<string>('');
   const [courseData, setCourseData] = useState<MergedCourseData | null>(null);
   const courseSearch = async () => {
     setProgress(10);
+    setProgressLabel('Initializing search...');
     setIsLoaded(false);
     AppLogger.info("Course search clicked with:", { selectedTerm, searchSubject, searchCourse });
-    // Implement course search logic here
-    // Mock progress updates
-    if (searchSubject && searchCourse && selectedTerm) {
-      const courseInfo = (DEPT_COURSES as any)[searchSubject][searchCourse];
-      const courseData = await fetchSingleCourseData(
-        searchCourse.split('-')[0],
-        searchCourse.split('-')[1],
-        courseInfo.course_id,
-        selectedTerm
-      );
-      setCourseData(courseData);
-    }
+    
+    try {
+      if (searchSubject && searchCourse && selectedTerm) {
+        const courseKey = `${searchCourse.split('-')[0]} ${searchCourse.split('-')[1]}`;
+        const courseInfo = (DEPT_COURSES as any)[searchSubject][searchCourse];
+        setProgress(20);
+        setProgressLabel(`Searching for ${courseKey} in ${selectedTerm}`);
+        
+        const courseData = await fetchSingleCourseData(
+          searchCourse.split('-')[0],
+          searchCourse.split('-')[1],
+          courseInfo.course_id,
+          selectedTerm,
+          // Pass the progress update callback with message support
+          (progressValue, statusMessage) => {
+            // Update progress with scaled value (20-95% range)
+            setProgress(20 + Math.round(progressValue * 0.75));
+            
+            // Update label from the status message if provided
+            if (statusMessage) {
+              setProgressLabel(statusMessage);
+            }
+          }
+        );
+        
+        setCourseData(courseData);
+      }
+    } catch (error) {
+      AppLogger.error("Error fetching course data:", error);
+      setProgressLabel('Error fetching course data');
+    } finally {
       setProgress(100);
+      setProgressLabel('Complete');
       setIsLoaded(true);
+    }
   };
 
   return (
@@ -113,7 +143,7 @@ export default function CourseSearch() {
           >
             Search
           </Button>
-          {!isLoaded && <CircularProgressWithLabel value={progress} />}
+          {!isLoaded && <CircularProgressWithLabel value={progress} label={progressLabel} />}
           {/* Course search results would go here */}
         </List>
       </Box>

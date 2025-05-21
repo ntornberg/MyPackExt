@@ -9,7 +9,6 @@ import {
   List,
   ListItem,
   ListItemText,
-  ListSubheader,
   TextField,
   Typography,
   Collapse
@@ -24,26 +23,33 @@ import { fetchCourseSearchData } from '../../services/api';
 import type { RequiredCourse, MajorPlan, Subplan } from '../../types/Plans';
 import type { MergedCourseData } from '../../utils/CourseSearch/MergeDataUtil';
 
-export function CircularProgressWithLabel({ value }: { value: number }) {
+export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
   return (
-    <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-      <CircularProgress variant="determinate" value={value} />
-      <Box
-        sx={{
-          top: 0,
-          left: 0,
-          bottom: 0,
-          right: 0,
-          position: 'absolute',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Typography variant="caption" component="div" color="text.secondary">
-          {`${Math.round(value)}%`}
-        </Typography>
+    <Box sx={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
+      <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+        <CircularProgress variant="determinate" value={value} />
+        <Box
+          sx={{
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            position: 'absolute',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Typography variant="caption" component="div" color="text.secondary">
+            {`${Math.round(value)}%`}
+          </Typography>
+        </Box>
       </Box>
+      {label && (
+        <Typography variant="caption" component="div" color="text.secondary" sx={{ mt: 1, textAlign: 'center', maxWidth: '200px' }}>
+          {label}
+        </Typography>
+      )}
     </Box>
   );
 }
@@ -61,6 +67,7 @@ export default function PlanSearch() {
   const [openCourses, setOpenCourses] = useState<Record<string, MergedCourseData>>({});
   const [isLoaded, setIsLoaded] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [progressLabel, setProgressLabel] = useState<string>('');
 
   const subplanOptions = selectedMajor
     ? Object.keys(majorPlans[selectedMajor as keyof typeof majorPlans]?.subplans || {})
@@ -75,42 +82,68 @@ export default function PlanSearch() {
 
   const planSearch = async () => {
     setProgress(10); // start
+    setProgressLabel('Initializing plan search...');
     setSearchMajor(selectedMajor);
     setSearchSubplan(selectedSubplan);
     setIsLoaded(false);
     AppLogger.info("Search clicked with:", { selectedMajor, selectedSubplan, selectedTerm });
     // Call the async logic
-    await fetchOpenCourses(selectedMajor, selectedSubplan, selectedTerm, setProgress);
+    await fetchOpenCourses(selectedMajor, selectedSubplan, selectedTerm);
     setProgress(100); // done
+    setProgressLabel('Complete');
   };
 
-  const fetchOpenCourses = async (major: string | null, subplan: string | null, term: string | null, setProgress: (val: number) => void) => {
-    setProgress(30);
+  const fetchOpenCourses = async (major: string | null, subplan: string | null, term: string | null) => {
+    setProgress(10);
+    setProgressLabel(`Preparing to search for ${major} - ${subplan} courses`);
     AppLogger.info('fetchOpenCourses called with:', { major, subplan, term });
     
     if (major && subplan && term) {
       try {
+        setProgress(15);
+        setProgressLabel(`Loading ${major} plan data`);
         const major_data = majorPlans[major as keyof typeof majorPlans] as MajorPlan;
         const subplan_data = major_data?.subplans[subplan as keyof typeof major_data.subplans] as Subplan | undefined;
 
         if (!subplan_data) {
           AppLogger.error("No subplan data found for", subplan);
+          setProgressLabel(`Error: No data found for ${subplan}`);
           return;
         }
 
         const requirements = subplan_data?.requirements ?? {};
+        const reqCount = Object.keys(requirements).length;
+        setProgressLabel(`Processing ${reqCount} requirements for ${subplan}`);
         AppLogger.info("Requirements:", Object.keys(requirements));
+        setProgress(20);
 
         const newOpenCourses: Record<string, MergedCourseData> = {};
-        const data = await fetchCourseSearchData(Object.values(requirements), term);
+        
+        // Pass progress callback with status message support
+        const data = await fetchCourseSearchData(
+          Object.values(requirements), 
+          term,
+          (progressVal, statusMessage) => {
+            // Scale the progress to fit between 20-90%
+            setProgress(20 + Math.round(progressVal * 0.7));
+            
+            // Update progress label from the status message if provided
+            if (statusMessage) {
+              setProgressLabel(statusMessage);
+            }
+          }
+        );
 
         if (!data) {
           AppLogger.error("No data returned from fetchCourseSearchData");
+          setProgressLabel(`Error: No course data found for ${major} - ${subplan}`);
           return;
         }
 
         AppLogger.info("Data returned from API:", data);
-        setProgress(40);
+        setProgress(90);
+        setProgressLabel('Processing course sections');
+        
         for (const [courseKey, course] of Object.entries(data)) {
           // Ensure each section has a unique ID
           if (course.sections) {
@@ -121,13 +154,19 @@ export default function PlanSearch() {
           }
           newOpenCourses[courseKey] = course;
         }
-        setProgress(60);
+        
+        setProgress(95);
+        setProgressLabel('Finalizing search results');
         AppLogger.info("Setting openCourses with:", newOpenCourses);
         setIsLoaded(true);
         setOpenCourses(newOpenCourses);
         AppLogger.info('Updated open courses:', newOpenCourses);
       } catch (error) {
         AppLogger.error("Error in fetchOpenCourses:", error);
+        setProgressLabel(`Error fetching courses: ${error}`);
+      } finally {
+        setProgress(100);
+        setProgressLabel('Complete');
       }
     }
   };
@@ -148,7 +187,7 @@ export default function PlanSearch() {
               sx={(theme) => ({
                 border: '2px solid',
                 borderColor: (theme.vars || theme).palette.divider,
-                backgroundColor: (theme.vars || theme).palette.background.paper,
+                backgroundColor: 'none',
                 position: 'relative',
                 zIndex: 0,
                 borderRadius: 2,
@@ -320,7 +359,7 @@ export default function PlanSearch() {
             Search
           </Button>
           
-          {!isLoaded && <CircularProgressWithLabel value={progress} />}
+          {!isLoaded && <CircularProgressWithLabel value={progress} label={progressLabel} />}
           {requirementsList}
         </List>
       </Box>
