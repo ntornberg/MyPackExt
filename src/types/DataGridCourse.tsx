@@ -1,19 +1,44 @@
 import type { GridColDef } from "@mui/x-data-grid";
-import { RateMyProfessorCell } from "../components/RateMyProfessorCell";
-import { GradeDistributionCell } from "../components/GradeDistributionCell";
-import { CourseAvailibilityCell } from "../components/CourseAvailibilityCell";
+import { RateMyProfessorCell } from "../components/DataGridCells/RateMyProfessorCell";
+import { GradeDistributionCell } from "../components/DataGridCells/GradeDistributionCell";
+import { ClassNotesCell } from "../components/DataGridCells/ClassNotesCell";
+import { PrereqCell } from "../components/DataGridCells/PrereqCell";
+import { ToCartButtonCell } from "../components/DataGridCells/ToCartButtonCell";
+import { CourseInfoCell } from "../components/DataGridCells/CourseInfoCell";
+import { StatusAndSlotsCell } from "../components/DataGridCells/StatusAndSlotsCell";
+
 export const OpenCourseSectionsColumn: GridColDef[] = [
-    { field: 'id', headerName: 'ID', hideable: true },
-    { field: 'availability', headerName: 'Availability', flex: 2,renderCell: CourseAvailibilityCell },
-    { field: 'section', headerName: 'Section', flex: 2 },
-    { field: 'component', headerName: 'Component', flex: 2 }, 
-    { field: 'enrollment', headerName: 'Enrollment', flex: 2 },
-    { field: 'dayTime', headerName: 'Day Time', flex: 6 },
-    { field: 'location', headerName: 'Location', flex: 6 },
+    { field: 'id', headerName: 'ID', hideable: true, minWidth: 60 },
+    { 
+      field: 'to_cart_button', 
+      headerName: '', 
+      flex: 1, 
+      minWidth: 100, 
+      renderCell: ToCartButtonCell,
+      sortable: false,
+      filterable: false
+    },
+    { 
+      field: 'availability', 
+      headerName: '', 
+      flex: 1.5, 
+      minWidth: 150, 
+      renderCell: StatusAndSlotsCell,
+      sortable: false,
+      filterable: false
+    },
+    { 
+      field: 'section', 
+      headerName: 'Course Info', 
+      flex: 2, 
+      minWidth: 100, 
+      renderCell: CourseInfoCell 
+    },
     { 
       field: 'instructor_name', 
       headerName: 'Instructor', 
-      flex: 6,
+      flex: 2.5, 
+      minWidth: 130,
       renderCell: (params) => {
         const instructors = params.row.instructor_name;
         return Array.isArray(instructors) ? instructors.join(', ') : '';
@@ -21,16 +46,34 @@ export const OpenCourseSectionsColumn: GridColDef[] = [
     },
     { 
       field: 'professor_rating', 
-      headerName: 'Professor Rating', 
-      flex: 4,
+      headerName: 'Rating', 
+      flex: 1.5, 
+      minWidth: 120,
       renderCell: RateMyProfessorCell
     },
     { 
       field: 'grade_distribution', 
-      headerName: 'Grade Distribution', 
-      flex: 3,
+      headerName: 'Grades', 
+      flex: 1.5, 
+      minWidth: 120,
       renderCell: GradeDistributionCell
     },
-    { field: 'notes', headerName: 'Notes', flex: 2 },
-    { field: 'requisites', headerName: 'Requisites', flex: 2 },
+    { 
+      field: 'notes', 
+      headerName: '', 
+      flex: 0.7, 
+      minWidth: 50, 
+      renderCell: ClassNotesCell,
+      sortable: false,
+      filterable: false
+    },
+    { 
+      field: 'requisites', 
+      headerName: '', 
+      flex: 0.7, 
+      minWidth: 50, 
+      renderCell: PrereqCell,
+      sortable: false,
+      filterable: false
+    },
   ];

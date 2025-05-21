@@ -1,7 +1,6 @@
 import { paperClasses } from '@mui/material/Paper';
 import { alpha } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
-import type { DataGridComponents } from '@mui/x-data-grid/themeAugmentation';
 import { menuItemClasses } from '@mui/material/MenuItem';
 import { listItemIconClasses } from '@mui/material/ListItemIcon';
 import { iconButtonClasses } from '@mui/material/IconButton';
@@ -12,7 +11,8 @@ import { tablePaginationClasses } from '@mui/material/TablePagination';
 import { gray } from '../themePrimitives';
 
 /* eslint-disable import/prefer-default-export */
-export const dataGridCustomizations: DataGridComponents<Theme> & DataGridComponents<Theme> = {
+// Ignore type checking for MuiDataGrid component which is valid in @mui/x-data-grid
+export const dataGridCustomizations = {
   MuiDataGrid: {
     styleOverrides: {
       root: ({ theme }: { theme: Theme }) => ({
@@ -23,18 +23,25 @@ export const dataGridCustomizations: DataGridComponents<Theme> & DataGridCompone
         [`& .${gridClasses.columnHeader}`]: {
           backgroundColor: (theme.vars || theme).palette.background.paper,
           whiteSpace: 'normal',
-          lineHeight: 1.2,
-          padding: '8px 12px',
+          wordBreak: 'break-word',
+          lineHeight: 1.3,
+          padding: '14px 18px',
           height: 'auto !important',
-          minHeight: '56px',
+          minHeight: '64px',
+          maxWidth: '100%',
           '& .MuiDataGrid-columnHeaderTitle': {
             whiteSpace: 'normal',
-            lineHeight: 1.2,
+            wordBreak: 'break-word',
+            lineHeight: 1.3,
             overflow: 'visible',
             textOverflow: 'clip',
             display: 'block',
-            fontSize: theme.typography.pxToRem(14),
+            fontSize: 'clamp(14px, 1.2vw, 18px)',
             fontWeight: theme.typography.fontWeightMedium,
+            padding: '2px 0',
+            minHeight: '32px',
+            alignItems: 'center',
+            maxWidth: '100%',
           },
         },
         [`& .${gridClasses.footerContainer}`]: {
@@ -57,7 +64,21 @@ export const dataGridCustomizations: DataGridComponents<Theme> & DataGridCompone
           },
         },
       }),
-      cell: ({ theme }: { theme: Theme }) => ({ borderTopColor: (theme.vars || theme).palette.divider }),
+      cell: ({ theme }: { theme: Theme }) => ({
+        padding: '12px 16px',
+        fontSize: 'clamp(13px, 1vw, 16px)',
+        lineHeight: 1.5,
+        whiteSpace: 'normal',
+        wordBreak: 'break-word',
+        verticalAlign: 'middle',
+        alignItems: 'center',
+        minHeight: '48px',
+        maxHeight: 'none',
+        overflow: 'visible',
+        display: 'flex',
+        maxWidth: '100%',
+        borderTopColor: (theme.vars || theme).palette.divider,
+      }),
       menu: ({ theme }: { theme: Theme }) => ({
         borderRadius: theme.shape.borderRadius,
         backgroundImage: 'none',
@@ -163,5 +184,4 @@ export const dataGridCustomizations: DataGridComponents<Theme> & DataGridCompone
       columnHeaderDraggableContainer: { paddingRight: 2 },
     },
   },
-  
 };
