@@ -132,9 +132,17 @@ export const CalendarView  = async (params: GridRenderCellParams) => {
         appointment_list.push(appointment);
         
     }
+
     if(data){
         for(const course of Object.values(data)){
-            const schedule_entry = JSON.parse(course.combinedData) as ScheduleTableEntry;
+            AppLogger.info(course);
+            AppLogger.info(course.combinedData);
+           let schedule_entry : ScheduleTableEntry | null
+            if (typeof course.combinedData !== 'string') {
+                schedule_entry = course.combinedData as unknown as ScheduleTableEntry;
+              }else{
+                schedule_entry = null;
+              }
             if(schedule_entry && schedule_entry.section_details){
                 for(const section of schedule_entry.section_details){
                     let recurrRule = []
