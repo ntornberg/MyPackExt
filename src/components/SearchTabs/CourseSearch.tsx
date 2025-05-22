@@ -55,7 +55,7 @@ interface DeptCourse {
 }
 
 export default function CourseSearch() {
-  const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
+  const [selectedTerm, setSelectedTerm] = useState<string | null>(Object.keys(TermIdByName)[0]);
   const [searchSubject, setSearchSubject] = useState<string | null>(null);
   const [searchCourse, setSearchCourse] = useState<string | null>(null);
   // To store the selected course data from dropdown

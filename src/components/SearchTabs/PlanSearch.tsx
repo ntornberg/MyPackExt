@@ -12,7 +12,9 @@ import {
   TextField,
   Typography,
   Collapse,
-  ButtonBase
+  ButtonBase,
+  Checkbox,
+  FormControlLabel
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { majorPlans } from '../../Data/PlanSearch/MajorPlans';
@@ -21,7 +23,7 @@ import { TermIdByName } from '../../Data/TermID';
 import { AppLogger } from '../../utils/logger';
 import { OpenCourseSectionsColumn, sortSections } from '../../types/DataGridCourse';
 import { fetchCourseSearchData } from '../../services/api';
-import type { RequiredCourse, MajorPlan, Subplan } from '../../types/Plans';
+import type { RequiredCourse, MajorPlan, Subplan, MinorPlan } from '../../types/Plans';
 import type { MergedCourseData } from '../../utils/CourseSearch/MergeDataUtil';
 
 export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
@@ -60,11 +62,12 @@ export default function PlanSearch() {
   const major_options = Object.keys(majorPlans);
   const minor_options = Object.keys(minorPlans);
   const [selectedMajor, setSelectedMajor] = useState<string | null>(null);
-  const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
+  const [selectedTerm, setSelectedTerm] = useState<string | null>(Object.keys(TermIdByName)[0]);
   const [selectedMinor, setSelectedMinor] = useState<string | null>(null);
   const [selectedSubplan, setSelectedSubplan] = useState<string | null>(null);
   const [searchMajor, setSearchMajor] = useState<string | null>(null);
   const [searchSubplan, setSearchSubplan] = useState<string | null>(null);
+  const [searchMinor, setSearchMinor] = useState<string | null>(null);
   const [openCourses, setOpenCourses] = useState<Record<string, MergedCourseData>>({});
   const [isLoaded, setIsLoaded] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -85,34 +88,37 @@ export default function PlanSearch() {
     setProgress(10); // start
     setProgressLabel('Initializing plan search...');
     setSearchMajor(selectedMajor);
+    setSearchMinor(selectedMinor);
     setSearchSubplan(selectedSubplan);
     setIsLoaded(false);
     AppLogger.info("Search clicked with:", { selectedMajor, selectedSubplan, selectedTerm });
     // Call the async logic
-    await fetchOpenCourses(selectedMajor, selectedSubplan, selectedTerm);
+    await fetchOpenCourses(selectedMajor, selectedMinor, selectedSubplan, selectedTerm);
     setProgress(100); // done
     setProgressLabel('Complete');
   };
 
-  const fetchOpenCourses = async (major: string | null, subplan: string | null, term: string | null) => {
+  const fetchOpenCourses = async (major: string | null, minor :string | null, subplan: string | null, term: string | null) => {
     setProgress(10);
     setProgressLabel(`Preparing to search for ${major} - ${subplan} courses`);
     AppLogger.info('fetchOpenCourses called with:', { major, subplan, term });
     
-    if (major && subplan && term) {
+    if (((major && subplan) || (minor)) && term) {
       try {
         setProgress(15);
         setProgressLabel(`Loading ${major} plan data`);
         const major_data = majorPlans[major as keyof typeof majorPlans] as MajorPlan;
         const subplan_data = major_data?.subplans[subplan as keyof typeof major_data.subplans] as Subplan | undefined;
-
-        if (!subplan_data) {
+        const minor_data = minorPlans[minor as keyof typeof minorPlans] as MinorPlan | undefined;
+        if (!subplan_data && !minor_data) {
           AppLogger.error("No subplan data found for", subplan);
           setProgressLabel(`Error: No data found for ${subplan}`);
           return;
         }
-
-        const requirements = subplan_data?.requirements ?? {};
+        
+        const major_requirements = subplan_data?.requirements ?? {};
+        const minor_requirements = minor_data?.requirements ?? {};
+        const requirements = { ...minor_requirements, ...major_requirements };
         const reqCount = Object.keys(requirements).length;
         setProgressLabel(`Processing ${reqCount} requirements for ${subplan}`);
         AppLogger.info("Requirements:", Object.keys(requirements));
@@ -174,12 +180,14 @@ export default function PlanSearch() {
 
   // Build requirements list if search was performed
   let requirementsList = null;
-  if (searchMajor && searchSubplan) {
+  if ((searchMajor && searchSubplan ) || (searchMinor)) {
     const major_data = majorPlans[searchMajor as keyof typeof majorPlans] as MajorPlan;
     const subplan_data = major_data?.subplans[searchSubplan as keyof typeof major_data.subplans] as Subplan | undefined;
-    const requirements = subplan_data?.requirements ?? {};
-
-    if (subplan_data) {
+    const minor_data = minorPlans[searchMinor as keyof typeof minorPlans] as MinorPlan | undefined;
+    const major_requirements = subplan_data?.requirements ?? {};
+    const minor_requirements = minor_data?.requirements ?? {};
+    const requirements = { ...minor_requirements, ...major_requirements };
+    if (Object.keys(requirements).length > 0) {
       requirementsList = (
         <List >
           {Object.keys(requirements).map((requirementKey) => (
@@ -309,6 +317,7 @@ export default function PlanSearch() {
   }
 
   return (
+
     <DialogContent>
       <Box sx={{ width: '100%', p: 2 }}>
         <List>
@@ -364,7 +373,10 @@ export default function PlanSearch() {
           >
             Search
           </Button>
-          
+          <FormControlLabel
+            control={<Checkbox />}
+            label="Hide courses with no open sections"
+          />
           {!isLoaded && <CircularProgressWithLabel value={progress} label={progressLabel} />}
           {isLoaded && requirementsList}
         </List>

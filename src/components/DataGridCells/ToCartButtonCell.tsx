@@ -43,7 +43,9 @@ export const ToCartButtonCell = (params: GridRenderCellParams) => {
             <Button variant="contained" disabled title="Missing required data" sx={{
                 color: 'white',
                 backgroundColor: 'rgb(11, 14, 20)',
-                borderColor: 'rgb(51, 60, 77)',
+                borderColor: 'rgb(65, 70, 81)',
+                padding: '4px 4px',
+                borderRadius: '2px',
                 backgroundImage: 'none',
                 fontSize: {
                   xs: '0.7rem',

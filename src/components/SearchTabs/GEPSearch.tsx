@@ -63,7 +63,7 @@ export function CircularProgressWithLabel({ value, label }: { value: number; lab
 }
 
 export default function GEPSearch() {
-    const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
+    const [selectedTerm, setSelectedTerm] = useState<string | null>(Object.keys(TermIdByName)[0]);
     const [searchSubject, setSearchSubject] = useState<string | null>(null);
     const [isLoaded, setIsLoaded] = useState(true);
     const [progress, setProgress] = useState(0);

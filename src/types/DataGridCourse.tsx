@@ -80,6 +80,7 @@ export const OpenCourseSectionsColumn: GridColDef[] = [
       flex: 1, 
       minWidth: 120, 
       align: 'center',
+      headerAlign: 'center',
       renderCell: StatusAndSlotsCell,
       sortable: true,
       sortComparator: (v1, v2) => {
@@ -99,6 +100,8 @@ export const OpenCourseSectionsColumn: GridColDef[] = [
     { 
       field: 'section', 
       headerName: 'Course Info', 
+      align: 'left',
+      headerAlign: 'center',
       flex: 1, 
       minWidth: 50, 
       renderCell: CourseInfoCell,
@@ -139,6 +142,7 @@ export const OpenCourseSectionsColumn: GridColDef[] = [
       align: 'center',
       flex: 1, 
       minWidth: 70, 
+      headerAlign: 'center',
       renderCell: InfoCell,
       sortable: false,
       filterable: false,
