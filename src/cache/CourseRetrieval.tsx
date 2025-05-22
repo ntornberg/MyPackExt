@@ -2,7 +2,7 @@
 
 // Define the structure of the cache entry
 export interface CacheEntry {
-    combinedData: string;
+    combinedData: any;
     timestamp: number;
 }
 
