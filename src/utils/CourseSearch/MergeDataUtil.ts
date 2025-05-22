@@ -81,7 +81,7 @@ export function mergeData(
                     class_avg_max: parseFloat(String(batchCourse.class_avg_max ?? "0")),
                 }
             }
-            
+            AppLogger.info("Section premodification: ",section);
             // Add cart functionality fields to section
             const modifiedSection: ModifiedSection = {
                 ...section,
@@ -97,7 +97,7 @@ export function mergeData(
                 wait_list_okay: 'N', // Default waitlist setting
                 courseData: course // Reference to parent course
             };
-            
+            AppLogger.info("Section postmodification: ",modifiedSection);
             if (batchCourse || profData) {
                 mergedCourse.sections.push(modifiedSection);
             } else {

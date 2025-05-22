@@ -225,15 +225,15 @@ export default function PlanSearch() {
                           width: '100%', 
                           mb: 4
                         }}>
-                          {openCourses[`${course.course_abr}-${course.catalog_num}`]?.sections?.length > 0 ? (
+                          {openCourses[`${course.course_abr} ${course.catalog_num}`]?.sections?.length > 0 ? (
                             <Box sx={{ 
-                              height: 400,
+                              //height: 400,
                               width: '100%',
                               display: 'flex'
                             }}>
                               <DataGrid
                                 getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
-                                rows={openCourses[`${course.course_abr}-${course.catalog_num}`].sections.sort(sortSections)}
+                                rows={openCourses[`${course.course_abr} ${course.catalog_num}`].sections.sort(sortSections)}
                                 columns={OpenCourseSectionsColumn}
                                 columnVisibilityModel={{ id: false }}
                                 disableRowSelectionOnClick
@@ -366,7 +366,7 @@ export default function PlanSearch() {
           </Button>
           
           {!isLoaded && <CircularProgressWithLabel value={progress} label={progressLabel} />}
-          {requirementsList}
+          {isLoaded && requirementsList}
         </List>
       </Box>
     </DialogContent>

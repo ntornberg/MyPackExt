@@ -1,7 +1,6 @@
 import { IconButton, Tooltip, Box, Typography } from "@mui/material";
 import type { GridRenderCellParams } from "@mui/x-data-grid";
 import InfoIcon from '@mui/icons-material/Info';
-
 export const CourseInfoCell = (params: GridRenderCellParams) => {
     const { section, component, dayTime, location } = params.row;
     

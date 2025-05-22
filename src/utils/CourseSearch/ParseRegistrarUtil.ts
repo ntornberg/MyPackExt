@@ -1,7 +1,6 @@
 // Utility functions and types for course parsing and URL formation
 import * as cheerio from 'cheerio';
 import { TermIdByName } from '../../Data/TermID';
-import { SubjectMenuValues } from '../../Data/SubjectSearchValues';
 import { AppLogger } from '../logger';
 
 export interface CourseSection {
@@ -77,6 +76,9 @@ export function parseHTMLContent(html: string): CourseData | null {
       const notes = notesLink.attr('data-content') || null;
       const requisitesLink = $lastCell.find('[data-toggle="popover"][id^="reqs-"]');
       const requisites = requisitesLink.attr('data-content') || null;
+      let notes_clean = notes ? notes.replace(/^<p>/, '') : null;
+      const requisites_clean = requisites ? requisites.replace(/^\s*<p>|<\/p>$/g, '') : null;
+      notes_clean = notes_clean ? notes_clean.replace(/^\s*<br>|<\/br>$/g, '') : null;
       sections.push({
         id: `${section}-${classNumber}`,
         section,
@@ -88,8 +90,8 @@ export function parseHTMLContent(html: string): CourseData | null {
         location,
         instructor_name: ins_list,
         dates,
-        notes,
-        requisites,
+        notes: notes_clean,
+        requisites: requisites_clean,
       });
     }
   });
@@ -104,19 +106,19 @@ export function parseHTMLContent(html: string): CourseData | null {
   };
 }
 
-export function formCourseURL(term: string, course_abr: string, course_id: string) {
+export function formCourseURL(term: string, course_abr: string, catalog_num: string) {
     const term_id = TermIdByName[term];
-    const subject = SubjectMenuValues[course_abr];
-    AppLogger.info('Looking up subject', { course_abr, subject });
-    if (!subject) {
+    
+    AppLogger.info('Looking up subject', { course_abr });
+    if (!course_abr) {
         AppLogger.error('No subject found for course_abr', { course_abr });
         return null;
     }
     const formData = new URLSearchParams();
     formData.append("term", term_id);
-    formData.append("subject", subject);
+    formData.append("subject", course_abr);
     formData.append("course-inequality", "=");
-    const course_number = parseInt(course_id);
+    const course_number = parseInt(catalog_num);
     formData.append("course-number", course_number.toString());
     formData.append("course-career", "");
     formData.append("session", "");

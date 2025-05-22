@@ -133,6 +133,7 @@ export default function GEPSearch() {
               id="term_selector"
               options={Object.keys(TermIdByName)}
               value={selectedTerm}
+              defaultValue={TermIdByName[Object.keys(TermIdByName)[0]]}
               onChange={(_, value) => setSelectedTerm(value)}
               renderInput={(params) => 
                 <TextField {...params} label="Term" sx={{ padding: '10px' }} />
@@ -159,22 +160,22 @@ export default function GEPSearch() {
           </List>
         </Box>
       <List>
-            {courses && courses.map((course : RequiredCourse) => (
+            {(isLoaded && courses) && courses.map((course : RequiredCourse) => (
                 <ListItem alignItems="flex-start" key={course.course_abr} sx={{ pl: 4 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
                     <ListItemText
                         primary={`${course.course_descrip} ${course.course_abr} ${parseInt(course.catalog_num)}`}
                         secondary={`${course.course_abr} ${course.catalog_num}`}
                     />
-          {courseData && courseData[`${course.course_abr}-${course.catalog_num}`]?.sections.length > 0 ? (
+          {courseData && courseData[`${course.course_abr} ${course.catalog_num}`]?.sections.length > 0 ? (
             <Box sx={{ 
-              height: 400,
+              //height: 400,
               width: '100%',
               display: 'flex'
             }}>
               <DataGrid
                 getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
-                rows={courseData[`${course.course_abr}-${course.catalog_num}`].sections.sort(sortSections)}
+                rows={courseData[`${course.course_abr} ${course.catalog_num}`].sections.sort(sortSections)}
                 columns={OpenCourseSectionsColumn}
                 columnVisibilityModel={{ id: false }}
                 disableRowSelectionOnClick
@@ -226,6 +227,9 @@ export default function GEPSearch() {
                       xs: '0.7rem',
                       sm: '0.8rem',
                       md: '0.875rem'
+                    },
+                    '& .MuiSvgIcon-root' :{
+                        color: 'none'
                     }
                   }
                 }}

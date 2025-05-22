@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Autocomplete, 
   Box, 
@@ -7,15 +7,15 @@ import {
   TextField,
   DialogContent,
   CircularProgress,
-  Typography
+  Typography,
 } from '@mui/material';
 import { TermIdByName } from '../../Data/TermID';
 import { DEPT_COURSES } from '../../Data/CourseSearch/department_courses.typed';
 import { AppLogger } from '../../utils/logger';
 import { fetchSingleCourseData } from '../../services/api/CourseSearch/dataService';
-import type { MergedCourseData } from '../../utils/CourseSearch/MergeDataUtil';
 import { OpenCourseSectionsColumn, sortSections } from '../../types/DataGridCourse';
 import { DataGrid } from '@mui/x-data-grid';
+import { useMemoizedSearch } from '../../hooks/useMemoizedSearch';
 
 export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
   return (
@@ -48,55 +48,87 @@ export function CircularProgressWithLabel({ value, label }: { value: number; lab
   );
 }
 
+// Define the department course type
+interface DeptCourse {
+  course_id: string;
+  course_title: string;
+}
+
 export default function CourseSearch() {
   const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
   const [searchSubject, setSearchSubject] = useState<string | null>(null);
   const [searchCourse, setSearchCourse] = useState<string | null>(null);
-  const [isLoaded, setIsLoaded] = useState(true);
-  const [progress, setProgress] = useState(0);
-  const [progressLabel, setProgressLabel] = useState<string>('');
-  const [courseData, setCourseData] = useState<MergedCourseData | null>(null);
+  // To store the selected course data from dropdown
+  const [selectedCourseInfo, setSelectedCourseInfo] = useState<{code: string, catalogNum: string, title: string, id: string} | null>(null);
+  
+  // Use the memoized search hook
+  const { 
+    search, 
+    isLoading, 
+    progress, 
+    progressLabel, 
+    data: courseData, 
+    error 
+  } = useMemoizedSearch(fetchSingleCourseData);
+
   const courseSearch = async () => {
-    setProgress(10);
-    setProgressLabel('Initializing search...');
-    setIsLoaded(false);
-    AppLogger.info("Course search clicked with:", { selectedTerm, searchSubject, searchCourse });
+    AppLogger.info("Course search clicked with:", { selectedTerm, searchSubject, selectedCourseInfo });
     
-    try {
-      if (searchSubject && searchCourse && selectedTerm) {
-        const courseKey = `${searchCourse.split('-')[0]} ${searchCourse.split('-')[1]}`;
-        const courseInfo = (DEPT_COURSES as any)[searchSubject][searchCourse];
-        setProgress(20);
-        setProgressLabel(`Searching for ${courseKey} in ${selectedTerm}`);
-        
-        const courseData = await fetchSingleCourseData(
-          searchCourse.split('-')[0],
-          searchCourse.split('-')[1],
-          courseInfo.course_id,
-          selectedTerm,
-          // Pass the progress update callback with message support
-          (progressValue, statusMessage) => {
-            // Update progress with scaled value (20-95% range)
-            setProgress(20 + Math.round(progressValue * 0.75));
-            
-            // Update label from the status message if provided
-            if (statusMessage) {
-              setProgressLabel(statusMessage);
-            }
-          }
-        );
-        
-        setCourseData(courseData);
-      }
-    } catch (error) {
-      AppLogger.error("Error fetching course data:", error);
-      setProgressLabel('Error fetching course data');
-    } finally {
-      setProgress(100);
-      setProgressLabel('Complete');
-      setIsLoaded(true);
+    if (searchSubject && selectedCourseInfo && selectedTerm) {
+      await search(
+        searchSubject,
+        selectedCourseInfo.catalogNum,
+        selectedCourseInfo.id,
+        selectedTerm
+      );
     }
   };
+
+  // Effect to clear fields when dependencies change
+  useEffect(() => {
+    if (!searchSubject) {
+      setSearchCourse(null);
+      setSelectedCourseInfo(null);
+    }
+  }, [searchSubject]);
+
+  const handleCourseChange = (_: any, value: string | null) => {
+    setSearchCourse(value);
+    
+    if (value && searchSubject) {
+      AppLogger.info("Course change detected:", { value, searchSubject });
+      const courseCode = value.split(' ')[0]; // This gets something like "CSC316"
+      
+      if (searchSubject in DEPT_COURSES) {
+        const deptCourses = DEPT_COURSES[searchSubject as keyof typeof DEPT_COURSES];
+        // Safely access the course info with type checking
+        if (courseCode in deptCourses) {
+          const courseInfo = deptCourses[courseCode as keyof typeof deptCourses] as unknown as DeptCourse;
+          
+          // Extract just the catalog number (e.g., "316" from "CSC316")
+          // This handles cases with different subject codes
+          // Use a regex to extract the numeric portion (possibly with a letter suffix)
+          const match = courseCode.match(/[0-9]+[A-Za-z]?$/);
+          const catalogNum = match ? match[0] : courseCode.replace(searchSubject, '');
+          
+          AppLogger.info(`Extracted catalog number ${catalogNum} from course code ${courseCode}`);
+          
+          setSelectedCourseInfo({
+            code: courseCode,
+            catalogNum: catalogNum,
+            title: courseInfo.course_title,
+            id: courseInfo.course_id
+          });
+          return;
+        }
+      }
+      setSelectedCourseInfo(null);
+    } else {
+      setSelectedCourseInfo(null);
+    }
+  };
+
+ 
 
   return (
     <DialogContent>
@@ -106,6 +138,7 @@ export default function CourseSearch() {
             sx={{ width: '50%', mb: 2 }}
             id="term_selector"
             options={Object.keys(TermIdByName)}
+            defaultValue={TermIdByName[Object.keys(TermIdByName)[0]]}
             value={selectedTerm}
             onChange={(_, value) => setSelectedTerm(value)}
             renderInput={(params) => 
@@ -127,24 +160,30 @@ export default function CourseSearch() {
             id="course_selector"
             options={searchSubject 
               ? Object.entries(DEPT_COURSES[searchSubject as keyof typeof DEPT_COURSES])
-                  .map(([code, details]) => `${code} ${details.course_title}`)
+                  .map(([code, details]) => `${code} ${(details as unknown as DeptCourse).course_title}`)
               : []
             }
             value={searchCourse}
-            onChange={(_, value) => setSearchCourse(value?.split(' ')[0] ?? null)}
+            onChange={handleCourseChange}
             renderInput={(params) => 
               <TextField {...params} label="Course" sx={{ padding: '10px' }} />
             }
+            disabled={!searchSubject}
           />
           <Button
             variant='outlined'
             sx={{ width: '50%' }}
             onClick={courseSearch}
+            disabled={!selectedTerm || !searchSubject || !selectedCourseInfo || isLoading}
           >
             Search
           </Button>
-          {!isLoaded && <CircularProgressWithLabel value={progress} label={progressLabel} />}
-          {/* Course search results would go here */}
+          {isLoading && <CircularProgressWithLabel value={progress} label={progressLabel} />}
+          {error && (
+            <Typography color="error" sx={{ mt: 2 }}>
+              Error: {error.message}
+            </Typography>
+          )}
         </List>
       </Box>
       <Box sx={{ 
@@ -155,10 +194,11 @@ export default function CourseSearch() {
       }}>
         {courseData?.sections && courseData.sections.length > 0 ? (
           <Box sx={{ 
-            height: 400,
             width: '100%',
-            display: 'flex'
+            display: 'flex',
+            flexDirection: 'column'
           }}>
+            
             <DataGrid
               getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
               rows={courseData.sections.sort(sortSections)}
