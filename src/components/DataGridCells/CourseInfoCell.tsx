@@ -1,7 +1,10 @@
 import { IconButton, Tooltip, Box, Typography, Chip } from "@mui/material";
 import type { GridRenderCellParams } from "@mui/x-data-grid";
 import InfoIcon from '@mui/icons-material/Info';
+import { CalendarView } from "./CalendarView";
+
 export const CourseInfoCell = (params: GridRenderCellParams) => {
+    
     const { section, component, dayTime, location } = params.row;
     
     const tooltipContent = (
@@ -10,6 +13,7 @@ export const CourseInfoCell = (params: GridRenderCellParams) => {
             <Typography variant="body2">Type: {component}</Typography>
             <Typography variant="body2">Time: {dayTime}</Typography>
             <Typography variant="body2">Location: {location}</Typography>
+            <CalendarView {...params} />
         </Box>
     );
     

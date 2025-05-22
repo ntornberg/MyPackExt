@@ -65,6 +65,14 @@ export const OpenCourseSectionsColumn: GridColDef[] = [
       disableColumnMenu: true 
     },
     { 
+      field: 'course_title', 
+      headerName: 'Course Title', 
+      minWidth: 1,
+      disableColumnMenu: true,
+      hideable: true
+    },
+    
+    { 
       field: 'to_cart_button', 
       headerName: '', 
       flex: 1, 
