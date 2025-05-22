@@ -79,6 +79,7 @@ export const OpenCourseSectionsColumn: GridColDef[] = [
       headerName: 'Status', 
       flex: 1, 
       minWidth: 120, 
+      align: 'center',
       renderCell: StatusAndSlotsCell,
       sortable: true,
       sortComparator: (v1, v2) => {
@@ -135,6 +136,7 @@ export const OpenCourseSectionsColumn: GridColDef[] = [
     { 
       field: 'info', 
       headerName: 'Info', 
+      align: 'center',
       flex: 1, 
       minWidth: 70, 
       renderCell: InfoCell,

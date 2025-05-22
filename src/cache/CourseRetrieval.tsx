@@ -1,7 +1,7 @@
 ﻿import { AppLogger } from '../utils/logger';
 
 // Define the structure of the cache entry
-interface CacheEntry {
+export interface CacheEntry {
     combinedData: string;
     timestamp: number;
 }
@@ -87,6 +87,85 @@ async function storeInIndexedDB(cacheCategory: string, hash: string, cacheEntry:
         });
     } catch (error) {
         AppLogger.error(`[CACHE ERROR] IndexedDB store error:`, error);
+    }
+}
+
+/**
+ * Retrieves all entries for a category from both Chrome storage and IndexedDB.
+ * @param {string} cacheCategory - The cache category to retrieve
+ * @returns {Promise<Record<string, CacheEntry> | null>} - All cache entries or null
+ */
+export async function getCacheCategory(cacheCategory: string): Promise<Record<string, CacheEntry> | null> {
+    try {
+        // First try Chrome storage
+        if (isChromeStorageAvailable()) {
+            const cached = await chrome.storage.local.get(cacheCategory);
+            if (cached && cached[cacheCategory]) {
+                return cached[cacheCategory];
+            }
+        }
+        
+        // Then try IndexedDB
+        try {
+            const db = await openDatabase();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                
+                // Get all entries for this category
+                const getAllKeysRequest = store.getAllKeys();
+                
+                getAllKeysRequest.onsuccess = () => {
+                    const keys = getAllKeysRequest.result;
+                    const result: Record<string, CacheEntry> = {};
+                    let processed = 0;
+                    
+                    // If no keys, resolve immediately
+                    if (keys.length === 0) {
+                        resolve(null);
+                        return;
+                    }
+                    
+                    // Get all entries that start with the category prefix
+                    for (const key of keys) {
+                        if (typeof key === 'string' && key.startsWith(`${cacheCategory}:`)) {
+                            const getRequest = store.get(key);
+                            getRequest.onsuccess = () => {
+                                if (getRequest.result) {
+                                    const hash = getRequest.result.hash;
+                                    result[hash] = {
+                                        combinedData: getRequest.result.combinedData,
+                                        timestamp: getRequest.result.timestamp
+                                    };
+                                }
+                                processed++;
+                                if (processed === keys.length) {
+                                    resolve(Object.keys(result).length > 0 ? result : null);
+                                }
+                            };
+                        } else {
+                            processed++;
+                        }
+                    }
+                };
+                
+                getAllKeysRequest.onerror = () => {
+                    AppLogger.error(`[CACHE ERROR] Failed to get keys from IndexedDB:`, getAllKeysRequest.error);
+                    reject(getAllKeysRequest.error);
+                };
+                
+                // Close the database when the transaction is complete
+                transaction.oncomplete = () => {
+                    db.close();
+                };
+            });
+        } catch (error) {
+            AppLogger.error(`[CACHE ERROR] IndexedDB get category error:`, error);
+            return null;
+        }
+    } catch (error) {
+        AppLogger.error(`[CACHE ERROR] getCacheCategory: ${cacheCategory}`, error);
+        return null;
     }
 }
 

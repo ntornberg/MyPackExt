@@ -66,9 +66,14 @@ async function fetchSingleCourseData(course: Course): Promise<SingleCourseDataRe
       return null;
     }
     
-    const combinedData = await response.json() as SingleCourseDataResponse;
+    const combined_data_json = await response.json();
     
+    const combinedData = {
+      CourseData: combined_data_json.data.course? combined_data_json.data.course : null,
+      RateMyProfInfo: combined_data_json.data.prof? combined_data_json.data.prof : null,
+    } as SingleCourseDataResponse;
     // Store in memory cache
+
     courseDataCache.set(cacheKey, combinedData);
     
     // Generate hash and store in persistent cache

@@ -101,16 +101,16 @@ export const ToCartButtonCell = (params: GridRenderCellParams) => {
             onClick={handleAddToCart}
             sx={{
                 color: 'white',
-                backgroundColor: 'rgb(11, 14, 20)',
-                borderColor: 'rgb(51, 60, 77)',
-                backgroundImage: 'none',
+                backgroundColor: 'rgb(11, 14, 20) !important',
+                borderColor: 'rgb(51, 60, 77) !important',
+                backgroundImage: 'none !important',
                 fontSize: {
                   xs: '0.7rem',
                   sm: '0.8rem',
                   md: '0.875rem',
                 },
                 '&:hover': {
-                  backgroundColor: 'rgb(20, 25, 35)',
+                  backgroundColor: 'rgb(20, 25, 35) !important',
                 },
               }}
         >Add to Cart

@@ -54,7 +54,20 @@ export default function SlideOutDrawer() {
             <AppTheme>
                 <CssBaseline enableColorScheme />
                 <Box sx={{ p: 2, pointerEvents: 'auto' }}>
-                    <Button variant='outlined' onClick={() => setDrawerOpen(true)}>Course Search</Button>
+                    <Button variant='outlined' sx={{
+                       color: 'white',
+                       backgroundColor: 'rgb(11, 14, 20) !important',
+                       borderColor: 'rgb(51, 60, 77) !important',
+                       backgroundImage: 'none !important',
+                       fontSize: {
+                         xs: '0.7rem',
+                         sm: '0.8rem',
+                         md: '0.875rem',
+                       },
+                       '&:hover': {
+                         backgroundColor: 'rgb(20, 25, 35) !important',
+                       },
+                    }}  onClick={() => setDrawerOpen(true)}>Course Search</Button>
 
                     <Dialog 
                         fullWidth 

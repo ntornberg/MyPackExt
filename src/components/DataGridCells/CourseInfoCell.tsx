@@ -1,4 +1,4 @@
-import { IconButton, Tooltip, Box, Typography } from "@mui/material";
+import { IconButton, Tooltip, Box, Typography, Chip } from "@mui/material";
 import type { GridRenderCellParams } from "@mui/x-data-grid";
 import InfoIcon from '@mui/icons-material/Info';
 export const CourseInfoCell = (params: GridRenderCellParams) => {
@@ -14,12 +14,14 @@ export const CourseInfoCell = (params: GridRenderCellParams) => {
     );
     
     return (
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <Tooltip title={tooltipContent} arrow>
                 <IconButton size="small">
                     <InfoIcon fontSize="small" />
                 </IconButton>
+               
             </Tooltip>
+            {location.includes('Online') ? <Chip label="Online" size="small" /> : null}
         </Box> 
     );
 };
