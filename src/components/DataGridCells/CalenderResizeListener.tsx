@@ -69,7 +69,7 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
         },
         gridTemplateRows: {
           xs: '35px 1fr', // Mobile: shorter header
-          sm: 'clamp(40px, 6vh, 60px) 1fr', // Responsive header height
+          sm: 'clamp(40px, 8vh, 60px) 1fr', // Responsive header height
         },
         overflow: 'hidden',
         p: { xs: 0.5, sm: 1, md: 2 }, // Responsive padding
@@ -212,7 +212,7 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
                         color: '#fff',
                         px: { xs: 0.5, sm: 0.75, md: 1 },
                         py: { xs: 0.25, sm: 0.5 },
-                        fontSize: { xs: '9px', sm: '11px', md: '13px' },
+                        fontSize: { xs: '8px', sm: '9px', md: '9px' },
                         fontWeight: 500,
                         borderRadius: { xs: 0.5, sm: 1 },
                         overflow: 'hidden',
@@ -225,7 +225,7 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
                     >
                       {/* Truncate text on small screens */}
                       {ev.subj.length > 15 && window.innerWidth < 600
-                        ? `${ev.subj.substring(0, 12)}...`
+                        ? `${ev.subj.split(' ')[0]} ${ev.subj.split(' ')[1]}...`
                         : ev.subj}
                     </Paper>
                   );

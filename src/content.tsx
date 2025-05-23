@@ -100,11 +100,16 @@ observer.observe(document.body, { childList: true, subtree: true });
             return;
         }
         window.__mypackEnhancerInitialized = true;
-        AppLogger.info("Initializing MyPack Drawer");
-        // 1. Ensure the container element exists in the DOM
-                const overlayElement = ensureOverlayContainer();
+              const overlayElement = ensureOverlayContainer();
         // 2. Create the React root for that container
         const root = createRoot(overlayElement);
+        AppLogger.info("Initializing MyPack Drawer");
+        // 1. Ensure the container element exists in the DOM
+         
+        const scheduleElement = await waitForScheduleTable();
+        
+        scrapeScheduleTable(scheduleElement);
+      
 
         // 3. Render your root component (<SlideOutDrawer />) wrapped with CacheProvider
         // SlideOutDrawer itself should contain your AppTheme/ThemeProvider inside it,
@@ -114,8 +119,6 @@ observer.observe(document.body, { childList: true, subtree: true });
                 <SlideOutDrawer />
             </CacheProvider>
         );
-        const scheduleElement = await waitForScheduleTable();
-        scrapeScheduleTable(scheduleElement);
         const initialIframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe');
         await setupListener();
         if (initialIframe) {
