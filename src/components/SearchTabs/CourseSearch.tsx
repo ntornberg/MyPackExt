@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { 
   Autocomplete, 
   Box, 
@@ -16,6 +16,7 @@ import { fetchSingleCourseData } from '../../services/api/CourseSearch/dataServi
 import { OpenCourseSectionsColumn, sortSections } from '../../types/DataGridCourse';
 import { DataGrid } from '@mui/x-data-grid';
 import { useMemoizedSearch } from '../../hooks/useMemoizedSearch';
+import type { CourseSearchData } from '../TabDataStore/TabData';
 
 export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
   return (
@@ -54,12 +55,10 @@ interface DeptCourse {
   course_title: string;
 }
 
-export default function CourseSearch() {
-  const [selectedTerm, setSelectedTerm] = useState<string | null>(Object.keys(TermIdByName)[0]);
-  const [searchSubject, setSearchSubject] = useState<string | null>(null);
-  const [searchCourse, setSearchCourse] = useState<string | null>(null);
+export default function CourseSearch({setCourseSearchTabData, courseSearchData}: {setCourseSearchTabData: (key: keyof CourseSearchData, value: any) => void, courseSearchData: CourseSearchData}) {
+
   // To store the selected course data from dropdown
-  const [selectedCourseInfo, setSelectedCourseInfo] = useState<{code: string, catalogNum: string, title: string, id: string} | null>(null);
+  
   
   // Use the memoized search hook
   const { 
@@ -72,35 +71,42 @@ export default function CourseSearch() {
   } = useMemoizedSearch(fetchSingleCourseData);
 
   const courseSearch = async () => {
-    AppLogger.info("Course search clicked with:", { selectedTerm, searchSubject, selectedCourseInfo });
+    AppLogger.info("Course search clicked with:", { 
+      selectedTerm: courseSearchData.selectedTerm, 
+      searchSubject: courseSearchData.searchSubject, 
+      selectedCourseInfo: courseSearchData.selectedCourseInfo 
+    });
     
-    if (searchSubject && selectedCourseInfo && selectedTerm) {
+    if (courseSearchData.searchSubject && courseSearchData.selectedCourseInfo && courseSearchData.selectedTerm) {
       await search(
-        searchSubject,
-        selectedCourseInfo.catalogNum,
-        selectedCourseInfo.id,
-        selectedTerm
+        courseSearchData.searchSubject,
+        courseSearchData.selectedCourseInfo.catalogNum,
+        courseSearchData.selectedCourseInfo.id,
+        courseSearchData.selectedTerm
       );
     }
   };
 
   // Effect to clear fields when dependencies change
   useEffect(() => {
-    if (!searchSubject) {
-      setSearchCourse(null);
-      setSelectedCourseInfo(null);
+    if (!courseSearchData.searchSubject) {
+      setCourseSearchTabData('searchCourse', null);
+      setCourseSearchTabData('selectedCourseInfo', null);
     }
-  }, [searchSubject]);
+  }, [courseSearchData.searchSubject]);
 
   const handleCourseChange = (_: any, value: string | null) => {
-    setSearchCourse(value);
+    setCourseSearchTabData('searchCourse', value);
     
-    if (value && searchSubject) {
-      AppLogger.info("Course change detected:", { value, searchSubject });
+    if (value && courseSearchData.searchSubject) {
+      AppLogger.info("Course change detected:", { 
+        value, 
+        searchSubject: courseSearchData.searchSubject 
+      });
       const courseCode = value.split(' ')[0]; // This gets something like "CSC316"
       
-      if (searchSubject in DEPT_COURSES) {
-        const deptCourses = DEPT_COURSES[searchSubject as keyof typeof DEPT_COURSES];
+      if (courseSearchData.searchSubject in DEPT_COURSES) {
+        const deptCourses = DEPT_COURSES[courseSearchData.searchSubject as keyof typeof DEPT_COURSES];
         // Safely access the course info with type checking
         if (courseCode in deptCourses) {
           const courseInfo = deptCourses[courseCode as keyof typeof deptCourses] as unknown as DeptCourse;
@@ -109,11 +115,11 @@ export default function CourseSearch() {
           // This handles cases with different subject codes
           // Use a regex to extract the numeric portion (possibly with a letter suffix)
           const match = courseCode.match(/[0-9]+[A-Za-z]?$/);
-          const catalogNum = match ? match[0] : courseCode.replace(searchSubject, '');
+          const catalogNum = match ? match[0] : courseCode.replace(courseSearchData.searchSubject, '');
           
           AppLogger.info(`Extracted catalog number ${catalogNum} from course code ${courseCode}`);
           
-          setSelectedCourseInfo({
+          setCourseSearchTabData('selectedCourseInfo', {
             code: courseCode,
             catalogNum: catalogNum,
             title: courseInfo.course_title,
@@ -122,9 +128,9 @@ export default function CourseSearch() {
           return;
         }
       }
-      setSelectedCourseInfo(null);
+      setCourseSearchTabData('selectedCourseInfo', null);
     } else {
-      setSelectedCourseInfo(null);
+      setCourseSearchTabData('selectedCourseInfo', null);
     }
   };
 
@@ -139,8 +145,8 @@ export default function CourseSearch() {
             id="term_selector"
             options={Object.keys(TermIdByName)}
             defaultValue={TermIdByName[Object.keys(TermIdByName)[0]]}
-            value={selectedTerm}
-            onChange={(_, value) => setSelectedTerm(value)}
+            value={courseSearchData.selectedTerm}
+            onChange={(_, value) => setCourseSearchTabData('selectedTerm', value)}
             renderInput={(params) => 
               <TextField {...params} label="Term" sx={{ padding: '10px' }} />
             }
@@ -149,8 +155,8 @@ export default function CourseSearch() {
             sx={{ width: '50%', mb: 2 }}
             id="subject_selector"
             options={Object.keys(DEPT_COURSES)}
-            value={searchSubject}
-            onChange={(_, value) => setSearchSubject(value)}
+            value={courseSearchData.searchSubject}
+            onChange={(_, value) => setCourseSearchTabData('searchSubject', value)}
             renderInput={(params) => 
               <TextField {...params} label="Subject" sx={{ padding: '10px' }} />
             }
@@ -158,23 +164,23 @@ export default function CourseSearch() {
           <Autocomplete
             sx={{ width: '50%', mb: 2 }}
             id="course_selector"
-            options={searchSubject 
-              ? Object.entries(DEPT_COURSES[searchSubject as keyof typeof DEPT_COURSES])
+            options={courseSearchData.searchSubject 
+              ? Object.entries(DEPT_COURSES[courseSearchData.searchSubject as keyof typeof DEPT_COURSES])
                   .map(([code, details]) => `${code} ${(details as unknown as DeptCourse).course_title}`)
               : []
             }
-            value={searchCourse}
+            value={courseSearchData.searchCourse}
             onChange={handleCourseChange}
             renderInput={(params) => 
               <TextField {...params} label="Course" sx={{ padding: '10px' }} />
             }
-            disabled={!searchSubject}
+            disabled={!courseSearchData.searchSubject}
           />
           <Button
             variant='outlined'
             sx={{ width: '50%' }}
             onClick={courseSearch}
-            disabled={!selectedTerm || !searchSubject || !selectedCourseInfo || isLoading}
+            disabled={!courseSearchData.selectedTerm || !courseSearchData.searchSubject || !courseSearchData.selectedCourseInfo || isLoading}
           >
             Search
           </Button>

@@ -1,8 +1,7 @@
-import { Box, CircularProgress, ListItem, ListItemText, Typography } from "@mui/material";
+import { Box, CircularProgress, FormControlLabel, ListItem, ListItemText, Typography, Checkbox} from "@mui/material";
 
 import { Button, DialogContent, TextField, List, Autocomplete } from "@mui/material";
 import { AppLogger } from "../../utils/logger";
-import { useState } from "react";
 import { fetchGEPCourseData } from "../../services/api/CourseSearch/dataService";
 import { GEP_COURSES } from "../../Data/CourseSearch/gep_courses.typed";
 import type { MergedCourseData } from "../../utils/CourseSearch/MergeDataUtil";
@@ -12,7 +11,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import type { RequiredCourse } from "../../types/Plans";
 import { styled } from '@mui/material/styles';
 import { sortSections } from '../../types/DataGridCourse';
-
+import { type GEPData } from "../TabDataStore/TabData";
 // Styled DialogContent with gradient background
 const StyledDialogContent = styled(DialogContent)(({ theme }) => ({
 
@@ -62,23 +61,20 @@ export function CircularProgressWithLabel({ value, label }: { value: number; lab
   );
 }
 
-export default function GEPSearch() {
-    const [selectedTerm, setSelectedTerm] = useState<string | null>(Object.keys(TermIdByName)[0]);
-    const [searchSubject, setSearchSubject] = useState<string | null>(null);
-    const [isLoaded, setIsLoaded] = useState(true);
-    const [progress, setProgress] = useState(0);
-    const [progressLabel, setProgressLabel] = useState<string>('');
-    const [courseData, setCourseData] = useState<Record<string, MergedCourseData> | null>(null);
-    const [courses, setCourses] = useState<RequiredCourse[]>([]);
+export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepSearchTabData: (key: keyof GEPData, value: any) => void, gepSearchData: GEPData}) {
+
     const courseSearch = async () => {
-      setProgress(10);
-      setProgressLabel('Initializing GEP course search...');
-      setIsLoaded(false);
-      AppLogger.info("Course search clicked with:", { selectedTerm, searchSubject });
+      setGepSearchTabData('progress', 10);
+      setGepSearchTabData('progressLabel', 'Initializing GEP course search...');
+      setGepSearchTabData('isLoaded', false);
+      AppLogger.info("Course search clicked with:", { 
+        selectedTerm: gepSearchData.selectedTerm, 
+        searchSubject: gepSearchData.searchSubject 
+      });
       
       try {
-        if (searchSubject && selectedTerm) {
-          const courseInfo = (GEP_COURSES as any)[searchSubject];
+        if (gepSearchData.searchSubject && gepSearchData.selectedTerm) {
+          const courseInfo = (GEP_COURSES as any)[gepSearchData.searchSubject];
           if(courseInfo) {
             const courses = Object.entries(courseInfo).map(([course_title, course_info]) => {
               const title = course_title as string;
@@ -88,38 +84,38 @@ export default function GEPSearch() {
                 course_abr: title.split('-')[0],
                 catalog_num: title.split('-')[1],
                 course_descrip: course_entry.course_title,
-                term: selectedTerm
+                term: gepSearchData.selectedTerm
               };
             });
             
-            setCourses(courses);
-            setProgressLabel(`Processing ${courses.length} GEP courses for ${searchSubject}`);
+            setGepSearchTabData('courses', courses);
+            setGepSearchTabData('progressLabel', `Processing ${courses.length} GEP courses for ${gepSearchData.searchSubject}`);
             
             // Use the progress callback with status message
             const courseData = await fetchGEPCourseData(
               courses, 
-              selectedTerm, 
+              gepSearchData.selectedTerm, 
               (progressValue, statusMessage) => {
                 // Update progress state
-                setProgress(progressValue);
+                setGepSearchTabData('progress', progressValue);
                 
                 // Update the progress label if status message is provided
                 if (statusMessage) {
-                  setProgressLabel(statusMessage);
+                  setGepSearchTabData('progressLabel', statusMessage);
                 }
               }
             );
             
-            setCourseData(courseData);
+            setGepSearchTabData('courseData', courseData);
           }
         }
       } catch (error) {
         AppLogger.error("Error fetching course data:", error);
-        setProgressLabel('Error fetching GEP course data');
+        setGepSearchTabData('progressLabel', 'Error fetching GEP course data');
       } finally {
-        setProgress(100);
-        setProgressLabel('Complete');
-        setIsLoaded(true);
+        setGepSearchTabData('progress', 100);
+        setGepSearchTabData('progressLabel', 'Complete');
+        setGepSearchTabData('isLoaded', true);
       }
     };
 
@@ -132,9 +128,9 @@ export default function GEPSearch() {
               sx={{ width: '50%', mb: 2 }}
               id="term_selector"
               options={Object.keys(TermIdByName)}
-              value={selectedTerm}
+              value={gepSearchData.selectedTerm}
               defaultValue={TermIdByName[Object.keys(TermIdByName)[0]]}
-              onChange={(_, value) => setSelectedTerm(value)}
+              onChange={(_, value) => setGepSearchTabData('selectedTerm', value)}
               renderInput={(params) => 
                 <TextField {...params} label="Term" sx={{ padding: '10px' }} />
               }
@@ -143,8 +139,8 @@ export default function GEPSearch() {
               sx={{ width: '50%', mb: 2 }}
               id="subject_selector"
               options={Object.keys(GEP_COURSES)}
-              value={searchSubject}
-              onChange={(_, value) => setSearchSubject(value)}
+              value={gepSearchData.searchSubject}
+              onChange={(_, value) => setGepSearchTabData('searchSubject', value)}
               renderInput={(params) => 
                 <TextField {...params} label="Subject" sx={{ padding: '10px' }} />
               }
@@ -156,18 +152,28 @@ export default function GEPSearch() {
             >
               Search
             </Button>
-            {!isLoaded && <CircularProgressWithLabel value={progress} label={progressLabel} />}
+            <FormControlLabel
+            control={<Checkbox checked={gepSearchData.hideNoSections} onChange={(_, checked) => setGepSearchTabData('hideNoSections', checked)} />}
+            label="Hide courses with no open sections"
+          />
+            {!gepSearchData.isLoaded && <CircularProgressWithLabel value={gepSearchData.progress} label={gepSearchData.progressLabel || ''} />}
           </List>
         </Box>
       <List>
-            {(isLoaded && courses) && courses.map((course : RequiredCourse) => (
+            {(gepSearchData.isLoaded && gepSearchData.courses) && gepSearchData.courses.filter((course : RequiredCourse) => {
+              if (gepSearchData.hideNoSections && gepSearchData.courseData) {
+                const key = `${course.course_abr} ${course.catalog_num}`;
+                return (gepSearchData.courseData as Record<string, MergedCourseData>)[key]?.sections?.length > 0;
+              }
+              return true;
+            }).map((course : RequiredCourse) => (
                 <ListItem alignItems="flex-start" key={course.course_abr} sx={{ pl: 4 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
                     <ListItemText
                         primary={`${course.course_descrip} ${course.course_abr} ${parseInt(course.catalog_num)}`}
                         secondary={`${course.course_abr} ${course.catalog_num}`}
                     />
-          {courseData && courseData[`${course.course_abr} ${course.catalog_num}`]?.sections.length > 0 ? (
+          {gepSearchData.courseData && (gepSearchData.courseData as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections.length > 0 ? (
             <Box sx={{ 
               //height: 400,
               width: '100%',
@@ -175,7 +181,7 @@ export default function GEPSearch() {
             }}>
               <DataGrid
                 getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
-                rows={courseData[`${course.course_abr} ${course.catalog_num}`].sections.sort(sortSections)}
+                rows={(gepSearchData.courseData as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`].sections.sort(sortSections)}
                 columns={OpenCourseSectionsColumn}
                 columnVisibilityModel={{ id: false }}
                 disableRowSelectionOnClick
@@ -238,7 +244,7 @@ export default function GEPSearch() {
             
           ) : (
             <Typography variant="body1" sx={{ p: 2 }}>
-              {courseData ? 'No sections available' : 'Search for a course to see sections'}
+              {gepSearchData.courseData ? 'No sections available' : 'Search for a course to see sections'}
             </Typography>
           )}
            </Box>

@@ -16,6 +16,9 @@ import { myEmotionCache } from '../content';
 import CourseSearch from './SearchTabs/CourseSearch';
 import PlanSearch from './SearchTabs/PlanSearch';
 import GEPSearch from './SearchTabs/GEPSearch';
+import { GEPDataInitialState, type CourseSearchData, type PlanSearchData, type GEPData } from './TabDataStore/TabData';
+import { PlanSearchDataInitialState } from './TabDataStore/TabData';
+import { CourseSearchDataInitialState } from './TabDataStore/TabData';
 
 export function CircularProgressWithLabel({ value }: { value: number }) {
   return (
@@ -44,7 +47,18 @@ export function CircularProgressWithLabel({ value }: { value: number }) {
 export default function SlideOutDrawer() {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [selectedTab, setSelectedTab] = useState("0");
-    
+    const [courseSearchData, setCourseSearchData] = useState(CourseSearchDataInitialState);
+    const [planSearchData, setPlanSearchData] = useState(PlanSearchDataInitialState);
+    const [gepSearchData, setGepSearchData] = useState(GEPDataInitialState);
+    const setCourseSearchTabData = (key: keyof CourseSearchData, value: any) => {
+        setCourseSearchData((prev) => ({ ...prev, [key]: value }));
+    }
+    const setPlanSearchTabData = (key: keyof PlanSearchData, value: any) => {
+        setPlanSearchData((prev) => ({ ...prev, [key]: value }));
+    }
+    const setGepSearchTabData = (key: keyof GEPData, value: any) => {
+        setGepSearchData((prev) => ({ ...prev, [key]: value }));
+    }
     const handleTabChange = (_: React.SyntheticEvent, newValue: string) => {
         setSelectedTab(newValue);
     };
@@ -108,13 +122,13 @@ export default function SlideOutDrawer() {
                                 </TabList>
                             </Box>
                             <TabPanel value="0">
-                                <CourseSearch />
+                                <CourseSearch setCourseSearchTabData={setCourseSearchTabData} courseSearchData={courseSearchData} />
                             </TabPanel>
                             <TabPanel value="1">
-                                <GEPSearch />
+                                <GEPSearch setGepSearchTabData={setGepSearchTabData} gepSearchData={gepSearchData} />
                             </TabPanel>
                             <TabPanel value="2">
-                                <PlanSearch />
+                                <PlanSearch setPlanSearchTabData={setPlanSearchTabData} planSearchData={planSearchData} />
                             </TabPanel>
                         </TabContext>
                     </Dialog>

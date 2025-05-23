@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type PlanSearchData } from '../TabDataStore/TabData';
 import {
   Autocomplete,
   Box,
@@ -57,62 +57,57 @@ export function CircularProgressWithLabel({ value, label }: { value: number; lab
   );
 }
 
-export default function PlanSearch() {
-  const [open, setOpen] = useState<Record<string, boolean>>({});
+export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setPlanSearchTabData: (key: keyof PlanSearchData, value: any) => void, planSearchData: PlanSearchData}) {
+ 
   const major_options = Object.keys(majorPlans);
   const minor_options = Object.keys(minorPlans);
-  const [selectedMajor, setSelectedMajor] = useState<string | null>(null);
-  const [selectedTerm, setSelectedTerm] = useState<string | null>(Object.keys(TermIdByName)[0]);
-  const [selectedMinor, setSelectedMinor] = useState<string | null>(null);
-  const [selectedSubplan, setSelectedSubplan] = useState<string | null>(null);
-  const [searchMajor, setSearchMajor] = useState<string | null>(null);
-  const [searchSubplan, setSearchSubplan] = useState<string | null>(null);
-  const [searchMinor, setSearchMinor] = useState<string | null>(null);
-  const [openCourses, setOpenCourses] = useState<Record<string, MergedCourseData>>({});
-  const [isLoaded, setIsLoaded] = useState(true);
-  const [progress, setProgress] = useState(0);
-  const [progressLabel, setProgressLabel] = useState<string>('');
+ 
 
-  const subplanOptions = selectedMajor
-    ? Object.keys(majorPlans[selectedMajor as keyof typeof majorPlans]?.subplans || {})
+
+  const subplanOptions = planSearchData.selectedMajor
+    ? Object.keys(majorPlans[planSearchData.selectedMajor as keyof typeof majorPlans]?.subplans || {})
     : [];
 
   const handleClick = (requirementKey: string) => {
-    setOpen((prevState) => ({
+    setPlanSearchTabData('open', (prevState: Record<string, boolean>) => ({
       ...prevState,
       [requirementKey]: !prevState[requirementKey],
     }));
   };
 
   const planSearch = async () => {
-    setProgress(10); // start
-    setProgressLabel('Initializing plan search...');
-    setSearchMajor(selectedMajor);
-    setSearchMinor(selectedMinor);
-    setSearchSubplan(selectedSubplan);
-    setIsLoaded(false);
-    AppLogger.info("Search clicked with:", { selectedMajor, selectedSubplan, selectedTerm });
+    setPlanSearchTabData('progress', 10); // start
+    setPlanSearchTabData('progressLabel', 'Initializing plan search...');
+    setPlanSearchTabData('searchMajor', planSearchData.selectedMajor);
+    setPlanSearchTabData('searchMinor', planSearchData.selectedMinor);
+    setPlanSearchTabData('searchSubplan', planSearchData.selectedSubplan);
+    setPlanSearchTabData('isLoaded', false);
+    AppLogger.info("Search clicked with:", { 
+      selectedMajor: planSearchData.selectedMajor, 
+      selectedSubplan: planSearchData.selectedSubplan, 
+      selectedTerm: planSearchData.selectedTerm 
+    });
     // Call the async logic
-    await fetchOpenCourses(selectedMajor, selectedMinor, selectedSubplan, selectedTerm);
-    setProgress(100); // done
-    setProgressLabel('Complete');
+    await fetchOpenCourses(planSearchData.selectedMajor, planSearchData.selectedMinor, planSearchData.selectedSubplan, planSearchData.selectedTerm);
+    setPlanSearchTabData('progress', 100); // done
+    setPlanSearchTabData('progressLabel', 'Complete');
   };
 
   const fetchOpenCourses = async (major: string | null, minor :string | null, subplan: string | null, term: string | null) => {
-    setProgress(10);
-    setProgressLabel(`Preparing to search for ${major} - ${subplan} courses`);
+    setPlanSearchTabData('progress', 10);
+    setPlanSearchTabData('progressLabel', `Preparing to search for ${major} - ${subplan} courses`);
     AppLogger.info('fetchOpenCourses called with:', { major, subplan, term });
     
     if (((major && subplan) || (minor)) && term) {
       try {
-        setProgress(15);
-        setProgressLabel(`Loading ${major} plan data`);
+        setPlanSearchTabData('progress', 15);
+        setPlanSearchTabData('progressLabel', `Loading ${major} plan data`);
         const major_data = majorPlans[major as keyof typeof majorPlans] as MajorPlan;
         const subplan_data = major_data?.subplans[subplan as keyof typeof major_data.subplans] as Subplan | undefined;
         const minor_data = minorPlans[minor as keyof typeof minorPlans] as MinorPlan | undefined;
         if (!subplan_data && !minor_data) {
           AppLogger.error("No subplan data found for", subplan);
-          setProgressLabel(`Error: No data found for ${subplan}`);
+          setPlanSearchTabData('progressLabel', `Error: No data found for ${subplan}`);
           return;
         }
         
@@ -120,9 +115,9 @@ export default function PlanSearch() {
         const minor_requirements = minor_data?.requirements ?? {};
         const requirements = { ...minor_requirements, ...major_requirements };
         const reqCount = Object.keys(requirements).length;
-        setProgressLabel(`Processing ${reqCount} requirements for ${subplan}`);
+        setPlanSearchTabData('progressLabel', `Processing ${reqCount} requirements for ${subplan}`);
         AppLogger.info("Requirements:", Object.keys(requirements));
-        setProgress(20);
+        setPlanSearchTabData('progress', 20);
 
         const newOpenCourses: Record<string, MergedCourseData> = {};
         
@@ -132,24 +127,24 @@ export default function PlanSearch() {
           term,
           (progressVal, statusMessage) => {
             // Scale the progress to fit between 20-90%
-            setProgress(20 + Math.round(progressVal * 0.7));
+            setPlanSearchTabData('progress', 20 + Math.round(progressVal * 0.7));
             
             // Update progress label from the status message if provided
             if (statusMessage) {
-              setProgressLabel(statusMessage);
+              setPlanSearchTabData('progressLabel', statusMessage);
             }
           }
         );
 
         if (!data) {
           AppLogger.error("No data returned from fetchCourseSearchData");
-          setProgressLabel(`Error: No course data found for ${major} - ${subplan}`);
+          setPlanSearchTabData('progressLabel', `Error: No course data found for ${major} - ${subplan}`);
           return;
         }
 
         AppLogger.info("Data returned from API:", data);
-        setProgress(90);
-        setProgressLabel('Processing course sections');
+        setPlanSearchTabData('progress', 90);
+        setPlanSearchTabData('progressLabel', 'Processing course sections');
         
         for (const [courseKey, course] of Object.entries(data)) {
           // Ensure each section has a unique ID
@@ -162,28 +157,28 @@ export default function PlanSearch() {
           newOpenCourses[courseKey] = course;
         }
         
-        setProgress(95);
-        setProgressLabel('Finalizing search results');
+        setPlanSearchTabData('progress', 95);
+        setPlanSearchTabData('progressLabel', 'Finalizing search results');
         AppLogger.info("Setting openCourses with:", newOpenCourses);
-        setIsLoaded(true);
-        setOpenCourses(newOpenCourses);
+        setPlanSearchTabData('isLoaded', true);
+        setPlanSearchTabData('openCourses', newOpenCourses);
         AppLogger.info('Updated open courses:', newOpenCourses);
       } catch (error) {
         AppLogger.error("Error in fetchOpenCourses:", error);
-        setProgressLabel(`Error fetching courses: ${error}`);
+        setPlanSearchTabData('progressLabel', `Error fetching courses: ${error}`);
       } finally {
-        setProgress(100);
-        setProgressLabel('Complete');
+        setPlanSearchTabData('progress', 100);
+        setPlanSearchTabData('progressLabel', 'Complete');
       }
     }
   };
 
   // Build requirements list if search was performed
   let requirementsList = null;
-  if ((searchMajor && searchSubplan ) || (searchMinor)) {
-    const major_data = majorPlans[searchMajor as keyof typeof majorPlans] as MajorPlan;
-    const subplan_data = major_data?.subplans[searchSubplan as keyof typeof major_data.subplans] as Subplan | undefined;
-    const minor_data = minorPlans[searchMinor as keyof typeof minorPlans] as MinorPlan | undefined;
+  if (((planSearchData.selectedMajor && planSearchData.selectedSubplan ) || (planSearchData.selectedMinor)) && planSearchData.selectedTerm) {
+    const major_data = majorPlans[planSearchData.selectedMajor as keyof typeof majorPlans] as MajorPlan;
+    const subplan_data = major_data?.subplans[planSearchData.selectedSubplan as keyof typeof major_data.subplans] as Subplan | undefined;
+    const minor_data = minorPlans[planSearchData.selectedMinor as keyof typeof minorPlans] as MinorPlan | undefined;
     const major_requirements = subplan_data?.requirements ?? {};
     const minor_requirements = minor_data?.requirements ?? {};
     const requirements = { ...minor_requirements, ...major_requirements };
@@ -219,10 +214,15 @@ export default function PlanSearch() {
                 />
                 </ButtonBase>
               </ListItem>
-              <Collapse in={open[requirementKey]} timeout="auto" unmountOnExit>
+              <Collapse in={planSearchData.open[requirementKey as keyof Record<string, boolean>]} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding sx={{ 'background-color': 'none' }}>
                  
-                  {requirements[requirementKey].courses.map((course: RequiredCourse) => (
+                  {requirements[requirementKey].courses.filter((course: RequiredCourse) => {
+                    if (planSearchData.hideNoSections) {
+                      return (planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections?.length > 0;
+                    }
+                    return true;
+                  }).map((course: RequiredCourse) => (
                     <ListItem alignItems="flex-start" key={course.course_abr} sx={{ pl: 4 }}>
                       <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
                         <ListItemText
@@ -233,7 +233,7 @@ export default function PlanSearch() {
                           width: '100%', 
                           mb: 4
                         }}>
-                          {openCourses[`${course.course_abr} ${course.catalog_num}`]?.sections?.length > 0 ? (
+                          {(planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections?.length > 0 ? (
                             <Box sx={{ 
                               //height: 400,
                               width: '100%',
@@ -241,7 +241,7 @@ export default function PlanSearch() {
                             }}>
                               <DataGrid
                                 getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
-                                rows={openCourses[`${course.course_abr} ${course.catalog_num}`].sections.sort(sortSections)}
+                                rows={(planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`].sections.sort(sortSections)}
                                 columns={OpenCourseSectionsColumn}
                                 columnVisibilityModel={{ id: false }}
                                 disableRowSelectionOnClick
@@ -326,8 +326,8 @@ export default function PlanSearch() {
             sx={{ width: '50%', mb: 2 }}
             id="term_selector"
             options={Object.keys(TermIdByName)}
-            value={selectedTerm}
-            onChange={(_, value) => setSelectedTerm(value)}
+            value={planSearchData.selectedTerm}
+            onChange={(_, value) => setPlanSearchTabData('selectedTerm', value)}
             renderInput={(params) => 
               <TextField {...params} label="Term" sx={{ padding: '10px' }} />
             }
@@ -337,8 +337,8 @@ export default function PlanSearch() {
             sx={{ width: '50%', mb: 2 }}
             id="major_selector"
             options={major_options}
-            value={selectedMajor}
-            onChange={(_, value) => setSelectedMajor(value)}
+            value={planSearchData.selectedMajor}
+            onChange={(_, value) => setPlanSearchTabData('selectedMajor', value)}
             renderInput={(params) => 
               <TextField {...params} label="Major" sx={{ padding: '10px' }} />
             }
@@ -348,8 +348,8 @@ export default function PlanSearch() {
             sx={{ width: '50%', mb: 2 }}
             id="minor_selector"
             options={minor_options}
-            value={selectedMinor}
-            onChange={(_, value) => setSelectedMinor(value)}
+            value={planSearchData.selectedMinor}
+            onChange={(_, value) => setPlanSearchTabData('selectedMinor', value)}
             renderInput={(params) => 
               <TextField {...params} label="Minor" sx={{ padding: '10px' }} />
             }
@@ -359,8 +359,8 @@ export default function PlanSearch() {
             sx={{ width: '50%', mb: 2 }}
             id="subplan_selector"
             options={subplanOptions}
-            value={selectedSubplan}
-            onChange={(_, value) => setSelectedSubplan(value)}
+            value={planSearchData.selectedSubplan}
+            onChange={(_, value) => setPlanSearchTabData('selectedSubplan', value)}
             renderInput={(params) => 
               <TextField {...params} label="Subplan" sx={{ padding: '10px' }} />
             }
@@ -374,11 +374,11 @@ export default function PlanSearch() {
             Search
           </Button>
           <FormControlLabel
-            control={<Checkbox />}
+            control={<Checkbox checked={planSearchData.hideNoSections} onChange={(_, checked) => setPlanSearchTabData('hideNoSections', checked)} />}
             label="Hide courses with no open sections"
           />
-          {!isLoaded && <CircularProgressWithLabel value={progress} label={progressLabel} />}
-          {isLoaded && requirementsList}
+          {!planSearchData.isLoaded && <CircularProgressWithLabel value={planSearchData.progress} label={planSearchData.progressLabel || ''} />}
+          {planSearchData.isLoaded && requirementsList}
         </List>
       </Box>
     </DialogContent>
