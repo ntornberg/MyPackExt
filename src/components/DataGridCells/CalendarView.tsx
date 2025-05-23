@@ -1,37 +1,15 @@
 import {Box} from '@mui/material';
-import {
-    ScheduleComponent,
-    Day,
-    Week,
-    WorkWeek,
-    Month,
-    Agenda,
-    Inject,
-    ViewsDirective,
-    ViewDirective
-} from '@syncfusion/ej2-react-schedule';
+
+
+
 import {getCacheCategory} from '../../cache/CourseRetrieval';
 import type {GridRenderCellParams} from '@mui/x-data-grid';
 import {AppLogger} from '../../utils/logger';
 import {useState, useEffect} from 'react';
-import '@syncfusion/ej2-base/styles/material.css';
-import '@syncfusion/ej2-buttons/styles/material.css';
-import '@syncfusion/ej2-calendars/styles/material.css';
-import '@syncfusion/ej2-dropdowns/styles/material.css';
-import '@syncfusion/ej2-inputs/styles/material.css';
-import '@syncfusion/ej2-lists/styles/material.css';
-import '@syncfusion/ej2-navigations/styles/material.css';
-import '@syncfusion/ej2-popups/styles/material.css';
-import '@syncfusion/ej2-split-buttons/styles/material.css';
-import '@syncfusion/ej2-react-schedule/styles/material.css';
 
-const DayOfWeek: Record<string, string> = {
-    MO: "2025-05-05",
-    TU: "2025-05-06",
-    WE: "2025-05-07",
-    TH: "2025-05-08",
-    FR: "2025-05-09",
-}
+import CreateCalender from './CalenderResizeListener';
+
+
 type ScheduleTableEntry = {
     DT_RowId: string | null;
     career: string | null;
@@ -68,30 +46,28 @@ type ScheduleTableEntry = {
     waitlist_total: string | null;
 };
 
-interface EventSettingsModel {
-    Id: number;
-    Subject: string;
-    StartTime: Date;
-    EndTime: Date;
-    IsAllDay: boolean;
-    RecurrenceRule?: string;
-    Description?: string;
-    Location?: string;
-    CategoryColor?: string;
+export interface ScheduleEvent {
+  id: number;
+  subj: string;
+  start: string;
+  end: string;
+  days: string[];
+  color: string;
 }
+
 
 export const CalendarView = (params: GridRenderCellParams) => {
     // @ts-ignore
-    const {dayTime, course_title} = params.row;
+    const {dayTime, courseData} = params.row;
 
-    const [eventData, setEventData] = useState<EventSettingsModel[]>([]);
+    const [eventData, setEventData] = useState<ScheduleEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-
+    AppLogger.info(courseData);
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const courses = await getCacheCategory('scheduleTableData');
-                const events: EventSettingsModel[] = [];
+                const events: ScheduleEvent[] = [];
                 let eventId = 1;
 
                 if (courses) {
@@ -104,28 +80,23 @@ export const CalendarView = (params: GridRenderCellParams) => {
 
                         for (const [index, item] of time_array.entries()) {
                             if (['M', 'T', 'W', 'Th', 'F', 'Sa', 'Su'].includes(item)) {
-                                switch (item) {
+                                switch (item) { 
                                     case 'M':
-                                        meeting_days.push('MO');
+                                        meeting_days.push('Mon');
                                         break;
                                     case 'T':
-                                        meeting_days.push('TU');
+                                        meeting_days.push('Tue');
                                         break;
                                     case 'W':
-                                        meeting_days.push('WE');
+                                        meeting_days.push('Wed');
                                         break;
                                     case 'Th':
-                                        meeting_days.push('TH');
+                                        meeting_days.push('Thu');
                                         break;
                                     case 'F':
-                                        meeting_days.push('FR');
+                                        meeting_days.push('Fri');
                                         break;
-                                    case 'Sa':
-                                        meeting_days.push('SA');
-                                        break;
-                                    case 'Su':
-                                        meeting_days.push('SU');
-                                        break;
+                                 
                                 }
                             } else if (index + 4 < time_array.length) {
                                 start_time = `${item} ${time_array[index + 1]}`;
@@ -135,22 +106,20 @@ export const CalendarView = (params: GridRenderCellParams) => {
                         }
 
                         if (meeting_days.length > 0 && start_time && end_time) {
-                            const startDate = new Date(`${DayOfWeek[meeting_days[0]]} ${start_time}`);
-                            const endDate = new Date(`${DayOfWeek[meeting_days[0]]} ${end_time}`);
-                            const recurrRule = `FREQ=WEEKLY;BYDAY=${meeting_days.join(',')}`;
+                         
+                            
 
                             events.push({
-                                Id: eventId++,
-                                Subject: course_title,
-                                StartTime: startDate,
-                                EndTime: endDate,
-                                IsAllDay: false,
-                                RecurrenceRule: recurrRule,
-                                CategoryColor: '#2ECC71' // Green color
+                                id: eventId++,
+                                subj: courseData.code,
+                                start: start_time,
+                                end: end_time,
+                                days: meeting_days,
+                                color: '#2ECC71' // Green color
                             });
                         }
                     }
-
+                    AppLogger.info(courses);
                     // Process course data
                     for (const course of Object.values(courses)) {
                         AppLogger.info(course);
@@ -169,46 +138,39 @@ export const CalendarView = (params: GridRenderCellParams) => {
                                     for (const day of section.meet_days.split('/')) {
                                         switch (day.trim()) {
                                             case 'Mon':
-                                                recurrRule.push('MO');
+                                                recurrRule.push('Mon');
                                                 break;
                                             case 'Tue':
-                                                recurrRule.push('TU');
+                                                recurrRule.push('Tue');
                                                 break;
                                             case 'Wed':
-                                                recurrRule.push('WE');
+                                                recurrRule.push('Wed');
                                                 break;
                                             case 'Thu':
-                                                recurrRule.push('TH');
+                                                recurrRule.push('Thu');
                                                 break;
                                             case 'Fri':
-                                                recurrRule.push('FR');
+                                                recurrRule.push('Fri');
                                                 break;
-                                            case 'Sat':
-                                                recurrRule.push('SA');
-                                                break;
-                                            case 'Sun':
-                                                recurrRule.push('SU');
-                                                break;
+                                      
                                         }
                                     }
 
                                     if (recurrRule.length > 0) {
                                         const [startTime, endTime] = section.time.split('-').map(t => t.trim());
-                                        const startDay = new Date(`${DayOfWeek[recurrRule[0]]} ${startTime}`);
-                                        const endDay = new Date(`${DayOfWeek[recurrRule[0]]} ${endTime}`);
-                                        const recurrRuleStr = `FREQ=WEEKLY;BYDAY=${recurrRule.join(',')}`;
+                                
+                                      
                                         const sectionType = section.type || 'Section';
                                         const subject = `${schedule_entry.classs?.trim() || ''} ${sectionType}`.trim();
-
+                                        AppLogger.info(subject);
+                                        AppLogger.info(schedule_entry.classs);
                                         events.push({
-                                            Id: eventId++,
-                                            Subject: subject,
-                                            StartTime: startDay,
-                                            EndTime: endDay,
-                                            IsAllDay: false,
-                                            RecurrenceRule: recurrRuleStr,
-                                            Description: section.course_topic || undefined,
-                                            CategoryColor: '#E74C3C' // Red color
+                                            id: eventId++,
+                                            subj: subject,
+                                            start: startTime,
+                                            end: endTime,
+                                            days: recurrRule,
+                                            color: '#E74C3C' // Red color
                                         });
                                     }
                                 }
@@ -226,34 +188,15 @@ export const CalendarView = (params: GridRenderCellParams) => {
         };
 
         fetchData();
-    }, [dayTime, course_title]); // Add dependencies that should trigger refetch
+    }, [dayTime, courseData]); // Add dependencies that should trigger refetch
 
     if (isLoading) {
         return <div>Loading...</div>; // Or a loading spinner
     }
 
     return (
-        <Box sx={{width: '100%', height: '500px'}}>
-            <ScheduleComponent
-                width='100%'
-                height='100%'
-                selectedDate={new Date(DayOfWeek['MO'])}
-                eventSettings={{dataSource: eventData}}
-                currentView='Week'
-                startHour='06:00'
-                endHour='24:00'
-                timeScale={{interval: 60}}
-                firstDayOfWeek={0}
-            >
-                <ViewsDirective>
-                    <ViewDirective option='Day'/>
-                    <ViewDirective option='Week'/>
-                    <ViewDirective option='WorkWeek'/>
-                    <ViewDirective option='Month'/>
-                    <ViewDirective option='Agenda'/>
-                </ViewsDirective>
-                <Inject services={[Day, Week, WorkWeek, Month, Agenda]}/>
-            </ScheduleComponent>
+        <Box sx={{width: '100%', height: '100%'}}>
+            <CreateCalender eventData={eventData} />
         </Box>
     );
 };
