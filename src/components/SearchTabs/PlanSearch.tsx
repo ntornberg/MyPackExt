@@ -69,6 +69,8 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
     : [];
 
   const handleClick = (requirementKey: string) => {
+    AppLogger.info("Requirement clicked:", { requirementKey });
+    AppLogger.info("Open state:", planSearchData.open);
     setPlanSearchTabData('open', (prevState: Record<string, boolean>) => ({
       ...prevState,
       [requirementKey]: !prevState[requirementKey],
@@ -114,6 +116,10 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
         const major_requirements = subplan_data?.requirements ?? {};
         const minor_requirements = minor_data?.requirements ?? {};
         const requirements = { ...minor_requirements, ...major_requirements };
+        setPlanSearchTabData('open', Object.keys(requirements).reduce((acc, key) => {
+          acc[key] = false;
+          return acc;
+        }, {} as Record<string, boolean>));
         const reqCount = Object.keys(requirements).length;
         setPlanSearchTabData('progressLabel', `Processing ${reqCount} requirements for ${subplan}`);
         AppLogger.info("Requirements:", Object.keys(requirements));
