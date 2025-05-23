@@ -19,7 +19,26 @@ export const CourseInfoCell = (params: GridRenderCellParams) => {
     
     return (
         <Box sx={{ maxWidth: 800, display: 'flex', gap: 1, alignItems: 'center' }}>
-            <Tooltip sx={{ maxWidth: 800 }} placement="top"title={tooltipContent} arrow>
+            <Tooltip 
+                placement="left" 
+                title={tooltipContent} 
+                arrow
+                slotProps={{
+                    tooltip: {
+                        sx: {
+                            maxWidth: '800px',
+                            maxHeight: '800px',
+                            height: 'auto',
+                            width: 'auto',
+                            bgcolor: 'background.paper',
+                            color: 'text.primary',
+                            boxShadow: 4,
+                            fontSize: '0.875rem',
+                            p: 0
+                        }
+                    }
+                }}
+            >
                 <IconButton size="small">
                     <InfoIcon fontSize="small" />
                 </IconButton>

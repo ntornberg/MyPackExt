@@ -58,7 +58,7 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
 
   return (
     <Box sx={{
-        height: '30vh',
+        height: '50vh',
         width: '100%',
         maxWidth: '1400px',
         margin: '0 auto',
