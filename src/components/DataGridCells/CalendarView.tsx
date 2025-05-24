@@ -7,7 +7,7 @@ import type {GridRenderCellParams} from '@mui/x-data-grid';
 import {AppLogger} from '../../utils/logger';
 import {useState, useEffect} from 'react';
 
-import CreateCalender from './CalenderResizeListener';
+import CreateCalender, { toMinutes } from './CalenderResizeListener';
 
 
 type ScheduleTableEntry = {
@@ -51,7 +51,7 @@ export interface ScheduleEvent {
   subj: string;
   start: string;
   end: string;
-  days: string[];
+  days: {day : string, isOverlapping : boolean}[];
   color: string;
 }
 
@@ -114,8 +114,8 @@ export const CalendarView = (params: GridRenderCellParams) => {
                                 subj: courseData.code,
                                 start: start_time,
                                 end: end_time,
-                                days: meeting_days,
-                                color: '#2ECC71' // Green color
+                                days: meeting_days.map((dayValue) => { return {day: dayValue,isOverlapping: false}}),
+                                color: '#2ECC71', // Green color
                             });
                         }
                     }
@@ -169,8 +169,8 @@ export const CalendarView = (params: GridRenderCellParams) => {
                                             subj: subject,
                                             start: startTime,
                                             end: endTime,
-                                            days: recurrRule,
-                                            color: '#E74C3C' // Red color
+                                            days: recurrRule.map((dayValue) => { return {day: dayValue,isOverlapping: false}}),
+                                            color: '#E74C3C', // Red color
                                         });
                                     }
                                 }
@@ -178,6 +178,31 @@ export const CalendarView = (params: GridRenderCellParams) => {
                         }
                     }
                 }
+                AppLogger.info("Events", events);
+                for (let i = 0; i < events.length; i++) {
+                    for (let j = i + 1; j < events.length; j++) {
+                      const eventA = events[i];
+                      const eventB = events[j];
+                 
+                      if (
+                        toMinutes(eventA.start) < toMinutes(eventB.end) &&
+                        toMinutes(eventA.end) > toMinutes(eventB.start)
+                      ) {
+                        AppLogger.info("Overlap found");
+                        const daysA = Object.fromEntries(eventA.days.map(day => [day.day, true]));
+                        const daysB = Object.fromEntries(eventB.days.map(day => [day.day, true]));
+                  
+                        // Mark overlaps for both events, only on shared days
+                        eventA.days = eventA.days.map(day =>
+                          daysB[day.day] ? { ...day, isOverlapping: true } : day
+                        );
+                        eventB.days = eventB.days.map(day =>
+                          daysA[day.day] ? { ...day, isOverlapping: true } : day
+                        );
+                      }
+                    }
+                  }
+                  
                 
                 setEventData(events);
             } catch (error) {

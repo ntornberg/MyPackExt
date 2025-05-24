@@ -71,10 +71,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
   const handleClick = (requirementKey: string) => {
     AppLogger.info("Requirement clicked:", { requirementKey });
     AppLogger.info("Open state:", planSearchData.open);
-    setPlanSearchTabData('open', (prevState: Record<string, boolean>) => ({
-      ...prevState,
-      [requirementKey]: !prevState[requirementKey],
-    }));
+    setPlanSearchTabData('open', requirementKey);
   };
 
   const planSearch = async () => {

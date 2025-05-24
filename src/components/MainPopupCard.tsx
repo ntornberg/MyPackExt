@@ -54,7 +54,17 @@ export default function SlideOutDrawer() {
         setCourseSearchData((prev) => ({ ...prev, [key]: value }));
     }
     const setPlanSearchTabData = (key: keyof PlanSearchData, value: any) => {
+      if(key === 'open'){
+        setPlanSearchData((prevState) => ({
+          ...prevState, 
+          open: {
+            ...prevState.open,
+            [value]: !prevState.open[value]
+          }
+        }));
+      } else {
         setPlanSearchData((prev) => ({ ...prev, [key]: value }));
+      }
     }
     const setGepSearchTabData = (key: keyof GEPData, value: any) => {
         setGepSearchData((prev) => ({ ...prev, [key]: value }));

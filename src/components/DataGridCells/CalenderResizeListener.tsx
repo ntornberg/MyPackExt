@@ -3,9 +3,9 @@ import { Box, Paper, Typography } from '@mui/material';
 import type { ScheduleEvent } from './CalendarView';
 import { AppLogger } from '../../utils/logger';
 
-/* ───────── helpers ───────── */
 
-function toMinutes(time: string) {
+
+export function toMinutes(time: string) {
   const [hms, mod] = time.split(' ');
   let [h, m] = hms.split(':').map(Number);
   if (mod === 'PM' && h !== 12) h += 12;
@@ -15,7 +15,7 @@ function toMinutes(time: string) {
 
 function getMetrics(start: string, end: string, bodyPx: number) {
   const windowStartMin = 6 * 60; // 6 AM
-  const windowLenMin = 16 * 60; // 6 AM→10 PM = 960 min
+  const windowLenMin = 16 * 60; // 6 AM->10 PM = 960 min
   const pxPerMin = bodyPx / windowLenMin;
   const startMin = toMinutes(start);
   const endMin = toMinutes(end);
@@ -191,7 +191,7 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
             {/* Events for this day */}
             {body.h > 0 &&
               events
-                .filter((e) => e.days.includes(day))
+                .filter((e) => e.days.some((d) => d.day === day))
                 .map((ev) => {
                   const { topPx, heightPx } = getMetrics(
                     ev.start,
@@ -199,6 +199,7 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
                     body.h
                   );
                   return (
+                    
                     <Paper
                       key={`${ev.id}-${day}`}
                       elevation={2}
@@ -209,6 +210,7 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
                         right: { xs: 1, sm: 2, md: 3 },
                         height: heightPx,
                         bgcolor: ev.color,
+                        opacity: ev.days.some((d) => d.isOverlapping && d.day === day) ? 0.5 : 1,
                         color: '#fff',
                         px: { xs: 0.5, sm: 0.75, md: 1 },
                         py: { xs: 0.25, sm: 0.5 },
