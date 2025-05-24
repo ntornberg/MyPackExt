@@ -1,14 +1,14 @@
 import type { GridRenderCellParams } from "@mui/x-data-grid";
 import { IconButton } from "@mui/material";
 import { Tooltip } from "@mui/material";
-import InfoIcon from '@mui/icons-material/Info';
+import WarningIcon from '@mui/icons-material/Warning';
 
 
 export const PrereqCell = (params: GridRenderCellParams) => {
-    const { prereqs } = params.row;
-    return (<Tooltip title={prereqs}>
+    const { requisites } = params.row;
+    return (<Tooltip title={requisites}>
         <IconButton>
-          <InfoIcon />
+          <WarningIcon color="warning" />
         </IconButton>
       </Tooltip>);
 };

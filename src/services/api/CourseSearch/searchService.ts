@@ -14,6 +14,7 @@ export async function searchOpenCoursesByParams(
     term: string, 
     courseAbr: string, 
     catalogNum: string
+    
 ): Promise<CourseData | null> {
     try {
         AppLogger.info('Searching open courses for', { term, courseAbr, catalogNum });

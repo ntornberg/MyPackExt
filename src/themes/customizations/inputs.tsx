@@ -77,8 +77,8 @@ export const inputsCustomizations: Components<Theme> = {
   },
   MuiDialogContent: {
     styleOverrides: {
-      root: ({ theme }) => ({
-        backgroundColor: (theme.vars || theme).palette.background.paper,
+      root: () => ({
+        backgroundColor: 'none',
         overlay: 'none',
       }),
     },

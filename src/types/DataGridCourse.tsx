@@ -6,57 +6,107 @@ import { PrereqCell } from "../components/DataGridCells/PrereqCell";
 import { ToCartButtonCell } from "../components/DataGridCells/ToCartButtonCell";
 import { CourseInfoCell } from "../components/DataGridCells/CourseInfoCell";
 import { StatusAndSlotsCell } from "../components/DataGridCells/StatusAndSlotsCell";
+import type { ModifiedSection } from "../utils/CourseSearch/MergeDataUtil";
 
+export function sortSections(v1: ModifiedSection, v2: ModifiedSection) {
+  // Order should be Open,Reserved,Waitlist,Closed
+  const order: Record<string, number> = { 
+    "Open": 3, 
+    "Reserved": 2, 
+    "Waitlist": 1, 
+    "Closed": 0 
+  };
+  
+
+  const v1Value = typeof v1.availability === 'string' ? order[v1.availability] ?? -1 : -1;
+  const v2Value = typeof v2.availability === 'string' ? order[v2.availability] ?? -1 : -1;
+  
+  const availabilityDiff = v2Value - v1Value;
+  
+  // If availability is equal, compare by professor rating
+  if (availabilityDiff === 0) {
+    const rating1 = v1.professor_rating?.avgRating || 0;
+    const rating2 = v2.professor_rating?.avgRating || 0;
+    return rating2 - rating1; // Higher rating first
+  }
+  
+  return availabilityDiff;
+}
+
+// Combined cell for both notes and prerequisites
+const InfoCell = (params: any) => {
+  const hasRequisites = params.row.requisites && 
+                        params.row.requisites !== '';
+  const hasNotes = params.row.notes && params.row.notes.trim() !== '';
+
+  // If no info to display, return null
+  if (!hasRequisites && !hasNotes) {
+    return null;
+  }
+  
+  // Return both cells side by side if both have content
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      {hasNotes && <ClassNotesCell {...params} />}
+      {hasRequisites && <PrereqCell {...params} />}
+    </div>
+  );
+};
 
 export const OpenCourseSectionsColumn: GridColDef[] = [
-    { field: 'id', headerName: 'ID', hideable: true, minWidth: 60 },
+    { 
+      field: 'id', 
+      headerName: 'ID', 
+      hideable: true, 
+      minWidth: 60,
+      disableColumnMenu: true 
+    },
+   
+    
     { 
       field: 'to_cart_button', 
       headerName: '', 
       flex: 1, 
-      minWidth: 100, 
+      minWidth: 80, 
       renderCell: ToCartButtonCell,
       sortable: false,
-      filterable: false
+      filterable: false,
+      disableColumnMenu: true
     },
     { 
       field: 'availability', 
-      headerName: '', 
-      flex: 1.5, 
-      minWidth: 150, 
+      headerName: 'Status', 
+      flex: 1, 
+      minWidth: 120, 
+      align: 'center',
+      headerAlign: 'center',
       renderCell: StatusAndSlotsCell,
       sortable: true,
-      sortComparator: (v1, v2, param1, param2) => {
-        // Order should be Open,Reserved,Waitlist,Closed
+      sortComparator: (v1, v2) => {
         const order: Record<string, number> = { 
-          "Open": 0, 
-          "Reserved": 1, 
-          "Waitlist": 2, 
-          "Closed": 3 
+          "Open": 3, 
+          "Reserved": 2, 
+          "Waitlist": 1, 
+          "Closed": 0 
         };
-        
-        // Compare availability status first
-        const availabilityDiff = (order[String(v1)] || 4) - (order[String(v2)] || 4);
-        
-        // If availability is equal, compare by professor rating
-        if (availabilityDiff === 0) {
-          const rating1 = param1.api.getCellValue(param1.id, 'professor_rating')?.avgRating || 0;
-          const rating2 = param2.api.getCellValue(param2.id, 'professor_rating')?.avgRating || 0;
-          return rating2 - rating1; // Higher rating first
-        }
-        
-        return availabilityDiff;
+        const val1 = typeof v1 === 'string' ? order[v1] ?? -1 : -1;
+        const val2 = typeof v2 === 'string' ? order[v2] ?? -1 : -1;
+        return val2 - val1;
       },
-      filterable: false
+      filterable: false,
+      disableColumnMenu: true
     },
     { 
       field: 'section', 
       headerName: 'Course Info', 
-      flex: 2, 
-      minWidth: 80, 
+      align: 'left',
+      headerAlign: 'center',
+      flex: 1, 
+      minWidth: 50, 
       renderCell: CourseInfoCell,
       sortable: false,
-      filterable: false
+      filterable: false,
+      disableColumnMenu: true
     },
     { 
       field: 'instructor_name', 
@@ -66,38 +116,35 @@ export const OpenCourseSectionsColumn: GridColDef[] = [
       renderCell: (params) => {
         const instructors = params.row.instructor_name;
         return Array.isArray(instructors) ? instructors.join(', ') : '';
-      }
+      },
+      disableColumnMenu: true
     },
     { 
       field: 'professor_rating', 
       headerName: 'Rating', 
       flex: 1.5, 
       minWidth: 120,
-      renderCell: RateMyProfessorCell
+      renderCell: RateMyProfessorCell,
+      disableColumnMenu: true
     },
     { 
       field: 'grade_distribution', 
       headerName: 'Grades', 
       flex: 1.5, 
       minWidth: 120,
-      renderCell: GradeDistributionCell
+      renderCell: GradeDistributionCell,
+      disableColumnMenu: true
     },
     { 
-      field: 'notes', 
-      headerName: '', 
-      flex: 0.7, 
-      minWidth: 50, 
-      renderCell: ClassNotesCell,
+      field: 'info', 
+      headerName: 'Info', 
+      align: 'center',
+      flex: 1, 
+      minWidth: 70, 
+      headerAlign: 'center',
+      renderCell: InfoCell,
       sortable: false,
-      filterable: false
-    },
-    { 
-      field: 'requisites', 
-      headerName: '', 
-      flex: 0.7, 
-      minWidth: 50, 
-      renderCell: PrereqCell,
-      sortable: false,
-      filterable: false
-    },
+      filterable: false,
+      disableColumnMenu: true
+    }
   ];

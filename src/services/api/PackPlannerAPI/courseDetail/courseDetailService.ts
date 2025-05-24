@@ -4,6 +4,7 @@ import { createGradeCard } from '../grade/gradeService';
 import { createProfessorCard } from '../professor/ratingService';
 import type { Course } from '../../../../types';
 import type { SingleCourseDataResponse, CourseElements } from '../../types';
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../../../config';
 
 // Cache map to store course data in memory
 const courseDataCache = new Map<string, SingleCourseDataResponse>();
@@ -46,17 +47,33 @@ async function fetchSingleCourseData(course: Course): Promise<SingleCourseDataRe
   // Fetch from API if not in cache
   try {
     AppLogger.info("Fetching combined data from API for:", course);
-    const url = `https://app-gradefetchbackend.azurewebsites.net/api/user/singleCourse?courseName=${encodeURIComponent(course.abr)}&professorName=${encodeURIComponent(course.instructor)}`;
-    const response = await fetch(url);
+    const url = `${SUPABASE_URL}/functions/v1/database-access`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({
+        courseName: course.abr,
+        professorName: course.instructor
+      })
+    });
+    
     
     if (!response.ok) {
       AppLogger.error("Error fetching combined data:", response.status, response.statusText);
       return null;
     }
     
-    const combinedData = await response.json() as SingleCourseDataResponse;
+    const combined_data_json = await response.json();
     
+    const combinedData = {
+      CourseData: combined_data_json.data.course? combined_data_json.data.course : null,
+      RateMyProfInfo: combined_data_json.data.prof? combined_data_json.data.prof : null,
+    } as SingleCourseDataResponse;
     // Store in memory cache
+
     courseDataCache.set(cacheKey, combinedData);
     
     // Generate hash and store in persistent cache
