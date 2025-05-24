@@ -37,6 +37,7 @@ export function parseHTMLContent(html: string): CourseData | null {
   const $courseSection = $('.course');
   if ($courseSection.length === 0) {
     console.error("Could not find course section.");
+    AppLogger.error("Could not find course section.", { html_parse });
     return null;
   }
   const code = $courseSection.find('h1').contents().first().text().trim();

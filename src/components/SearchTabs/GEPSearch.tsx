@@ -112,6 +112,27 @@ export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepS
             
             // Check which courses have sections
             if (courseData) {
+              // Show a detailed sample of one course's data structure
+              const sampleCourseKey = Object.keys(courseData)[0];
+              if (sampleCourseKey) {
+                const sampleCourseData = courseData[sampleCourseKey];
+                AppLogger.info("[GEP DATA STRUCTURE] Example course data structure:", {
+                  key: sampleCourseKey,
+                  title: sampleCourseData.title,
+                  sections: {
+                    type: typeof sampleCourseData.sections,
+                    isArray: Array.isArray(sampleCourseData.sections),
+                    length: sampleCourseData.sections?.length || 0,
+                    // If there's a section, show its structure
+                    firstSection: sampleCourseData.sections?.length > 0 ? {
+                      section: sampleCourseData.sections[0].section,
+                      classNumber: sampleCourseData.sections[0].classNumber,
+                      instructor: sampleCourseData.sections[0].instructor_name
+                    } : 'No sections'
+                  }
+                });
+              }
+              
               const coursesWithSections = Object.entries(courseData)
                 .filter(([_, data]) => data.sections && data.sections.length > 0)
                 .map(([key]) => key);
@@ -140,50 +161,50 @@ export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepS
 
     // Memoize the filtered courses to prevent recalculation on every render
     const filteredCourses = useMemo(() => {
-   
-      
-      if (!gepSearchData.isLoaded || !gepSearchData.courses) {
-        AppLogger.info("[GEP FILTER DEBUG] No courses or not loaded, returning empty array");
-        return [];
-      }
-      
-      if (!gepSearchData.hideNoSections || !gepSearchData.courseData) {
-        AppLogger.info("[GEP FILTER DEBUG] Not filtering - returning all courses");
-        return gepSearchData.courses;
-      }
-      
-      // Apply filtering only when hideNoSections is true
-      AppLogger.info("[GEP FILTER DEBUG] Filtering courses");
-      
-      // Debug each course's section data before filtering
-      gepSearchData.courses.forEach(course => {
-        const key = `${course.course_abr} ${course.catalog_num}`;
-        const data = (gepSearchData.courseData as Record<string, MergedCourseData>)[key];
-        AppLogger.info(`[GEP FILTER DEBUG] Course ${key}: has data? ${!!data}, sections? ${data?.sections?.length || 0}`);
-      });
-      
-      // Perform filtering with detailed logging
-      const filtered = gepSearchData.courses.filter((course: RequiredCourse) => {
-        const key = `${course.course_abr} ${course.catalog_num}`;
-        const courseData = (gepSearchData.courseData as Record<string, MergedCourseData>)[key];
+    
+        if (!gepSearchData.isLoaded || !gepSearchData.courses) {
+          AppLogger.info("[GEP FILTER] No courses or not loaded");
+          return [];
+        }
         
-        // Log detailed information about this course
-       
+        if (!gepSearchData.hideNoSections || !gepSearchData.courseData) {
+          AppLogger.info("[GEP FILTER] Not filtering - returning all courses");
+          return gepSearchData.courses;
+        }
         
-        // Only return true if course has data AND has sections with length > 0
-        const hasSection = courseData && courseData.sections && courseData.sections.length > 0;
-        AppLogger.info(`[GEP FILTER DEBUG] - Will be included: ${hasSection}`);
+        // Apply filtering only when hideNoSections is true
+        AppLogger.info("[GEP FILTER] Filtering courses by sections");
         
-        return hasSection;
-      });
-      
-      // Log the filtering results
-      AppLogger.info(`[GEP FILTER DEBUG] Filtered ${gepSearchData.courses.length} courses down to ${filtered.length}`);
-      filtered.forEach(course => {
-        AppLogger.info(`[GEP FILTER DEBUG] Included course: ${course.course_abr} ${course.catalog_num}`);
-      });
-      
-      return filtered;
+        // Log section data structure for debugging
+        if (gepSearchData.courses.length > 0) {
+          const sampleCourse = gepSearchData.courses[0];
+          const sampleKey = `${sampleCourse.course_abr} ${sampleCourse.catalog_num}`;
+          const sampleData = (gepSearchData.courseData as Record<string, MergedCourseData>)[sampleKey];
+          
+          AppLogger.info("[GEP FILTER] Sample course data structure:", {
+            key: sampleKey,
+            hasCourseData: !!sampleData,
+            sections: sampleData ? {
+              type: typeof sampleData.sections,
+              isArray: Array.isArray(sampleData.sections),
+              length: sampleData.sections?.length || 0,
+              sampleSection: sampleData.sections?.length > 0 ? sampleData.sections[0] : null
+            } : 'No course data'
+          });
+        }
+        
+        // Perform filtering with minimal logging
+        const filtered = gepSearchData.courses.filter((course: RequiredCourse) => {
+          const key = `${course.course_abr} ${course.catalog_num}`;
+          const courseData = (gepSearchData.courseData as Record<string, MergedCourseData>)[key];
+          
+          // Return true if course has data AND has sections with length > 0
+          return courseData && courseData.sections && courseData.sections.length > 0;
+        });
+        
+        AppLogger.info(`[GEP FILTER] Filtered ${gepSearchData.courses.length} courses to ${filtered.length} with sections`);
+        
+        return filtered;
     }, [gepSearchData.courses, gepSearchData.hideNoSections, gepSearchData.courseData, gepSearchData.isLoaded]);
     AppLogger.info("Filtered courses");
     AppLogger.info(filteredCourses);

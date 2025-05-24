@@ -217,43 +217,38 @@ export async function batchFetchCoursesData(
     courseKeyMapping[courseKey] = course;
     
     const openCoursesCacheKey = courseKey + ' ' + term;
-    AppLogger.info(`[BATCH DEBUG] Generating cache key for: "${openCoursesCacheKey}"`);
+    // Log just the cache key format once
+    if (course === courses[0]) {
+      AppLogger.info(`[CACHE KEY FORMAT] Cache key format: "${openCoursesCacheKey}" -> hash`);
+    }
     const hashKey = await generateCacheKey(openCoursesCacheKey);
     openCoursesHashKeys[courseKey] = hashKey;
     
     // Check cache
-    AppLogger.info(`[BATCH DEBUG] Checking cache for course: ${courseKey}, hash: ${hashKey}`);
     const cachedData = await getGenericCache(CACHE_KEYS.OPEN_COURSES, hashKey);
     
     if (cachedData) {
-      // Cache hit
-      AppLogger.info(`[BATCH DEBUG] Cache HIT for course: ${courseKey}`);
+      // Cache hit - only log sample data for the first hit
       const cachedCourseData = JSON.parse(cachedData.combinedData);
       
-      // Log details of the cached data
-      AppLogger.info(`[BATCH DEBUG] Retrieved cached data for ${courseKey}:`);
-      AppLogger.info(`[BATCH DEBUG] - Title: ${cachedCourseData.title}`);
-      AppLogger.info(`[BATCH DEBUG] - Code: ${cachedCourseData.code}`);
-      AppLogger.info(`[BATCH DEBUG] - Sections count: ${cachedCourseData.sections?.length || 0}`);
-      
-      // Log a summary of each section
-      if (cachedCourseData.sections && cachedCourseData.sections.length > 0) {
-        cachedCourseData.sections.forEach((section: any, idx: number) => {
-          AppLogger.info(`[BATCH DEBUG] - Section ${idx+1}: ${section.section}, ClassNum: ${section.classNumber}`);
+      if (!Object.keys(openCoursesCache).length) { // Only log first cache hit
+        AppLogger.info(`[CACHE DATA SAMPLE] Retrieved data structure for ${courseKey}:`, {
+          title: cachedCourseData.title,
+          code: cachedCourseData.code,
+          sectionsCount: cachedCourseData.sections?.length || 0,
+          // Log the first section if available
+          sampleSection: cachedCourseData.sections?.length > 0 ? {
+            section: cachedCourseData.sections[0].section,
+            classNumber: cachedCourseData.sections[0].classNumber,
+            instructors: cachedCourseData.sections[0].instructor_name
+          } : 'No sections'
         });
-      } else {
-        AppLogger.info(`[BATCH DEBUG] - No sections in cached data for ${courseKey}`);
       }
       
       openCoursesCache[courseKey] = cachedCourseData;
-      
-      // Log if course has sections
-      const sectionsCount = openCoursesCache[courseKey]?.sections?.length || 0;
-      AppLogger.info(`[BATCH DEBUG] Cached course ${courseKey} has ${sectionsCount} sections`);
       return { cached: true, courseKey };
     } else {
       // Cache miss
-      AppLogger.info(`[BATCH DEBUG] Cache MISS for course: ${courseKey}, will fetch from API`);
       openCoursesToFetch.push(course);
       return { cached: false, courseKey };
     }
@@ -273,44 +268,46 @@ export async function batchFetchCoursesData(
     const fetchPromises = openCoursesToFetch.map(async (course) => {
       const courseKey = `${course.course_abr} ${course.catalog_num}`;
       try {
-        AppLogger.info(`[BATCH DEBUG] Fetching course data for: ${courseKey}`);
         const courseData = await searchOpenCoursesByParams(term, course.course_abr, course.catalog_num);
         if (courseData) {
-          // Log the raw course data before caching
-          AppLogger.info(`[BATCH DEBUG] Raw course data for ${courseKey}:`);
-          AppLogger.info(`[BATCH DEBUG] - Title: ${courseData.title}`);
-          AppLogger.info(`[BATCH DEBUG] - Code: ${courseData.code}`);
-          AppLogger.info(`[BATCH DEBUG] - Sections count: ${courseData.sections?.length || 0}`);
-          
-          // Log details about each section
-          if (courseData.sections && courseData.sections.length > 0) {
-            courseData.sections.forEach((section, idx) => {
-              AppLogger.info(`[BATCH DEBUG] - Section ${idx+1}:`);
-              AppLogger.info(`[BATCH DEBUG]   - Section number: ${section.section}`);
-              AppLogger.info(`[BATCH DEBUG]   - Class number: ${section.classNumber}`);
-              AppLogger.info(`[BATCH DEBUG]   - Status: ${(section as any).status || 'Unknown'}`);
-              AppLogger.info(`[BATCH DEBUG]   - Instructors: ${section.instructor_name?.join(', ') || 'None'}`);
+          // Only log sample data for the first course
+          if (course === openCoursesToFetch[0]) {
+            AppLogger.info(`[API DATA SAMPLE] API returned data structure for ${courseKey}:`, {
+              title: courseData.title,
+              code: courseData.code,
+              sectionsCount: courseData.sections?.length || 0,
+              // Log the first section if available
+              sampleSection: courseData.sections?.length > 0 ? {
+                section: courseData.sections[0].section,
+                classNumber: courseData.sections[0].classNumber,
+                instructors: courseData.sections[0].instructor_name
+              } : 'No sections'
             });
-          } else {
-            AppLogger.info(`[BATCH DEBUG] - No sections available for ${courseKey}`);
           }
           
           // Cache the result
           const hashKey = openCoursesHashKeys[courseKey];
           const cacheData = JSON.stringify(courseData);
-          AppLogger.info(`[BATCH DEBUG] Caching course data for: ${courseKey}, hash: ${hashKey}`);
-          AppLogger.info(`[BATCH DEBUG] Cache data preview (first 100 chars): ${cacheData.substring(0, 100)}...`);
+          
+          // Log the cache key and data sample once
+          if (course === openCoursesToFetch[0]) {
+            AppLogger.info(`[STORED CACHE FORMAT] Sample cache data for ${courseKey}:`, {
+              cacheKey: openCoursesHashKeys[courseKey],
+              dataPreview: cacheData.substring(0, 100) + '...',
+              objectKeys: Object.keys(courseData)
+            });
+          }
+          
           await setGenericCache(CACHE_KEYS.OPEN_COURSES, hashKey, cacheData);
           
           // Add to our data collection
           openCoursesCache[courseKey] = courseData;
           return { success: true, courseKey };
         } else {
-          AppLogger.info(`[BATCH DEBUG] No data found for course: ${courseKey}`);
           return { success: false, courseKey };
         }
       } catch (error) {
-        AppLogger.error(`[BATCH DEBUG] Error fetching course data for ${courseKey}:`, error);
+        AppLogger.error(`Error fetching course data for ${courseKey}:`, error);
         return { success: false, courseKey, error };
       }
     });
@@ -437,22 +434,7 @@ export async function batchFetchCoursesData(
   // Merge data for each course
   const mergedData = mergeData(openCoursesCache, filteredGradeProfData, courseKeyMapping);
   
-  // Log merged data details
-  AppLogger.info(`[BATCH DEBUG] Merged data summary:`);
-  Object.entries(mergedData).forEach(([key, data]) => {
-    AppLogger.info(`[BATCH DEBUG] - Course ${key}:`);
-    AppLogger.info(`[BATCH DEBUG]   - Title: ${data.title}`);
-    AppLogger.info(`[BATCH DEBUG]   - Sections: ${data.sections?.length || 0}`);
-    
-    // Log details for each section
-    if (data.sections && data.sections.length > 0) {
-      data.sections.forEach((section, idx) => {
-        AppLogger.info(`[BATCH DEBUG]   - Section ${idx+1}: ${section.section}, ClassNum: ${section.classNumber}`);
-      });
-    } else {
-      AppLogger.info(`[BATCH DEBUG]   - No sections available after merge`);
-    }
-  });
+
   
   // Add to result
   Object.assign(result, mergedData);

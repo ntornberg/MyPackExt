@@ -299,11 +299,20 @@ function estimateSize(str: string): number {
  * @param {Record<string, any>} item - The object to use for the hash.
  * @returns {Promise<string>} - The generated unique key.
  */
+// Set to track which key patterns we've already logged
+const loggedCacheKeys = new Set<string>();
+
 export async function generateCacheKey(item: string): Promise<string> {
-    AppLogger.info(`[CACHE DEBUG] Generating cache key for plain text: "${item}"`);
-    const hash = await hashString(item);
-    AppLogger.info(`[CACHE DEBUG] Generated hash: "${hash}" for plain text: "${item}"`);
-    return hash;
+    // Log only the first time for each unique input pattern
+    const pattern = item.split(' ')[0]; // Log pattern once per type (course abbr or batch-gradeprof)
+    
+    if (!loggedCacheKeys.has(pattern)) {
+        const hash = await hashString(item);
+        AppLogger.info(`[CACHE KEY] Sample for pattern "${pattern}": Input "${item}" -> Hash: "${hash}"`);
+        loggedCacheKeys.add(pattern);
+    }
+    
+    return hashString(item);
 }
 
 /**
@@ -318,6 +327,12 @@ function isChromeStorageAvailable(): boolean {
          typeof chrome.storage.local !== 'undefined';
 }
 
+// Set to track whether we've logged sample cache entries
+const loggedSampleCacheData = {
+    retrieve: false,
+    store: false
+};
+
 /**
  * Retrieves cached data from a given cache category using a precomputed hash.
  * First checks chrome.storage, then falls back to IndexedDB for larger items.
@@ -327,8 +342,6 @@ function isChromeStorageAvailable(): boolean {
  */
 export async function getGenericCache(cacheCategory: string, hash: string): Promise<CacheEntry | null> {
     try {
-        AppLogger.info(`[CACHE DEBUG] Looking up cache: Category "${cacheCategory}", Hash "${hash}"`);
-        
         // Check if Chrome storage is available
         if (isChromeStorageAvailable()) {
             // First try chrome.storage
@@ -340,30 +353,45 @@ export async function getGenericCache(cacheCategory: string, hash: string): Prom
                     // Check if the cache entry has expired
                     const now = Date.now();
                     if (entry.timestamp && (now - entry.timestamp > CACHE_EXPIRATION)) {
-                        AppLogger.info(`[CACHE DEBUG] Found but expired in Chrome Storage: Category "${cacheCategory}", Hash "${hash}", Age: ${(now - entry.timestamp) / 1000}s`);
                         delete cache[hash];
                         await chrome.storage.local.set({ [cacheCategory]: cache });
                         return null;
                     }
-                    AppLogger.info(`[CACHE DEBUG] Cache HIT in Chrome Storage: Category "${cacheCategory}", Hash "${hash}"`);
+                    
+                    // Log sample data format (only once)
+                    if (!loggedSampleCacheData.retrieve) {
+                        AppLogger.info(`[CACHE RETRIEVED] Sample data format for category "${cacheCategory}":`, {
+                            storage: 'Chrome Storage',
+                            hash: hash.substring(0, 10) + '...',
+                            dataPreview: typeof entry.combinedData === 'string' 
+                                ? entry.combinedData.substring(0, 100) + '...' 
+                                : 'Not a string',
+                            timestamp: new Date(entry.timestamp).toISOString()
+                        });
+                        loggedSampleCacheData.retrieve = true;
+                    }
+                    
                     return entry;
                 }
-                AppLogger.info(`[CACHE DEBUG] Cache MISS in Chrome Storage, hash not found: Category "${cacheCategory}", Hash "${hash}"`);
-            } else {
-                AppLogger.info(`[CACHE DEBUG] Cache MISS in Chrome Storage, category not found: Category "${cacheCategory}"`);
             }
-            
-            // If not found in chrome.storage, try IndexedDB
-        } else {
-            AppLogger.info(`[CACHE INFO] Chrome Storage not available, falling back to IndexedDB: Category: ${cacheCategory}, Key: ${hash}`);
         }
         
+        // Try IndexedDB
         const indexedResult = await getFromIndexedDB(cacheCategory, hash);
-        if (indexedResult) {
-            AppLogger.info(`[CACHE DEBUG] Cache HIT in IndexedDB: Category "${cacheCategory}", Hash "${hash}"`);
-        } else {
-            AppLogger.info(`[CACHE DEBUG] Cache MISS in IndexedDB: Category "${cacheCategory}", Hash "${hash}"`);
+        
+        // Log sample format from IndexedDB (only once)
+        if (indexedResult && !loggedSampleCacheData.retrieve) {
+            AppLogger.info(`[CACHE RETRIEVED] Sample data format for category "${cacheCategory}":`, {
+                storage: 'IndexedDB',
+                hash: hash.substring(0, 10) + '...',
+                dataPreview: typeof indexedResult.combinedData === 'string' 
+                    ? indexedResult.combinedData.substring(0, 100) + '...' 
+                    : 'Not a string',
+                timestamp: new Date(indexedResult.timestamp).toISOString()
+            });
+            loggedSampleCacheData.retrieve = true;
         }
+        
         return indexedResult;
     } catch (error) {
         AppLogger.error(`[CACHE ERROR] getGenericCache: Category: ${cacheCategory}, Key: ${hash}`, error);
@@ -379,30 +407,43 @@ export async function getGenericCache(cacheCategory: string, hash: string): Prom
  * @param {string} jsonData - The JSON data to store.
  * @returns {Promise<void>}
  */
-export async function setGenericCache(cacheCategory: string, hash: string, jsonData: string): Promise<void> {
+export async function setGenericCache(cacheCategory: string, hash: string, jsonData: any): Promise<void> {
     try {
-        const dataSize = estimateSize(jsonData);
+        // Ensure jsonData is a string
+        const dataAsString = typeof jsonData === 'string' 
+            ? jsonData 
+            : JSON.stringify(jsonData);
+        
+        const dataSize = estimateSize(dataAsString);
         const cacheEntry: CacheEntry = {
-            combinedData: jsonData,
+            combinedData: dataAsString,
             timestamp: Date.now()
         };
         
-        AppLogger.info(`[CACHE DEBUG] Storing in cache: Category "${cacheCategory}", Hash "${hash}", Size ${dataSize} bytes`);
+        // Log sample cache storage info (only once)
+        if (!loggedSampleCacheData.store) {
+            AppLogger.info(`[CACHE STORED] Sample data format for category "${cacheCategory}":`, {
+                hash: hash.substring(0, 10) + '...',
+                storage: dataSize > SIZE_THRESHOLD ? 'IndexedDB' : 'Chrome Storage',
+                dataSize: `${Math.round(dataSize / 1024)} KB`,
+                dataPreview: dataAsString.substring(0, 100) + '...',
+                dataType: typeof jsonData,
+                timestamp: new Date(cacheEntry.timestamp).toISOString()
+            });
+            loggedSampleCacheData.store = true;
+        }
         
         // Use IndexedDB for large items or if Chrome storage is not available
         if (dataSize > SIZE_THRESHOLD || !isChromeStorageAvailable()) {
-            AppLogger.info(`[CACHE DEBUG] Using IndexedDB for storage: Size ${dataSize} > Threshold ${SIZE_THRESHOLD} or Chrome unavailable`);    
             await storeInIndexedDB(cacheCategory, hash, cacheEntry);
             return;
         }
         
         // Use chrome.storage for smaller items
-        AppLogger.info(`[CACHE DEBUG] Using Chrome Storage: Size ${dataSize} <= Threshold ${SIZE_THRESHOLD}`);
         const data = await chrome.storage.local.get([cacheCategory]);
         const current = data[cacheCategory] || {};
         current[hash] = cacheEntry;
         await chrome.storage.local.set({ [cacheCategory]: current });
-        AppLogger.info(`[CACHE DEBUG] Successfully stored in Chrome Storage: Category "${cacheCategory}", Hash "${hash}"`);
     } catch (error) {
         AppLogger.error(`[CACHE ERROR] setGenericCache: Category: ${cacheCategory}, Key: ${hash}`, error);
     }
