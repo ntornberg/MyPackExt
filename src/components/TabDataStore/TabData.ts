@@ -41,7 +41,7 @@ export const PlanSearchDataInitialState: PlanSearchData = {
     isLoaded: true,
     progress: 0,
     progressLabel: '',
-    hideNoSections: false
+    hideNoSections: true
 }
 
 export type GEPData = {
@@ -63,5 +63,5 @@ export const GEPDataInitialState: GEPData = {
     progressLabel: '',
     courseData: {},
     courses: [],
-    hideNoSections: false
+    hideNoSections: true
 }

@@ -184,7 +184,10 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
     const minor_data = minorPlans[planSearchData.selectedMinor as keyof typeof minorPlans] as MinorPlan | undefined;
     const major_requirements = subplan_data?.requirements ?? {};
     const minor_requirements = minor_data?.requirements ?? {};
+    AppLogger.info(`[PLAN SEARCH] Major Requirements:`, major_requirements);
+    AppLogger.info(`[PLAN SEARCH] Minor Requirements:`, minor_requirements);
     const requirements = { ...minor_requirements, ...major_requirements };
+    AppLogger.info(`[PLAN SEARCH] Requirements:`, requirements);
     if (Object.keys(requirements).length > 0) {
       requirementsList = (
         <List >
@@ -238,7 +241,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
                         }}>
                           {(planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections?.length > 0 ? (
                             <Box sx={{ 
-                              //height: 400,
+                              height: '100%',
                               width: '100%',
                               display: 'flex'
                             }}>
@@ -377,7 +380,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
             Search
           </Button>
           <FormControlLabel
-            control={<Checkbox checked={planSearchData.hideNoSections} onChange={(_, checked) => setPlanSearchTabData('hideNoSections', checked)} />}
+            control={<Checkbox checked={planSearchData.hideNoSections}  onChange={(_, checked) => setPlanSearchTabData('hideNoSections', checked)} />}
             label="Hide courses with no open sections"
           />
           {!planSearchData.isLoaded && <CircularProgressWithLabel value={planSearchData.progress} label={planSearchData.progressLabel || ''} />}

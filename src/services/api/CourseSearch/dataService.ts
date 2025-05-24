@@ -13,7 +13,8 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../../config';
  */
 const CACHE_KEYS = {
   OPEN_COURSES: "openCourses",
-  GRADE_PROF: "gradeProfData"
+  GRADE_PROF: "gradeProfData",
+  NULL_COURSES: "nullCourses"  // Cache for courses that return no data
 };
 
 /**
@@ -39,6 +40,18 @@ export async function fetchSingleCourseData(
   // Generate hash for persistent cache lookup
   const openCoursesCacheKey = courseKey + ' ' + term;
   const openCoursesHashKey = await generateCacheKey(openCoursesCacheKey);
+  
+  // Check if this course is known to return null
+  onProgress?.(15, `Checking if ${courseKey} is known to be unavailable`);
+  const nullCacheKey = `null-${openCoursesCacheKey}`;
+  const nullHashKey = await generateCacheKey(nullCacheKey);
+  const cachedNull = await getGenericCache(CACHE_KEYS.NULL_COURSES, nullHashKey);
+  
+  if (cachedNull) {
+    AppLogger.info(`Course ${courseKey} is cached as null, skipping API call`);
+    onProgress?.(100, `Course ${courseKey} is not available`);
+    return null;
+  }
   
   // Check open courses cache first
   onProgress?.(20, `Checking open courses cache for ${courseKey}`);
@@ -67,6 +80,14 @@ export async function fetchSingleCourseData(
     
     if (!courseData) {
       AppLogger.error("No open courses data returned for", courseKey);
+      
+      // Cache null result to avoid future API calls
+      await setGenericCache(CACHE_KEYS.NULL_COURSES, nullHashKey, { 
+        courseKey, 
+        term, 
+        reason: 'API returned null' 
+      });
+      
       onProgress?.(100, `No open courses data found for ${courseKey}`);
       return null;
     }
@@ -109,7 +130,8 @@ export async function fetchSingleCourseData(
   }
   
   // Generate hash for grade/professor cache lookup
-  const gradeProfCacheKey = `${courseKey}-gradeprof-${term}`;
+  const instructorList = courseSectionsWithProfs.map(cs => cs.instructor_name).sort().join(',');
+  const gradeProfCacheKey = `${courseKey}-${instructorList}-${term}`;
   const gradeProfHashKey = await generateCacheKey(gradeProfCacheKey);
   
   // Check grade/professor cache
@@ -206,12 +228,15 @@ export async function batchFetchCoursesData(
   AppLogger.info(`[BATCH DEBUG] Phase 1: Checking open courses cache for ${courses.length} courses`);
   
   // Generate cache keys and prepare lookup data
-  const courseKeyMapping: Record<string, RequiredCourse> = {};
-  const openCoursesCache: Record<string, CourseData> = {};
-  const openCoursesToFetch: RequiredCourse[] = [];
-  const openCoursesHashKeys: Record<string, string> = {};
+  const courseKeyMapping: Record<string, RequiredCourse> = {}; // Used to find the course id when merging the data
+  const openCoursesCache: Record<string, CourseData> = {}; // Used to store the data that is already in cache
+  const openCoursesToFetch: RequiredCourse[] = []; // Used to store the data that needs to be fetched from the API
+  const openCoursesHashKeys: Record<string, string> = {}; // Used when storing the data in cache that needed to be fetched
   
   // Create a promise for each course to check the cache in parallel
+  // Gets the course key, hash key, and checks if the course is known to return null
+  // Adds the course to the openCoursesCache if it is in the cache
+  // Adds the course to the openCoursesToFetch if it is not in the cache
   const openCoursesCachePromises = courses.map(async (course) => {
     const courseKey = `${course.course_abr} ${course.catalog_num}`;
     courseKeyMapping[courseKey] = course;
@@ -224,7 +249,18 @@ export async function batchFetchCoursesData(
     const hashKey = await generateCacheKey(openCoursesCacheKey);
     openCoursesHashKeys[courseKey] = hashKey;
     
-    // Check cache
+    // Check if this course is known to return null
+    const nullCacheKey = `null-${openCoursesCacheKey}`;
+    const nullHashKey = await generateCacheKey(nullCacheKey);
+    const cachedNull = await getGenericCache(CACHE_KEYS.NULL_COURSES, nullHashKey);
+    
+    if (cachedNull) {
+      // This course is known to return null, skip it
+      AppLogger.info(`[CACHE NULL] Course ${courseKey} known to return null, skipping`);
+      return { cached: true, courseKey, isNull: true };
+    }
+    
+    // Check cache for actual course data
     const cachedData = await getGenericCache(CACHE_KEYS.OPEN_COURSES, hashKey);
     
     if (cachedData) {
@@ -268,35 +304,15 @@ export async function batchFetchCoursesData(
     const fetchPromises = openCoursesToFetch.map(async (course) => {
       const courseKey = `${course.course_abr} ${course.catalog_num}`;
       try {
+        onProgress?.(25, `Fetching open courses data for ${courseKey}`);
         const courseData = await searchOpenCoursesByParams(term, course.course_abr, course.catalog_num);
         if (courseData) {
-          // Only log sample data for the first course
-          if (course === openCoursesToFetch[0]) {
-            AppLogger.info(`[API DATA SAMPLE] API returned data structure for ${courseKey}:`, {
-              title: courseData.title,
-              code: courseData.code,
-              sectionsCount: courseData.sections?.length || 0,
-              // Log the first section if available
-              sampleSection: courseData.sections?.length > 0 ? {
-                section: courseData.sections[0].section,
-                classNumber: courseData.sections[0].classNumber,
-                instructors: courseData.sections[0].instructor_name
-              } : 'No sections'
-            });
-          }
+        
           
           // Cache the result
           const hashKey = openCoursesHashKeys[courseKey];
           const cacheData = JSON.stringify(courseData);
           
-          // Log the cache key and data sample once
-          if (course === openCoursesToFetch[0]) {
-            AppLogger.info(`[STORED CACHE FORMAT] Sample cache data for ${courseKey}:`, {
-              cacheKey: openCoursesHashKeys[courseKey],
-              dataPreview: cacheData.substring(0, 100) + '...',
-              objectKeys: Object.keys(courseData)
-            });
-          }
           
           await setGenericCache(CACHE_KEYS.OPEN_COURSES, hashKey, cacheData);
           
@@ -304,6 +320,19 @@ export async function batchFetchCoursesData(
           openCoursesCache[courseKey] = courseData;
           return { success: true, courseKey };
         } else {
+          // Cache null result to avoid future API calls for this course
+          const openCoursesCacheKey = courseKey + ' ' + term;
+          const nullCacheKey = `null-${openCoursesCacheKey}`;
+          const nullHashKey = await generateCacheKey(nullCacheKey);
+          
+          // Store a simple null marker with timestamp
+          await setGenericCache(CACHE_KEYS.NULL_COURSES, nullHashKey, { 
+            courseKey, 
+            term, 
+            reason: 'API returned null' 
+          });
+          
+          AppLogger.info(`[CACHE NULL] Cached null result for ${courseKey}`);
           return { success: false, courseKey };
         }
       } catch (error) {
@@ -323,57 +352,38 @@ export async function batchFetchCoursesData(
     AppLogger.info(`[BATCH DEBUG] Course ${key}: ${sectionsCount} sections available`);
   });
   
-  // Phase 3: Prepare grade/professor data requests
-  onProgress?.(40, "Processing course sections for grade/professor data");
+  // Phase 4: Fetch Grade/Professor Data (per course)
+  onProgress?.(50, "Processing grade/professor data for each course");
   
-  const courseSectionsWithProfs: { course_title: string; instructor_name: string }[] = [];
-  const courseToSectionIndex: Record<string, number[]> = {};
-  
-  // Process all course data to extract professor information
-  Object.entries(openCoursesCache).forEach(([courseKey, courseData]) => {
+  // Process grade/professor data for each course individually
+  const gradePromises = Object.entries(openCoursesCache).map(async ([courseKey, courseData]) => {
     if (!courseData || !courseData.sections) return;
     
-    courseData.sections
-      .forEach((section, index) => {
-        if (section.instructor_name && section.instructor_name.length > 0 && courseData.code) {
-          // Add to sections with professors
-          const instructor = section.instructor_name[0];
-          if (instructor) {
-            courseSectionsWithProfs.push({
-              course_title: courseData.code,
-              instructor_name: instructor
-            });
-            
-            // Track which section this corresponds to
-            if (!courseToSectionIndex[courseKey]) {
-              courseToSectionIndex[courseKey] = [];
-            }
-            courseToSectionIndex[courseKey].push(index);
-          }
-        }
-      });
-  });
-  
-  // Phase 4: Fetch Grade/Professor Data
-  let gradeProfData: BatchDataRequestResponse | null = null;
-  
-  if (courseSectionsWithProfs.length > 0) {
-    onProgress?.(50, `Fetching grade/professor data for ${courseSectionsWithProfs.length} sections`);
+    // Get sections with instructors for this specific course
+    const courseSectionsWithProfs = courseData.sections
+      .filter(section => section.instructor_name && section.instructor_name.length > 0 && courseData.code)
+      .map(section => ({
+        course_title: courseData.code,
+        instructor_name: section.instructor_name[0]
+      }));
     
-    // Generate hash for grade/professor cache lookup
-    const gradeProfCacheKey = `batch-gradeprof-${courseSectionsWithProfs.length}-${term}`;
+    if (courseSectionsWithProfs.length === 0) return;
+    
+    // Create a course-specific cache key based on the course and its instructors
+    const instructorList = courseSectionsWithProfs.map(cs => cs.instructor_name).sort().join(',');
+    const gradeProfCacheKey = `${courseKey}-${instructorList}-${term}`;
     const gradeProfHashKey = await generateCacheKey(gradeProfCacheKey);
     
-    // Check grade/professor cache
+    // Check grade/professor cache for this specific course
     const cachedGradeProf = await getGenericCache(CACHE_KEYS.GRADE_PROF, gradeProfHashKey);
     
+    let gradeProfData: BatchDataRequestResponse | null = null;
+    
     if (cachedGradeProf) {
-      AppLogger.info("Grade/professor cache hit for batch request");
       gradeProfData = JSON.parse(cachedGradeProf.combinedData);
-      onProgress?.(70, "Found grade/professor data in cache");
+      AppLogger.info(`[GRADE CACHE HIT] Found cached grade/prof data for ${courseKey}`);
     } else {
-      // Fetch grade/professor data if not in cache
-      onProgress?.(60, "Fetching grade/professor data from API");
+      // Fetch grade/professor data for this specific course
       try {
         const url = `${SUPABASE_URL}/functions/v1/clever-function`;
         const apiResponse = await fetch(url, {
@@ -392,49 +402,45 @@ export async function batchFetchCoursesData(
         const jsonResponse = await apiResponse.json();
         gradeProfData = jsonResponse.data as BatchDataRequestResponse;
         
-        // Cache grade/professor data if useful data was returned
+        // Cache grade/professor data for this specific course
         if (gradeProfData && (gradeProfData.courses?.length || gradeProfData.profs?.length)) {
           await setGenericCache(CACHE_KEYS.GRADE_PROF, gradeProfHashKey, JSON.stringify(gradeProfData));
-          onProgress?.(70, "Cached grade/professor data");
+          AppLogger.info(`[GRADE CACHE STORE] Cached grade/prof data for ${courseKey}`);
         }
       } catch (error) {
-        AppLogger.error("Error fetching grade/professor data:", error);
-        onProgress?.(70, `Error fetching grade/professor data: ${error}`);
-        // Continue without grade/professor data
+        AppLogger.error(`Error fetching grade/professor data for ${courseKey}:`, error);
+        // Continue without grade/professor data for this course
       }
     }
-  }
+    
+    return { courseKey, gradeProfData };
+  });
   
-  // Phase 5: Merge Data
-  onProgress?.(80, "Merging course data");
+  // Wait for all grade/prof requests to complete
+  const gradeResults = await Promise.all(gradePromises);
   
-  // Filter the grade/prof data to only include our requested courses/professors
-  // to keep the cache size reasonable
-  const filteredGradeProfData: BatchDataRequestResponse = {
+  // Combine all grade/prof data
+  const combinedGradeProfData: BatchDataRequestResponse = {
     courses: [],
     profs: []
   };
   
-  if (gradeProfData) {
-    // Filter courses to only those we requested
-    if (gradeProfData.courses && gradeProfData.courses.length > 0) {
-      const relevantCourses = courseSectionsWithProfs.map(cs => cs.course_title);
-      filteredGradeProfData.courses = gradeProfData.courses
-        .filter(course => relevantCourses.includes(course.course_name));
+  gradeResults.forEach(result => {
+    if (result && result.gradeProfData) {
+      if (result.gradeProfData.courses) {
+        combinedGradeProfData.courses!.push(...result.gradeProfData.courses);
+      }
+      if (result.gradeProfData.profs) {
+        combinedGradeProfData.profs!.push(...result.gradeProfData.profs);
+      }
     }
-    
-    // Filter professors to only those we requested
-    if (gradeProfData.profs && gradeProfData.profs.length > 0) {
-      const relevantProfessors = courseSectionsWithProfs.map(cs => cs.instructor_name);
-      filteredGradeProfData.profs = gradeProfData.profs
-        .filter(prof => relevantProfessors.includes(prof.master_name));
-    }
-  }
+  });
+  
+  // Phase 5: Merge Data
+  onProgress?.(80, "Merging course data");
   
   // Merge data for each course
-  const mergedData = mergeData(openCoursesCache, filteredGradeProfData, courseKeyMapping);
-  
-
+  const mergedData = mergeData(openCoursesCache, combinedGradeProfData, courseKeyMapping);
   
   // Add to result
   Object.assign(result, mergedData);
@@ -545,16 +551,7 @@ export async function fetchGEPCourseData(
       }
     );
     
-    // Log results summary
-    const resultKeys = Object.keys(batchResults);
-    AppLogger.info(`[GEP DEBUG] Fetch complete. Found ${resultKeys.length} courses with data.`);
     
-    // Log which courses have sections
-    resultKeys.forEach(key => {
-      const courseData = batchResults[key];
-      const sectionCount = courseData.sections?.length || 0;
-      AppLogger.info(`[GEP DEBUG] Course ${key}: ${sectionCount} sections found`);
-    });
     
     if (Object.keys(batchResults).length === 0) {
       AppLogger.warn("No course data found for any GEP requirements");

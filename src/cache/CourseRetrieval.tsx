@@ -299,18 +299,13 @@ function estimateSize(str: string): number {
  * @param {Record<string, any>} item - The object to use for the hash.
  * @returns {Promise<string>} - The generated unique key.
  */
-// Set to track which key patterns we've already logged
-const loggedCacheKeys = new Set<string>();
+
 
 export async function generateCacheKey(item: string): Promise<string> {
     // Log only the first time for each unique input pattern
-    const pattern = item.split(' ')[0]; // Log pattern once per type (course abbr or batch-gradeprof)
     
-    if (!loggedCacheKeys.has(pattern)) {
-        const hash = await hashString(item);
-        AppLogger.info(`[CACHE KEY] Sample for pattern "${pattern}": Input "${item}" -> Hash: "${hash}"`);
-        loggedCacheKeys.add(pattern);
-    }
+    
+   
     
     return hashString(item);
 }
@@ -327,11 +322,7 @@ function isChromeStorageAvailable(): boolean {
          typeof chrome.storage.local !== 'undefined';
 }
 
-// Set to track whether we've logged sample cache entries
-const loggedSampleCacheData = {
-    retrieve: false,
-    store: false
-};
+
 
 /**
  * Retrieves cached data from a given cache category using a precomputed hash.
@@ -358,18 +349,7 @@ export async function getGenericCache(cacheCategory: string, hash: string): Prom
                         return null;
                     }
                     
-                    // Log sample data format (only once)
-                    if (!loggedSampleCacheData.retrieve) {
-                        AppLogger.info(`[CACHE RETRIEVED] Sample data format for category "${cacheCategory}":`, {
-                            storage: 'Chrome Storage',
-                            hash: hash.substring(0, 10) + '...',
-                            dataPreview: typeof entry.combinedData === 'string' 
-                                ? entry.combinedData.substring(0, 100) + '...' 
-                                : 'Not a string',
-                            timestamp: new Date(entry.timestamp).toISOString()
-                        });
-                        loggedSampleCacheData.retrieve = true;
-                    }
+                   
                     
                     return entry;
                 }
@@ -379,18 +359,7 @@ export async function getGenericCache(cacheCategory: string, hash: string): Prom
         // Try IndexedDB
         const indexedResult = await getFromIndexedDB(cacheCategory, hash);
         
-        // Log sample format from IndexedDB (only once)
-        if (indexedResult && !loggedSampleCacheData.retrieve) {
-            AppLogger.info(`[CACHE RETRIEVED] Sample data format for category "${cacheCategory}":`, {
-                storage: 'IndexedDB',
-                hash: hash.substring(0, 10) + '...',
-                dataPreview: typeof indexedResult.combinedData === 'string' 
-                    ? indexedResult.combinedData.substring(0, 100) + '...' 
-                    : 'Not a string',
-                timestamp: new Date(indexedResult.timestamp).toISOString()
-            });
-            loggedSampleCacheData.retrieve = true;
-        }
+        
         
         return indexedResult;
     } catch (error) {
@@ -420,18 +389,7 @@ export async function setGenericCache(cacheCategory: string, hash: string, jsonD
             timestamp: Date.now()
         };
         
-        // Log sample cache storage info (only once)
-        if (!loggedSampleCacheData.store) {
-            AppLogger.info(`[CACHE STORED] Sample data format for category "${cacheCategory}":`, {
-                hash: hash.substring(0, 10) + '...',
-                storage: dataSize > SIZE_THRESHOLD ? 'IndexedDB' : 'Chrome Storage',
-                dataSize: `${Math.round(dataSize / 1024)} KB`,
-                dataPreview: dataAsString.substring(0, 100) + '...',
-                dataType: typeof jsonData,
-                timestamp: new Date(cacheEntry.timestamp).toISOString()
-            });
-            loggedSampleCacheData.store = true;
-        }
+      
         
         // Use IndexedDB for large items or if Chrome storage is not available
         if (dataSize > SIZE_THRESHOLD || !isChromeStorageAvailable()) {

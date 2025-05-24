@@ -7,6 +7,7 @@ import type {GridRenderCellParams} from '@mui/x-data-grid';
 import {useState, useEffect} from 'react';
 
 import CreateCalender, { toMinutes } from './CalenderResizeListener';
+import { AppLogger } from '../../utils/logger';
 
 
 type ScheduleTableEntry = {
@@ -65,6 +66,7 @@ export const CalendarView = (params: GridRenderCellParams) => {
         const fetchData = async () => {
             try {
                 const courses = await getCacheCategory('scheduleTableData');
+                AppLogger.info(`[GEP DEBUG] Courses:`, courses);
                 const events: ScheduleEvent[] = [];
                 let eventId = 1;
 
@@ -125,7 +127,11 @@ export const CalendarView = (params: GridRenderCellParams) => {
                         let schedule_entry: ScheduleTableEntry | null = null;
                         if (typeof course.combinedData !== 'string') {
                             schedule_entry = course.combinedData as unknown as ScheduleTableEntry;
+                        }else{
+                            schedule_entry = JSON.parse(course.combinedData) as unknown as ScheduleTableEntry;
                         }
+                        AppLogger.info(`[GEP DEBUG] Schedule Entry:`, schedule_entry);
+                        AppLogger.info(`[GEP DEBUG] Schedule Entry Section Details:`, schedule_entry?.section_details);
 
                         if (schedule_entry?.section_details) {
                             for (const section of schedule_entry.section_details) {
