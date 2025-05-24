@@ -40,8 +40,7 @@ export function mergeData(
             AppLogger.warn("Required course not found for course: ",course);
             AppLogger.warn("Course key: ",cacheKey);
         }
-        AppLogger.info("Required course: ",reqCourse);
-        AppLogger.info("Course: ",cacheKey);
+
         
         const mergedCourse: MergedCourseData = {
             ...course,
@@ -54,12 +53,11 @@ export function mergeData(
         const catalog_nbr = codeParts.length > 1 ? codeParts[1] : '';
         
         for (const section of course.sections) {
-            AppLogger.info("Section: ",section);
-            AppLogger.info("Batch data courses: ",batchData.courses);
+
             const batchCourse = batchData.courses?.find((gradeData) =>{
                 if (gradeData.instructor_name === section.instructor_name[0] &&
                     gradeData.course_name === course.code) {
-                    AppLogger.info("Matched ",gradeData.instructor_name," ",section.instructor_name[0])
+                  
                     return gradeData;
                 }
                 return null;
@@ -81,7 +79,6 @@ export function mergeData(
                     class_avg_max: parseFloat(String(batchCourse.class_avg_max ?? "0")),
                 }
             }
-            AppLogger.info("Section premodification: ",section);
             // Add cart functionality fields to section
             const modifiedSection: ModifiedSection = {
                 ...section,
@@ -97,7 +94,6 @@ export function mergeData(
                 wait_list_okay: 'N', // Default waitlist setting
                 courseData: course // Reference to parent course
             };
-            AppLogger.info("Section postmodification: ",modifiedSection);
             if (batchCourse || profData) {
                 mergedCourse.sections.push(modifiedSection);
             } else {

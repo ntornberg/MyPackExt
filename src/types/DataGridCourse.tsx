@@ -7,7 +7,6 @@ import { ToCartButtonCell } from "../components/DataGridCells/ToCartButtonCell";
 import { CourseInfoCell } from "../components/DataGridCells/CourseInfoCell";
 import { StatusAndSlotsCell } from "../components/DataGridCells/StatusAndSlotsCell";
 import type { ModifiedSection } from "../utils/CourseSearch/MergeDataUtil";
-import { AppLogger } from "../utils/logger";
 
 export function sortSections(v1: ModifiedSection, v2: ModifiedSection) {
   // Order should be Open,Reserved,Waitlist,Closed
@@ -36,12 +35,10 @@ export function sortSections(v1: ModifiedSection, v2: ModifiedSection) {
 
 // Combined cell for both notes and prerequisites
 const InfoCell = (params: any) => {
-  AppLogger.info("InfoCell params:", params);
   const hasRequisites = params.row.requisites && 
                         params.row.requisites !== '';
   const hasNotes = params.row.notes && params.row.notes.trim() !== '';
-  AppLogger.info("hasRequisites:", hasRequisites);
-  AppLogger.info("hasNotes:", hasNotes);
+
   // If no info to display, return null
   if (!hasRequisites && !hasNotes) {
     return null;

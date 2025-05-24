@@ -10,7 +10,7 @@ import {
 import { PieChart } from '@mui/x-charts/PieChart';
 import type { GridRenderCellParams } from '@mui/x-data-grid';
 import type { GradeData } from '../../types';
-import { AppLogger } from '../../utils/logger';
+
 
 export const GradeDistributionCell = (params: GridRenderCellParams) => {
   const [open, setOpen] = useState(false);
@@ -19,8 +19,7 @@ export const GradeDistributionCell = (params: GridRenderCellParams) => {
   if (!grade_distribution) {
     return <Typography variant="body2">No grade data</Typography>;
   }
-  AppLogger.info("Grade distribution: ", grade_distribution);
-  AppLogger.info("Grade distribution row: ", params.row);
+
   const handleOpen = () => {
     setOpen(true);
   };

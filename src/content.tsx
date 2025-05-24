@@ -28,7 +28,6 @@ import createCache from '@emotion/cache';
 import { CacheProvider } from "@emotion/react";
 
 export function createEmotionCache() {
-  AppLogger.info("Creating emotion cache");
   
   try {
     return createCache({
@@ -50,7 +49,6 @@ function debounceScraper(scrapePlanner: (plannerTableElement: Element) => Promis
         AppLogger.info("Planner changes detected, re-scraping planner...");
         try {
             const plannerElement = await waitForCart(); // Re-ensure planner table is accessible
-            AppLogger.info(plannerElement);
             await scrapePlanner(plannerElement);
         } catch (error) {
             AppLogger.error("Error during debounced planner scrape:", error);

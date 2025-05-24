@@ -2,6 +2,7 @@ import { Box, CircularProgress, FormControlLabel, ListItem, ListItemText, Typogr
 
 import { Button, DialogContent, TextField, List, Autocomplete } from "@mui/material";
 import { AppLogger } from "../../utils/logger";
+import { useMemo } from "react";
 import { fetchGEPCourseData } from "../../services/api/CourseSearch/dataService";
 import { GEP_COURSES } from "../../Data/CourseSearch/gep_courses.typed";
 import type { MergedCourseData } from "../../utils/CourseSearch/MergeDataUtil";
@@ -106,6 +107,24 @@ export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepS
               }
             );
             
+            // Debug the returned course data
+            AppLogger.info("[GEP RENDER DEBUG] Received course data:", courseData);
+            
+            // Check which courses have sections
+            if (courseData) {
+              const coursesWithSections = Object.entries(courseData)
+                .filter(([_, data]) => data.sections && data.sections.length > 0)
+                .map(([key]) => key);
+              
+              AppLogger.info(`[GEP RENDER DEBUG] Courses with sections (${coursesWithSections.length}): ${coursesWithSections.join(', ')}`);
+              
+              const coursesWithoutSections = Object.entries(courseData)
+                .filter(([_, data]) => !data.sections || data.sections.length === 0)
+                .map(([key]) => key);
+              
+              AppLogger.info(`[GEP RENDER DEBUG] Courses without sections (${coursesWithoutSections.length}): ${coursesWithoutSections.join(', ')}`);
+            }
+            
             setGepSearchTabData('courseData', courseData);
           }
         }
@@ -119,7 +138,55 @@ export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepS
       }
     };
 
-  
+    // Memoize the filtered courses to prevent recalculation on every render
+    const filteredCourses = useMemo(() => {
+   
+      
+      if (!gepSearchData.isLoaded || !gepSearchData.courses) {
+        AppLogger.info("[GEP FILTER DEBUG] No courses or not loaded, returning empty array");
+        return [];
+      }
+      
+      if (!gepSearchData.hideNoSections || !gepSearchData.courseData) {
+        AppLogger.info("[GEP FILTER DEBUG] Not filtering - returning all courses");
+        return gepSearchData.courses;
+      }
+      
+      // Apply filtering only when hideNoSections is true
+      AppLogger.info("[GEP FILTER DEBUG] Filtering courses");
+      
+      // Debug each course's section data before filtering
+      gepSearchData.courses.forEach(course => {
+        const key = `${course.course_abr} ${course.catalog_num}`;
+        const data = (gepSearchData.courseData as Record<string, MergedCourseData>)[key];
+        AppLogger.info(`[GEP FILTER DEBUG] Course ${key}: has data? ${!!data}, sections? ${data?.sections?.length || 0}`);
+      });
+      
+      // Perform filtering with detailed logging
+      const filtered = gepSearchData.courses.filter((course: RequiredCourse) => {
+        const key = `${course.course_abr} ${course.catalog_num}`;
+        const courseData = (gepSearchData.courseData as Record<string, MergedCourseData>)[key];
+        
+        // Log detailed information about this course
+       
+        
+        // Only return true if course has data AND has sections with length > 0
+        const hasSection = courseData && courseData.sections && courseData.sections.length > 0;
+        AppLogger.info(`[GEP FILTER DEBUG] - Will be included: ${hasSection}`);
+        
+        return hasSection;
+      });
+      
+      // Log the filtering results
+      AppLogger.info(`[GEP FILTER DEBUG] Filtered ${gepSearchData.courses.length} courses down to ${filtered.length}`);
+      filtered.forEach(course => {
+        AppLogger.info(`[GEP FILTER DEBUG] Included course: ${course.course_abr} ${course.catalog_num}`);
+      });
+      
+      return filtered;
+    }, [gepSearchData.courses, gepSearchData.hideNoSections, gepSearchData.courseData, gepSearchData.isLoaded]);
+    AppLogger.info("Filtered courses");
+    AppLogger.info(filteredCourses);
     return (
       <StyledDialogContent>
         <Box sx={{ width: '100%', p: 2 }}>
@@ -159,98 +226,108 @@ export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepS
             {!gepSearchData.isLoaded && <CircularProgressWithLabel value={gepSearchData.progress} label={gepSearchData.progressLabel || ''} />}
           </List>
         </Box>
-      <List>
-            {(gepSearchData.isLoaded && gepSearchData.courses) && gepSearchData.courses.filter((course : RequiredCourse) => {
-              if (gepSearchData.hideNoSections && gepSearchData.courseData) {
+        {gepSearchData.isLoaded && filteredCourses.length === 0 && (
+          <Typography variant="body1" sx={{ p: 4, textAlign: 'center' }}>
+            No courses with open sections found. {gepSearchData.hideNoSections && "Try unchecking 'Hide courses with no open sections'."}
+          </Typography>
+        )}
+        
+        {/* Add key to force re-rendering when hideNoSections changes */}
+        
+        <List 
+          key={`course-list-${gepSearchData.hideNoSections ? 'filtered' : 'all'}`}
+        >
+        
+            {filteredCourses.map((course : RequiredCourse) => {
                 const key = `${course.course_abr} ${course.catalog_num}`;
-                return (gepSearchData.courseData as Record<string, MergedCourseData>)[key]?.sections?.length > 0;
-              }
-              return true;
-            }).map((course : RequiredCourse) => (
-                <ListItem alignItems="flex-start" key={course.course_abr} sx={{ pl: 4 }}>
+                const courseData = gepSearchData.courseData as Record<string, MergedCourseData>;
+                const hasSections = courseData[key]?.sections?.length > 0;
+                
+                return (
+                  <ListItem alignItems="flex-start" key={course.course_abr} sx={{ pl: 4 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                    <ListItemText
+                      <ListItemText
                         primary={`${course.course_descrip} ${course.course_abr} ${parseInt(course.catalog_num)}`}
                         secondary={`${course.course_abr} ${course.catalog_num}`}
-                    />
-          {gepSearchData.courseData && (gepSearchData.courseData as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections.length > 0 ? (
-            <Box sx={{ 
-              //height: 400,
-              width: '100%',
-              display: 'flex'
-            }}>
-              <DataGrid
-                getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
-                rows={(gepSearchData.courseData as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`].sections.sort(sortSections)}
-                columns={OpenCourseSectionsColumn}
-                columnVisibilityModel={{ id: false }}
-                disableRowSelectionOnClick
-                pageSizeOptions={[5, 10, 25]}
-                initialState={{
-                  pagination: {
-                    paginationModel: {
-                      pageSize: 5,
-                    },
-                  },
-                }}
-                sx={{
-                  width: '100%',
-                  '& .MuiDataGrid-main': { overflow: 'visible' },
-                  '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: (theme) => theme.palette.background.paper,
-                    minHeight: '64px !important',
-                    lineHeight: '24px !important',
-                  },
-                  '& .MuiDataGrid-columnHeaderTitle': {
-                    fontWeight: 'bold',
-                    overflow: 'visible',
-                    lineHeight: '1.2 !important',
-                    whiteSpace: 'normal',
-                    textOverflow: 'clip',
-                    fontSize: {
-                      xs: '0.75rem',
-                      sm: '0.875rem',
-                      md: '1rem'
-                    }
-                  },
-                  '& .MuiDataGrid-cell': {
-                    whiteSpace: 'normal',
-                    padding: '8px 16px',
-                    fontSize: {
-                      xs: '0.75rem',
-                      sm: '0.875rem',
-                      md: '0.925rem'
-                    }
-                  },
-                  '& .MuiDataGrid-row': {
-                    width: '100%'
-                  },
-                  '& .MuiDataGrid-virtualScroller': {
-                    width: '100%'
-                  },
-                  '& .MuiButtonBase-root': {
-                    fontSize: {
-                      xs: '0.7rem',
-                      sm: '0.8rem',
-                      md: '0.875rem'
-                    },
-                    '& .MuiSvgIcon-root' :{
-                        color: 'none'
-                    }
-                  }
-                }}
-              />
-            </Box>
-            
-          ) : (
-            <Typography variant="body1" sx={{ p: 2 }}>
-              {gepSearchData.courseData ? 'No sections available' : 'Search for a course to see sections'}
-            </Typography>
-          )}
-           </Box>
-        </ListItem>
-       
-        ))}
+                      />
+                      {hasSections ? (
+                        <Box sx={{ 
+                          height: '100%',
+                          minHeight: 300,
+                          width: '100%',
+                          display: 'flex'
+                        }}>
+                          <DataGrid
+                            getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
+                            rows={courseData[key].sections.sort(sortSections)}
+                            columns={OpenCourseSectionsColumn}
+                            columnVisibilityModel={{ id: false }}
+                            disableRowSelectionOnClick
+                            pageSizeOptions={[5, 10, 25]}
+                            initialState={{
+                              pagination: {
+                                paginationModel: {
+                                  pageSize: 5,
+                                },
+                              },
+                            }}
+                            sx={{
+                              width: '100%',
+                              '& .MuiDataGrid-main': { overflow: 'visible' },
+                              '& .MuiDataGrid-columnHeaders': {
+                                backgroundColor: (theme) => theme.palette.background.paper,
+                                minHeight: '64px !important',
+                                lineHeight: '24px !important',
+                              },
+                              '& .MuiDataGrid-columnHeaderTitle': {
+                                fontWeight: 'bold',
+                                overflow: 'visible',
+                                lineHeight: '1.2 !important',
+                                whiteSpace: 'normal',
+                                textOverflow: 'clip',
+                                fontSize: {
+                                  xs: '0.75rem',
+                                  sm: '0.875rem',
+                                  md: '1rem'
+                                }
+                              },
+                              '& .MuiDataGrid-cell': {
+                                whiteSpace: 'normal',
+                                padding: '8px 16px',
+                                fontSize: {
+                                  xs: '0.75rem',
+                                  sm: '0.875rem',
+                                  md: '0.925rem'
+                                }
+                              },
+                              '& .MuiDataGrid-row': {
+                                width: '100%'
+                              },
+                              '& .MuiDataGrid-virtualScroller': {
+                                width: '100%'
+                              },
+                              '& .MuiButtonBase-root': {
+                                fontSize: {
+                                  xs: '0.7rem',
+                                  sm: '0.8rem',
+                                  md: '0.875rem'
+                                },
+                                '& .MuiSvgIcon-root' :{
+                                    color: 'none'
+                                }
+                              }
+                            }}
+                          />
+                        </Box>
+                      ) : (
+                        <Typography variant="body1" sx={{ p: 2 }}>
+                          {gepSearchData.courseData ? 'No sections available' : 'Search for a course to see sections'}
+                        </Typography>
+                      )}
+                    </Box>
+                  </ListItem>
+                );
+              })}
         </List>
       </StyledDialogContent>
      

@@ -194,6 +194,7 @@ export async function batchFetchCoursesData(
   
   // Report initial progress
   onProgress?.(5, `Starting batch processing for ${courses.length} courses`);
+  AppLogger.info(`[BATCH DEBUG] Starting batch processing for ${courses.length} courses, term: ${term}`);
   
   if (!courses || courses.length === 0) {
     onProgress?.(100, "No courses to process");
@@ -202,6 +203,7 @@ export async function batchFetchCoursesData(
   
   // Phase 1: Check Open Courses Cache
   onProgress?.(10, "Checking open courses cache");
+  AppLogger.info(`[BATCH DEBUG] Phase 1: Checking open courses cache for ${courses.length} courses`);
   
   // Generate cache keys and prepare lookup data
   const courseKeyMapping: Record<string, RequiredCourse> = {};
@@ -215,18 +217,43 @@ export async function batchFetchCoursesData(
     courseKeyMapping[courseKey] = course;
     
     const openCoursesCacheKey = courseKey + ' ' + term;
+    AppLogger.info(`[BATCH DEBUG] Generating cache key for: "${openCoursesCacheKey}"`);
     const hashKey = await generateCacheKey(openCoursesCacheKey);
     openCoursesHashKeys[courseKey] = hashKey;
     
     // Check cache
+    AppLogger.info(`[BATCH DEBUG] Checking cache for course: ${courseKey}, hash: ${hashKey}`);
     const cachedData = await getGenericCache(CACHE_KEYS.OPEN_COURSES, hashKey);
     
     if (cachedData) {
       // Cache hit
-      openCoursesCache[courseKey] = JSON.parse(cachedData.combinedData);
+      AppLogger.info(`[BATCH DEBUG] Cache HIT for course: ${courseKey}`);
+      const cachedCourseData = JSON.parse(cachedData.combinedData);
+      
+      // Log details of the cached data
+      AppLogger.info(`[BATCH DEBUG] Retrieved cached data for ${courseKey}:`);
+      AppLogger.info(`[BATCH DEBUG] - Title: ${cachedCourseData.title}`);
+      AppLogger.info(`[BATCH DEBUG] - Code: ${cachedCourseData.code}`);
+      AppLogger.info(`[BATCH DEBUG] - Sections count: ${cachedCourseData.sections?.length || 0}`);
+      
+      // Log a summary of each section
+      if (cachedCourseData.sections && cachedCourseData.sections.length > 0) {
+        cachedCourseData.sections.forEach((section: any, idx: number) => {
+          AppLogger.info(`[BATCH DEBUG] - Section ${idx+1}: ${section.section}, ClassNum: ${section.classNumber}`);
+        });
+      } else {
+        AppLogger.info(`[BATCH DEBUG] - No sections in cached data for ${courseKey}`);
+      }
+      
+      openCoursesCache[courseKey] = cachedCourseData;
+      
+      // Log if course has sections
+      const sectionsCount = openCoursesCache[courseKey]?.sections?.length || 0;
+      AppLogger.info(`[BATCH DEBUG] Cached course ${courseKey} has ${sectionsCount} sections`);
       return { cached: true, courseKey };
     } else {
       // Cache miss
+      AppLogger.info(`[BATCH DEBUG] Cache MISS for course: ${courseKey}, will fetch from API`);
       openCoursesToFetch.push(course);
       return { cached: false, courseKey };
     }
@@ -235,33 +262,69 @@ export async function batchFetchCoursesData(
   // Wait for all cache check promises to complete
   await Promise.all(openCoursesCachePromises);
   
+  AppLogger.info(`[BATCH DEBUG] Cache check complete. ${Object.keys(openCoursesCache).length} courses from cache, ${openCoursesToFetch.length} to fetch.`);
+  
   // Phase 2: Fetch Missing Open Courses Data (in parallel)
   if (openCoursesToFetch.length > 0) {
     onProgress?.(20, `Fetching open courses data for ${openCoursesToFetch.length} courses`);
+    AppLogger.info(`[BATCH DEBUG] Phase 2: Fetching ${openCoursesToFetch.length} courses from API`);
     
     // Create a promise for each course to fetch
     const fetchPromises = openCoursesToFetch.map(async (course) => {
       const courseKey = `${course.course_abr} ${course.catalog_num}`;
       try {
+        AppLogger.info(`[BATCH DEBUG] Fetching course data for: ${courseKey}`);
         const courseData = await searchOpenCoursesByParams(term, course.course_abr, course.catalog_num);
-        
         if (courseData) {
+          // Log the raw course data before caching
+          AppLogger.info(`[BATCH DEBUG] Raw course data for ${courseKey}:`);
+          AppLogger.info(`[BATCH DEBUG] - Title: ${courseData.title}`);
+          AppLogger.info(`[BATCH DEBUG] - Code: ${courseData.code}`);
+          AppLogger.info(`[BATCH DEBUG] - Sections count: ${courseData.sections?.length || 0}`);
+          
+          // Log details about each section
+          if (courseData.sections && courseData.sections.length > 0) {
+            courseData.sections.forEach((section, idx) => {
+              AppLogger.info(`[BATCH DEBUG] - Section ${idx+1}:`);
+              AppLogger.info(`[BATCH DEBUG]   - Section number: ${section.section}`);
+              AppLogger.info(`[BATCH DEBUG]   - Class number: ${section.classNumber}`);
+              AppLogger.info(`[BATCH DEBUG]   - Status: ${(section as any).status || 'Unknown'}`);
+              AppLogger.info(`[BATCH DEBUG]   - Instructors: ${section.instructor_name?.join(', ') || 'None'}`);
+            });
+          } else {
+            AppLogger.info(`[BATCH DEBUG] - No sections available for ${courseKey}`);
+          }
+          
           // Cache the result
           const hashKey = openCoursesHashKeys[courseKey];
-          await setGenericCache(CACHE_KEYS.OPEN_COURSES, hashKey, JSON.stringify(courseData));
+          const cacheData = JSON.stringify(courseData);
+          AppLogger.info(`[BATCH DEBUG] Caching course data for: ${courseKey}, hash: ${hashKey}`);
+          AppLogger.info(`[BATCH DEBUG] Cache data preview (first 100 chars): ${cacheData.substring(0, 100)}...`);
+          await setGenericCache(CACHE_KEYS.OPEN_COURSES, hashKey, cacheData);
+          
+          // Add to our data collection
           openCoursesCache[courseKey] = courseData;
           return { success: true, courseKey };
+        } else {
+          AppLogger.info(`[BATCH DEBUG] No data found for course: ${courseKey}`);
+          return { success: false, courseKey };
         }
-        return { success: false, courseKey, error: "No data returned" };
       } catch (error) {
-        AppLogger.error(`Error fetching open courses for ${courseKey}:`, error);
+        AppLogger.error(`[BATCH DEBUG] Error fetching course data for ${courseKey}:`, error);
         return { success: false, courseKey, error };
       }
     });
     
-    // Wait for all fetch promises to complete
     await Promise.all(fetchPromises);
   }
+  
+  AppLogger.info(`[BATCH DEBUG] Phase 2 complete. Have data for ${Object.keys(openCoursesCache).length} courses.`);
+  
+  // Log courses with and without sections after fetching
+  Object.entries(openCoursesCache).forEach(([key, data]) => {
+    const sectionsCount = data?.sections?.length || 0;
+    AppLogger.info(`[BATCH DEBUG] Course ${key}: ${sectionsCount} sections available`);
+  });
   
   // Phase 3: Prepare grade/professor data requests
   onProgress?.(40, "Processing course sections for grade/professor data");
@@ -374,8 +437,41 @@ export async function batchFetchCoursesData(
   // Merge data for each course
   const mergedData = mergeData(openCoursesCache, filteredGradeProfData, courseKeyMapping);
   
+  // Log merged data details
+  AppLogger.info(`[BATCH DEBUG] Merged data summary:`);
+  Object.entries(mergedData).forEach(([key, data]) => {
+    AppLogger.info(`[BATCH DEBUG] - Course ${key}:`);
+    AppLogger.info(`[BATCH DEBUG]   - Title: ${data.title}`);
+    AppLogger.info(`[BATCH DEBUG]   - Sections: ${data.sections?.length || 0}`);
+    
+    // Log details for each section
+    if (data.sections && data.sections.length > 0) {
+      data.sections.forEach((section, idx) => {
+        AppLogger.info(`[BATCH DEBUG]   - Section ${idx+1}: ${section.section}, ClassNum: ${section.classNumber}`);
+      });
+    } else {
+      AppLogger.info(`[BATCH DEBUG]   - No sections available after merge`);
+    }
+  });
+  
   // Add to result
   Object.assign(result, mergedData);
+  
+  // Log final result
+  AppLogger.info(`[BATCH DEBUG] Final result summary:`);
+  AppLogger.info(`[BATCH DEBUG] - Total courses: ${Object.keys(result).length}`);
+  
+  const coursesWithSections = Object.entries(result)
+    .filter(([_, data]) => data.sections && data.sections.length > 0)
+    .map(([key]) => key);
+  
+  AppLogger.info(`[BATCH DEBUG] - Courses with sections (${coursesWithSections.length}): ${coursesWithSections.join(', ')}`);
+  
+  const coursesWithoutSections = Object.entries(result)
+    .filter(([_, data]) => !data.sections || data.sections.length === 0)
+    .map(([key]) => key);
+  
+  AppLogger.info(`[BATCH DEBUG] - Courses without sections (${coursesWithoutSections.length}): ${coursesWithoutSections.join(', ')}`);
   
   onProgress?.(100, `Completed processing ${courses.length} courses`);
   return result;
@@ -445,11 +541,15 @@ export async function fetchGEPCourseData(
 ): Promise<Record<string, MergedCourseData> | null> {
   // Initial progress
   onProgress?.(10, `Initializing search for ${courses.length} GEP courses`);
+  AppLogger.info(`[GEP DEBUG] Starting fetchGEPCourseData for ${courses.length} courses, term: ${term}`);
   
   if (courses.length === 0) {
     onProgress?.(100, "No GEP courses to process");
     return null;
   }
+  
+  // Log courses being searched
+  AppLogger.info(`[GEP DEBUG] Courses to fetch:`, courses.map(c => `${c.course_abr} ${c.catalog_num}`));
   
   // Use the new batch processing function
   try {
@@ -462,6 +562,17 @@ export async function fetchGEPCourseData(
         onProgress?.(scaledProgress, statusMessage);
       }
     );
+    
+    // Log results summary
+    const resultKeys = Object.keys(batchResults);
+    AppLogger.info(`[GEP DEBUG] Fetch complete. Found ${resultKeys.length} courses with data.`);
+    
+    // Log which courses have sections
+    resultKeys.forEach(key => {
+      const courseData = batchResults[key];
+      const sectionCount = courseData.sections?.length || 0;
+      AppLogger.info(`[GEP DEBUG] Course ${key}: ${sectionCount} sections found`);
+    });
     
     if (Object.keys(batchResults).length === 0) {
       AppLogger.warn("No course data found for any GEP requirements");

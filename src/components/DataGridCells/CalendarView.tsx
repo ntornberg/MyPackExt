@@ -4,7 +4,6 @@ import {Box} from '@mui/material';
 
 import {getCacheCategory} from '../../cache/CourseRetrieval';
 import type {GridRenderCellParams} from '@mui/x-data-grid';
-import {AppLogger} from '../../utils/logger';
 import {useState, useEffect} from 'react';
 
 import CreateCalender, { toMinutes } from './CalenderResizeListener';
@@ -62,7 +61,6 @@ export const CalendarView = (params: GridRenderCellParams) => {
 
     const [eventData, setEventData] = useState<ScheduleEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    AppLogger.info(courseData);
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -119,11 +117,10 @@ export const CalendarView = (params: GridRenderCellParams) => {
                             });
                         }
                     }
-                    AppLogger.info(courses);
+
                     // Process course data
                     for (const course of Object.values(courses)) {
-                        AppLogger.info(course);
-                        AppLogger.info(course.combinedData);
+  
 
                         let schedule_entry: ScheduleTableEntry | null = null;
                         if (typeof course.combinedData !== 'string') {
@@ -162,8 +159,7 @@ export const CalendarView = (params: GridRenderCellParams) => {
                                       
                                         const sectionType = section.type || 'Section';
                                         const subject = `${schedule_entry.classs?.trim() || ''} ${sectionType}`.trim();
-                                        AppLogger.info(subject);
-                                        AppLogger.info(schedule_entry.classs);
+                  
                                         events.push({
                                             id: eventId++,
                                             subj: subject,
@@ -178,7 +174,7 @@ export const CalendarView = (params: GridRenderCellParams) => {
                         }
                     }
                 }
-                AppLogger.info("Events", events);
+
                 for (let i = 0; i < events.length; i++) {
                     for (let j = i + 1; j < events.length; j++) {
                       const eventA = events[i];
@@ -188,7 +184,6 @@ export const CalendarView = (params: GridRenderCellParams) => {
                         toMinutes(eventA.start) < toMinutes(eventB.end) &&
                         toMinutes(eventA.end) > toMinutes(eventB.start)
                       ) {
-                        AppLogger.info("Overlap found");
                         const daysA = Object.fromEntries(eventA.days.map(day => [day.day, true]));
                         const daysB = Object.fromEntries(eventB.days.map(day => [day.day, true]));
                   

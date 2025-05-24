@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { Box, Paper, Typography } from '@mui/material';
 import type { ScheduleEvent } from './CalendarView';
-import { AppLogger } from '../../utils/logger';
+
 
 
 
@@ -43,7 +43,6 @@ function useSize<T extends HTMLElement>() {
 /* ───────── component ───────── */
 
 export default function CreateCalender({ eventData }: { eventData: ScheduleEvent[] }) {
-  AppLogger.info(eventData);
   const windowStart = 6,
     windowEnd = 22;
   const hours = Array.from(
