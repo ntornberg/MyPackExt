@@ -30,7 +30,7 @@ export default defineConfig({
   ],
   build: {
     outDir: 'dist',
-   /* minify: false,*/
+   minify: false,
   },
   resolve: {
     alias: {

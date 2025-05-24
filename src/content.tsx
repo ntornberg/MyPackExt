@@ -28,7 +28,6 @@ import createCache from '@emotion/cache';
 import { CacheProvider } from "@emotion/react";
 
 export function createEmotionCache() {
-  AppLogger.info("Creating emotion cache");
   
   try {
     return createCache({
@@ -50,7 +49,6 @@ function debounceScraper(scrapePlanner: (plannerTableElement: Element) => Promis
         AppLogger.info("Planner changes detected, re-scraping planner...");
         try {
             const plannerElement = await waitForCart(); // Re-ensure planner table is accessible
-            AppLogger.info(plannerElement);
             await scrapePlanner(plannerElement);
         } catch (error) {
             AppLogger.error("Error during debounced planner scrape:", error);
@@ -100,11 +98,16 @@ observer.observe(document.body, { childList: true, subtree: true });
             return;
         }
         window.__mypackEnhancerInitialized = true;
-        AppLogger.info("Initializing MyPack Drawer");
-        // 1. Ensure the container element exists in the DOM
-                const overlayElement = ensureOverlayContainer();
+              const overlayElement = ensureOverlayContainer();
         // 2. Create the React root for that container
         const root = createRoot(overlayElement);
+        AppLogger.info("Initializing MyPack Drawer");
+        // 1. Ensure the container element exists in the DOM
+         
+        const scheduleElement = await waitForScheduleTable();
+        
+        scrapeScheduleTable(scheduleElement);
+      
 
         // 3. Render your root component (<SlideOutDrawer />) wrapped with CacheProvider
         // SlideOutDrawer itself should contain your AppTheme/ThemeProvider inside it,
@@ -114,8 +117,6 @@ observer.observe(document.body, { childList: true, subtree: true });
                 <SlideOutDrawer />
             </CacheProvider>
         );
-        const scheduleElement = await waitForScheduleTable();
-        scrapeScheduleTable(scheduleElement);
         const initialIframe = document.querySelector<HTMLIFrameElement>('[id$="divPSPAGECONTAINER"] iframe');
         await setupListener();
         if (initialIframe) {

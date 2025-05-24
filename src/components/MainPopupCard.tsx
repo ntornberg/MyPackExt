@@ -6,7 +6,6 @@ import {
     Button,
     CircularProgress,
     Dialog,
-    DialogTitle,
     Typography,
     Tab,
 } from '@mui/material';
@@ -17,6 +16,9 @@ import { myEmotionCache } from '../content';
 import CourseSearch from './SearchTabs/CourseSearch';
 import PlanSearch from './SearchTabs/PlanSearch';
 import GEPSearch from './SearchTabs/GEPSearch';
+import { GEPDataInitialState, type CourseSearchData, type PlanSearchData, type GEPData } from './TabDataStore/TabData';
+import { PlanSearchDataInitialState } from './TabDataStore/TabData';
+import { CourseSearchDataInitialState } from './TabDataStore/TabData';
 
 export function CircularProgressWithLabel({ value }: { value: number }) {
   return (
@@ -45,7 +47,28 @@ export function CircularProgressWithLabel({ value }: { value: number }) {
 export default function SlideOutDrawer() {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [selectedTab, setSelectedTab] = useState("0");
-    
+    const [courseSearchData, setCourseSearchData] = useState(CourseSearchDataInitialState);
+    const [planSearchData, setPlanSearchData] = useState(PlanSearchDataInitialState);
+    const [gepSearchData, setGepSearchData] = useState(GEPDataInitialState);
+    const setCourseSearchTabData = (key: keyof CourseSearchData, value: any) => {
+        setCourseSearchData((prev) => ({ ...prev, [key]: value }));
+    }
+    const setPlanSearchTabData = (key: keyof PlanSearchData, value: any) => {
+      if(key === 'open'){
+        setPlanSearchData((prevState) => ({
+          ...prevState, 
+          open: {
+            ...prevState.open,
+            [value]: !prevState.open[value]
+          }
+        }));
+      } else {
+        setPlanSearchData((prev) => ({ ...prev, [key]: value }));
+      }
+    }
+    const setGepSearchTabData = (key: keyof GEPData, value: any) => {
+        setGepSearchData((prev) => ({ ...prev, [key]: value }));
+    }
     const handleTabChange = (_: React.SyntheticEvent, newValue: string) => {
         setSelectedTab(newValue);
     };
@@ -55,7 +78,20 @@ export default function SlideOutDrawer() {
             <AppTheme>
                 <CssBaseline enableColorScheme />
                 <Box sx={{ p: 2, pointerEvents: 'auto' }}>
-                    <Button onClick={() => setDrawerOpen(true)}>Course Search</Button>
+                    <Button variant='outlined' sx={{
+                       color: 'white',
+                       backgroundColor: 'rgb(11, 14, 20) !important',
+                       borderColor: 'rgb(51, 60, 77) !important',
+                       backgroundImage: 'none !important',
+                       fontSize: {
+                         xs: '0.7rem',
+                         sm: '0.8rem',
+                         md: '0.875rem',
+                       },
+                       '&:hover': {
+                         backgroundColor: 'rgb(20, 25, 35) !important',
+                       },
+                    }}  onClick={() => setDrawerOpen(true)}>Course Search</Button>
 
                     <Dialog 
                         fullWidth 
@@ -74,19 +110,21 @@ export default function SlideOutDrawer() {
                         // })} 
                         slotProps={{
                             paper: {
-                                sx: {
-                                    '--Paper-overlay': 'none',
-                                    'background-image': 'none',
-                                },
+                              sx: {
+                                backgroundImage: `radial-gradient(80% 80% at 50% -15%, rgb(0, 41, 82), transparent)`,
+                                backgroundColor: "rgb(5, 7, 10)", // fallback for the rest of the dialog
+                                boxShadow: `0 0 10px 4px rgba(33, 150, 243, 0.6)`,
+                              color: "white",
+                              border: "2px solid black",
+                              borderRadius: 2,
+                             
                             },
-                            backdrop: {
-                                style: { pointerEvents: 'auto' }
-                            }
-                        }}
+                        }}}
                     >
-                        <DialogTitle>Course Search</DialogTitle>
                         <TabContext value={selectedTab}>
-                            <Box sx={{ width: '100%', p: 2 }}>
+                            <Box sx={{ 
+                                
+                                width: '100%', p: 2 }}>
                                 <TabList onChange={handleTabChange}>
                                     <Tab value="0" label="Course Search" />
                                     <Tab value="1" label="GEP Search" />
@@ -94,13 +132,13 @@ export default function SlideOutDrawer() {
                                 </TabList>
                             </Box>
                             <TabPanel value="0">
-                                <CourseSearch />
+                                <CourseSearch setCourseSearchTabData={setCourseSearchTabData} courseSearchData={courseSearchData} />
                             </TabPanel>
                             <TabPanel value="1">
-                                <GEPSearch />
+                                <GEPSearch setGepSearchTabData={setGepSearchTabData} gepSearchData={gepSearchData} />
                             </TabPanel>
                             <TabPanel value="2">
-                                <PlanSearch />
+                                <PlanSearch setPlanSearchTabData={setPlanSearchTabData} planSearchData={planSearchData} />
                             </TabPanel>
                         </TabContext>
                     </Dialog>

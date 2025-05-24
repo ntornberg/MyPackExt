@@ -4,7 +4,7 @@ import type { RequiredCourse } from "../../types/Plans";
 import { AppLogger } from "../logger";
 import type { CourseData, CourseSection } from "./ParseRegistrarUtil";
 
-type ModifiedSection = CourseSection & {
+export type ModifiedSection = CourseSection & {
     grade_distribution?: GradeData;
     professor_rating?: MatchedRateMyProf;
     // Cart functionality fields
@@ -26,7 +26,7 @@ export type MergedCourseData = Omit<CourseData, "sections"> & {
 export function mergeData(
     courses: Record<string, CourseData>, 
     batchData: BatchDataRequestResponse,
-    courseInfoMap?: Record<string, RequiredCourse> // Map of course keys to RequiredCourse
+    courseInfoMap?: Record<string, RequiredCourse> // Map of course keys to RequiredCourse containing course_id
 ) {
     AppLogger.info("Merging data");
     AppLogger.info("Batch data: ", batchData);
@@ -35,8 +35,12 @@ export function mergeData(
     const mergedData: Record<string, MergedCourseData> = {};
     for (const [cacheKey, course] of Object.entries(courses)) {
         // Get the courseKey (e.g., "CSC-316")
-        const courseKey = cacheKey.split(' ')[0]; // Remove the term part if present
-        const reqCourse = courseInfoMap?.[courseKey];
+        const reqCourse = courseInfoMap?.[cacheKey];
+        if(!reqCourse){
+            AppLogger.warn("Required course not found for course: ",course);
+            AppLogger.warn("Course key: ",cacheKey);
+        }
+
         
         const mergedCourse: MergedCourseData = {
             ...course,
@@ -49,10 +53,11 @@ export function mergeData(
         const catalog_nbr = codeParts.length > 1 ? codeParts[1] : '';
         
         for (const section of course.sections) {
+
             const batchCourse = batchData.courses?.find((gradeData) =>{
                 if (gradeData.instructor_name === section.instructor_name[0] &&
                     gradeData.course_name === course.code) {
-                    AppLogger.info("Matched ",gradeData.instructor_name," ",section.instructor_name[0])
+                  
                     return gradeData;
                 }
                 return null;
@@ -74,7 +79,6 @@ export function mergeData(
                     class_avg_max: parseFloat(String(batchCourse.class_avg_max ?? "0")),
                 }
             }
-            
             // Add cart functionality fields to section
             const modifiedSection: ModifiedSection = {
                 ...section,
@@ -90,7 +94,6 @@ export function mergeData(
                 wait_list_okay: 'N', // Default waitlist setting
                 courseData: course // Reference to parent course
             };
-            
             if (batchCourse || profData) {
                 mergedCourse.sections.push(modifiedSection);
             } else {
