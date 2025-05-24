@@ -175,23 +175,7 @@ export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepS
         // Apply filtering only when hideNoSections is true
         AppLogger.info("[GEP FILTER] Filtering courses by sections");
         
-        // Log section data structure for debugging
-        if (gepSearchData.courses.length > 0) {
-          const sampleCourse = gepSearchData.courses[0];
-          const sampleKey = `${sampleCourse.course_abr} ${sampleCourse.catalog_num}`;
-          const sampleData = (gepSearchData.courseData as Record<string, MergedCourseData>)[sampleKey];
-          
-          AppLogger.info("[GEP FILTER] Sample course data structure:", {
-            key: sampleKey,
-            hasCourseData: !!sampleData,
-            sections: sampleData ? {
-              type: typeof sampleData.sections,
-              isArray: Array.isArray(sampleData.sections),
-              length: sampleData.sections?.length || 0,
-              sampleSection: sampleData.sections?.length > 0 ? sampleData.sections[0] : null
-            } : 'No course data'
-          });
-        }
+       
         
         // Perform filtering with minimal logging
         const filtered = gepSearchData.courses.filter((course: RequiredCourse) => {
@@ -274,7 +258,6 @@ export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepS
                       {hasSections ? (
                         <Box sx={{ 
                           height: '100%',
-                          minHeight: 300,
                           width: '100%',
                           display: 'flex'
                         }}>

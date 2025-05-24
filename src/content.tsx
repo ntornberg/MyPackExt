@@ -26,6 +26,7 @@ AppLogger.info("MyPack Enhancer script started.");
 
 import createCache from '@emotion/cache';
 import { CacheProvider } from "@emotion/react";
+import FirstStartDialog from "./components/UserGuide/FirstStart.tsx";
 
 export function createEmotionCache() {
   
@@ -105,15 +106,12 @@ observer.observe(document.body, { childList: true, subtree: true });
         // 1. Ensure the container element exists in the DOM
          
         const scheduleElement = await waitForScheduleTable();
-        
         scrapeScheduleTable(scheduleElement);
       
-
-        // 3. Render your root component (<SlideOutDrawer />) wrapped with CacheProvider
-        // SlideOutDrawer itself should contain your AppTheme/ThemeProvider inside it,
-        // like shown in the previous corrected code for SlideOutDrawer.
-        root.render(
+        // 3. Render your root component containing both FirstStartDialog and SlideOutDrawer
+        root.render(
             <CacheProvider value={myEmotionCache}>
+                <FirstStartDialog />
                 <SlideOutDrawer />
             </CacheProvider>
         );
