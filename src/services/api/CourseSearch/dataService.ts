@@ -1,6 +1,7 @@
 import { AppLogger } from '../../../utils/logger';
 import { generateCacheKey, getGenericCache, setGenericCache } from "../../../cache/CourseRetrieval";
 import { searchOpenCoursesByParams } from './searchService';
+import { GroupCourses } from '../../../utils/CourseSearch/GroupCourses';
 import { mergeData } from '../../../utils/CourseSearch/MergeDataUtil';
 import type { RequiredCourse, Requirement } from '../../../types/Plans';
 import type { CourseData } from '../../../utils/CourseSearch/ParseRegistrarUtil';
@@ -267,19 +268,7 @@ export async function batchFetchCoursesData(
       // Cache hit - only log sample data for the first hit
       const cachedCourseData = JSON.parse(cachedData.combinedData);
       
-      if (!Object.keys(openCoursesCache).length) { // Only log first cache hit
-        AppLogger.info(`[CACHE DATA SAMPLE] Retrieved data structure for ${courseKey}:`, {
-          title: cachedCourseData.title,
-          code: cachedCourseData.code,
-          sectionsCount: cachedCourseData.sections?.length || 0,
-          // Log the first section if available
-          sampleSection: cachedCourseData.sections?.length > 0 ? {
-            section: cachedCourseData.sections[0].section,
-            classNumber: cachedCourseData.sections[0].classNumber,
-            instructors: cachedCourseData.sections[0].instructor_name
-          } : 'No sections'
-        });
-      }
+      
       
       openCoursesCache[courseKey] = cachedCourseData;
       return { cached: true, courseKey };
@@ -301,11 +290,13 @@ export async function batchFetchCoursesData(
     AppLogger.info(`[BATCH DEBUG] Phase 2: Fetching ${openCoursesToFetch.length} courses from API`);
     
     // Create a promise for each course to fetch
-    const fetchPromises = openCoursesToFetch.map(async (course) => {
-      const courseKey = `${course.course_abr} ${course.catalog_num}`;
+    const groupedCourses = GroupCourses(openCoursesToFetch);
+    const subjects_to_fetch = [...new Set(openCoursesToFetch.map((course) => course.course_abr))]
+    const fetchPromises = subjects_to_fetch.map(async (subject) => {
+      //const courseKey = `${course.course_abr} ${course.catalog_num}`;
       try {
         onProgress?.(25, `Fetching open courses data for ${courseKey}`);
-        const courseData = await searchOpenCoursesByParams(term, course.course_abr, course.catalog_num);
+        const courseData = await searchOpenCoursesByParams(term, course);
         if (courseData) {
         
           

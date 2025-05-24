@@ -31,7 +31,57 @@ export async function searchOpenCoursesByParams(
                     type: "fetchData",
                     url: "https://webappprd.acs.ncsu.edu/php/coursecat/search.php",
                     formData: formData,
-                    course: { course_abr: courseAbr, catalog_num: catalogNum }
+                }, (response) => {
+                    resolve(response);
+                });
+            });
+        }
+        
+        const response_string = await sendMessage();
+        
+        if (response_string == null) {
+            AppLogger.warn('Received null response from background fetch');
+        } else if (response_string && response_string.error) {
+            AppLogger.error('Error in background fetch:', response_string.error);
+        }
+        
+        if (response_string != null && !response_string.error) {
+            const parsed = parseHTMLContent(response_string);
+            if(Array.isArray(parsed)){
+                return parsed[0];
+            }else if(parsed){
+                return parsed;
+            }else{
+                return null;
+            }
+     
+        }
+    } catch (error) {
+        AppLogger.error('Error in searchOpenCourses', error);
+    }
+    
+    return null;
+}
+export async function batchSearchOpenCourses(
+    term: string, 
+    subject: string
+    
+): Promise<CourseData[] | CourseData | null> {
+    try {
+        AppLogger.info('Searching open courses for', { term, subject });
+        const formData = formCourseURL(term, subject, null);
+        
+        if (!formData) {
+            AppLogger.warn('Aborting searchOpenCourses: formData is null (subject missing)', { term, subject });
+            return null;
+        }
+        
+        function sendMessage(): Promise<any> { 
+            return new Promise((resolve, _) => {
+                chrome.runtime.sendMessage({
+                    type: "fetchData",
+                    url: "https://webappprd.acs.ncsu.edu/php/coursecat/search.php",
+                    formData: formData,
                 }, (response) => {
                     resolve(response);
                 });
@@ -55,7 +105,6 @@ export async function searchOpenCoursesByParams(
     
     return null;
 }
-
 /**
  * Legacy function to maintain backward compatibility
  * @param term The academic term to search in

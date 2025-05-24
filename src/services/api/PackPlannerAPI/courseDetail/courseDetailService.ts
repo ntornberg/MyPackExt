@@ -29,6 +29,7 @@ async function fetchSingleCourseData(course: Course): Promise<SingleCourseDataRe
   
   // Check persistent cache
   const persistentCache = await getGenericCache("courseList", hash);
+  AppLogger.info("Persistent cache:", persistentCache);
   if (persistentCache && persistentCache.combinedData) {
     try {
       const cachedData = JSON.parse(persistentCache.combinedData) as SingleCourseDataResponse;
