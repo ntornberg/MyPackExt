@@ -94,7 +94,7 @@ export async function fetchSingleCourseData(
     }
     
     // Cache open courses data
-    await setGenericCache(CACHE_KEYS.OPEN_COURSES, openCoursesHashKey, JSON.stringify(courseData));
+    await setGenericCache(CACHE_KEYS.OPEN_COURSES, openCoursesHashKey, JSON.stringify(courseData),120);
     onProgress?.(40, `Cached open courses data for ${courseKey}`);
   }
   

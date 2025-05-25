@@ -80,7 +80,7 @@ export async function batchSearchOpenCourses(
             return new Promise((resolve, _) => {
                 chrome.runtime.sendMessage({
                     type: "fetchData",
-                    url: "https://webappprd.acs.ncsu.edu/php/coursecat/search.php",
+                    url: "https://cloudflareworker.nicktornberg12.workers.dev/",
                     formData: formData,
                 }, (response) => {
                     resolve(response);

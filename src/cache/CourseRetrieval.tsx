@@ -4,6 +4,7 @@
 export interface CacheEntry {
     combinedData: any;
     timestamp: number;
+    expiresAt: number;
 }
 
 // Cache expiration time (24 hours in milliseconds)
@@ -133,7 +134,8 @@ export async function getCacheCategory(cacheCategory: string): Promise<Record<st
                                     const hash = getRequest.result.hash;
                                     result[hash] = {
                                         combinedData: getRequest.result.combinedData,
-                                        timestamp: getRequest.result.timestamp
+                                        timestamp: getRequest.result.timestamp,
+                                        expiresAt: getRequest.result.expiresAt
                                     };
                                 }
                                 processed++;
@@ -187,7 +189,8 @@ async function getFromIndexedDB(cacheCategory: string, hash: string): Promise<Ca
                 if (request.result) {
                     const entry = {
                         combinedData: request.result.combinedData,
-                        timestamp: request.result.timestamp
+                        timestamp: request.result.timestamp,
+                        expiresAt: request.result.expiresAt
                     };
                     
                     // Check if expired
@@ -376,7 +379,7 @@ export async function getGenericCache(cacheCategory: string, hash: string): Prom
  * @param {string} jsonData - The JSON data to store.
  * @returns {Promise<void>}
  */
-export async function setGenericCache(cacheCategory: string, hash: string, jsonData: any): Promise<void> {
+export async function setGenericCache(cacheCategory: string, hash: string, jsonData: any, cacheExpirationOverride?: number): Promise<void> {
     try {
         // Ensure jsonData is a string
         const dataAsString = typeof jsonData === 'string' 
@@ -386,7 +389,8 @@ export async function setGenericCache(cacheCategory: string, hash: string, jsonD
         const dataSize = estimateSize(dataAsString);
         const cacheEntry: CacheEntry = {
             combinedData: dataAsString,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            expiresAt: Date.now() + (cacheExpirationOverride || CACHE_EXPIRATION)
         };
         
       
