@@ -1,7 +1,7 @@
 import { AppLogger } from '../../../utils/logger';
 import { generateCacheKey, getGenericCache, setGenericCache } from "../../../cache/CourseRetrieval";
-import { searchOpenCoursesByParams } from './searchService';
-import { GroupCourses } from '../../../utils/CourseSearch/GroupCourses';
+import { batchSearchOpenCourses, searchOpenCoursesByParams } from './searchService';
+
 import { mergeData } from '../../../utils/CourseSearch/MergeDataUtil';
 import type { RequiredCourse, Requirement } from '../../../types/Plans';
 import type { CourseData } from '../../../utils/CourseSearch/ParseRegistrarUtil';
@@ -231,7 +231,7 @@ export async function batchFetchCoursesData(
   // Generate cache keys and prepare lookup data
   const courseKeyMapping: Record<string, RequiredCourse> = {}; // Used to find the course id when merging the data
   const openCoursesCache: Record<string, CourseData> = {}; // Used to store the data that is already in cache
-  const openCoursesToFetch: RequiredCourse[] = []; // Used to store the data that needs to be fetched from the API
+  const openCoursesToFetch: Record<string,RequiredCourse> = {}; // Used to store the data that needs to be fetched from the API
   const openCoursesHashKeys: Record<string, string> = {}; // Used when storing the data in cache that needed to be fetched
   
   // Create a promise for each course to check the cache in parallel
@@ -274,7 +274,7 @@ export async function batchFetchCoursesData(
       return { cached: true, courseKey };
     } else {
       // Cache miss
-      openCoursesToFetch.push(course);
+      openCoursesToFetch[courseKey] = course;
       return { cached: false, courseKey };
     }
   });
@@ -285,50 +285,61 @@ export async function batchFetchCoursesData(
   AppLogger.info(`[BATCH DEBUG] Cache check complete. ${Object.keys(openCoursesCache).length} courses from cache, ${openCoursesToFetch.length} to fetch.`);
   
   // Phase 2: Fetch Missing Open Courses Data (in parallel)
-  if (openCoursesToFetch.length > 0) {
+  if (Object.keys(openCoursesToFetch).length > 0) {
     onProgress?.(20, `Fetching open courses data for ${openCoursesToFetch.length} courses`);
     AppLogger.info(`[BATCH DEBUG] Phase 2: Fetching ${openCoursesToFetch.length} courses from API`);
     
     // Create a promise for each course to fetch
-    const groupedCourses = GroupCourses(openCoursesToFetch);
-    const subjects_to_fetch = [...new Set(openCoursesToFetch.map((course) => course.course_abr))]
+    //const groupedCourses = GroupCourses(openCoursesToFetch);
+    const subjects_to_fetch = [...new Set(Object.values(openCoursesToFetch).map((course) => course.course_abr))]
+    AppLogger.info("Fetching subjects",subjects_to_fetch);  
     const fetchPromises = subjects_to_fetch.map(async (subject) => {
       //const courseKey = `${course.course_abr} ${course.catalog_num}`;
       try {
-        onProgress?.(25, `Fetching open courses data for ${courseKey}`);
-        const courseData = await searchOpenCoursesByParams(term, course);
+        AppLogger.info("Term:",term);
+        onProgress?.(25, `Fetching open courses data for ${subject}`);
+        const courseData = await batchSearchOpenCourses(term, subject);
+        AppLogger.info("Found courses", courseData);
         if (courseData) {
         
-          
-          // Cache the result
-          const hashKey = openCoursesHashKeys[courseKey];
-          const cacheData = JSON.stringify(courseData);
-          
-          
-          await setGenericCache(CACHE_KEYS.OPEN_COURSES, hashKey, cacheData);
-          
-          // Add to our data collection
-          openCoursesCache[courseKey] = courseData;
-          return { success: true, courseKey };
-        } else {
-          // Cache null result to avoid future API calls for this course
-          const openCoursesCacheKey = courseKey + ' ' + term;
-          const nullCacheKey = `null-${openCoursesCacheKey}`;
+         if( Array.isArray(courseData)){
+          const filteredCourseData = courseData.filter((course) =>{
+            AppLogger.info("Course Title:",course.code)
+            return openCoursesToFetch[`${course.code}`];
+          })
+          AppLogger.info("Filtered",filteredCourseData)
+          for(const course of filteredCourseData){
+          const hashKey = openCoursesHashKeys[course.code];
+          const cacheData = JSON.stringify(course);
+          await setGenericCache(CACHE_KEYS.OPEN_COURSES,hashKey,cacheData)
+          openCoursesCache[course.code] = course;
+         }
+        }else{  
+          const filteredCourseData = openCoursesToFetch[`${courseData.code}`]
+          if(!filteredCourseData){
+          const nullCacheKey = `null-${courseData.code}`;
           const nullHashKey = await generateCacheKey(nullCacheKey);
-          
-          // Store a simple null marker with timestamp
           await setGenericCache(CACHE_KEYS.NULL_COURSES, nullHashKey, { 
-            courseKey, 
+            courseKey : courseData.code, 
             term, 
             reason: 'API returned null' 
           });
-          
-          AppLogger.info(`[CACHE NULL] Cached null result for ${courseKey}`);
-          return { success: false, courseKey };
+        }else{
+          const hashKey = openCoursesHashKeys[courseData.code];
+          const cacheData = JSON.stringify(courseData);
+          await setGenericCache(CACHE_KEYS.OPEN_COURSES,hashKey,cacheData)
+          openCoursesCache[courseData.code] = courseData;
+        }
+        }
+        
+          return { success: true, subject };
+        } else {
+         
+          return { success: false, subject };
         }
       } catch (error) {
-        AppLogger.error(`Error fetching course data for ${courseKey}:`, error);
-        return { success: false, courseKey, error };
+        AppLogger.error(`Error fetching course data for ${subject}:`, error);
+        return { success: false, subject, error };
       }
     });
     

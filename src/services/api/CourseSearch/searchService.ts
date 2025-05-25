@@ -87,7 +87,7 @@ export async function batchSearchOpenCourses(
                 });
             });
         }
-        
+                    
         const response_string = await sendMessage();
         
         if (response_string == null) {

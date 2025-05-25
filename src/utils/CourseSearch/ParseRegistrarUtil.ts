@@ -2,7 +2,7 @@
 import * as cheerio from 'cheerio';
 import { TermIdByName } from '../../Data/TermID';
 import { AppLogger } from '../logger';
-import type { Cheerio, CheerioAPI } from 'cheerio';
+import type { CheerioAPI } from 'cheerio';
 import type { Element as DomHandlerElement, Text } from 'domhandler';
 
 export interface CourseSection {
@@ -128,7 +128,7 @@ else {
 export function formCourseURL(term: string, course_abr: string, catalog_num?: string | null) {
     const term_id = TermIdByName[term];
     
-    AppLogger.info('Looking up subject', { course_abr });
+    AppLogger.info('Looking up subject', { course_abr },catalog_num);
     if (!course_abr) {
         AppLogger.error('No subject found for course_abr', { course_abr });
         return null;
@@ -136,9 +136,9 @@ export function formCourseURL(term: string, course_abr: string, catalog_num?: st
     const formData = new URLSearchParams();
     formData.append("term", term_id);
     formData.append("subject", course_abr);
-    const inequality = catalog_num? ">=" : "=";
+    const inequality = catalog_num ?  "=" : ">=";
     formData.append("course-inequality", inequality);
-    const course_number = catalog_num? "0" : parseInt(catalog_num!).toString();
+    const course_number = catalog_num ? parseInt(catalog_num!).toString() :"0"  ;
     formData.append("course-number", course_number);
     formData.append("course-career", "");
     formData.append("session", "");
