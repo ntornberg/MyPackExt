@@ -30,12 +30,14 @@
     "@syncfusion/ej2-react-popups": "^29.2.4",
     "@syncfusion/ej2-react-schedule": "^29.2.5",
     "@syncfusion/ej2-schedule": "^29.2.5",
+    "@tanstack/react-virtual": "^3.13.9",
     "cheerio": "^1.0.0",
     "devextreme-react": "^24.2.7",
     "jsonpath-plus": "^10.3.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-gauge-component": "^1.2.64",
+    "react-window": "^1.8.11",
     "recharts": "^2.15.3"
   },
   "devDependencies": {
@@ -44,6 +46,7 @@
     "@types/chrome": "^0.0.320",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
+    "@types/react-window": "^1.8.8",
     "@types/requirejs": "^2.1.37",
     "@vitejs/plugin-react": "^4.4.1",
     "eslint": "^8.57.1",

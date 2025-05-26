@@ -14,23 +14,23 @@ export async function setupListener() {
 
                 if (payload.responseType == "_getScheduleTableData") {
                     const hash = await generateCacheKey(item.crse_id);
-                    await setGenericCache("scheduleTableData", hash, item);
+                    await setGenericCache("scheduleTableData", {hashKey : hash,cacheData : item});
                 }
                 if (payload.responseType == "_getShopCartTableData") {
                     const hash = await generateCacheKey(item.crse_id);
-                    await setGenericCache("shopCartTableData", hash, item);
+                    await setGenericCache("shopCartTableData", {hashKey : hash,cacheData : item});
                 }
                 if (payload.responseType == "_getPlanTermTableData") {
                     const hash = await generateCacheKey(item.crse_id);
-                    await setGenericCache("planTermTableData", hash, item);
+                    await setGenericCache("planTermTableData", {hashKey : hash,cacheData : item});
                 }
                 if (payload.responseType == "_getShopCartCalEvents") {
                     const hash = await generateCacheKey(item.class_nbr);
-                    await setGenericCache("shopCartCalEventsData", hash, item);
+                    await setGenericCache("shopCartCalEventsData", {hashKey : hash,cacheData : item});
                 }
                 if (payload.responseType == "_getScheduleCalEvents") {
                     const hash = await generateCacheKey(item.class_nbr);
-                    await setGenericCache("scheduleCalEventsData", hash, item);
+                    await setGenericCache("scheduleCalEventsData", {hashKey : hash,cacheData : item});
                 }
             }
         }

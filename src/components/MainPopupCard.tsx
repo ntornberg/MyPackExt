@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+﻿import { useState, useCallback, useMemo } from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 
 import {
@@ -19,6 +19,23 @@ import GEPSearch from './SearchTabs/GEPSearch';
 import { GEPDataInitialState, type CourseSearchData, type PlanSearchData, type GEPData } from './TabDataStore/TabData';
 import { PlanSearchDataInitialState } from './TabDataStore/TabData';
 import { CourseSearchDataInitialState } from './TabDataStore/TabData';
+import React from 'react';
+
+// Memoize tabs to prevent re-renders
+const MemoizedCourseSearchTab = React.memo(({ setCourseSearchTabData, courseSearchData }: 
+  { setCourseSearchTabData: (key: keyof CourseSearchData, value: any) => void; courseSearchData: CourseSearchData }) => (
+  <CourseSearch setCourseSearchTabData={setCourseSearchTabData} courseSearchData={courseSearchData} />
+));
+
+const MemoizedGEPSearchTab = React.memo(({ setGepSearchTabData, gepSearchData }: 
+  { setGepSearchTabData: (key: keyof GEPData, value: any) => void; gepSearchData: GEPData }) => (
+  <GEPSearch setGepSearchTabData={setGepSearchTabData} gepSearchData={gepSearchData} />
+));
+
+const MemoizedPlanSearchTab = React.memo(({ setPlanSearchTabData, planSearchData }: 
+  { setPlanSearchTabData: (key: keyof PlanSearchData, value: any) => void; planSearchData: PlanSearchData }) => (
+  <PlanSearch setPlanSearchTabData={setPlanSearchTabData} planSearchData={planSearchData} />
+));
 
 export function CircularProgressWithLabel({ value }: { value: number }) {
   return (
@@ -50,10 +67,13 @@ export default function SlideOutDrawer() {
     const [courseSearchData, setCourseSearchData] = useState(CourseSearchDataInitialState);
     const [planSearchData, setPlanSearchData] = useState(PlanSearchDataInitialState);
     const [gepSearchData, setGepSearchData] = useState(GEPDataInitialState);
-    const setCourseSearchTabData = (key: keyof CourseSearchData, value: any) => {
+    
+    // Create stable references for all setter functions
+    const setCourseSearchTabData = useCallback((key: keyof CourseSearchData, value: any) => {
         setCourseSearchData((prev) => ({ ...prev, [key]: value }));
-    }
-    const setPlanSearchTabData = (key: keyof PlanSearchData, value: any) => {
+    }, []);
+    
+    const setPlanSearchTabData = useCallback((key: keyof PlanSearchData, value: any) => {
       if(key === 'open'){
         setPlanSearchData((prevState) => ({
           ...prevState, 
@@ -65,13 +85,50 @@ export default function SlideOutDrawer() {
       } else {
         setPlanSearchData((prev) => ({ ...prev, [key]: value }));
       }
-    }
-    const setGepSearchTabData = (key: keyof GEPData, value: any) => {
+    }, []);
+    
+    const setGepSearchTabData = useCallback((key: keyof GEPData, value: any) => {
         setGepSearchData((prev) => ({ ...prev, [key]: value }));
-    }
-    const handleTabChange = (_: React.SyntheticEvent, newValue: string) => {
+    }, []);
+    
+    // Memoize all other handlers
+    const handleTabChange = useCallback((_: React.SyntheticEvent, newValue: string) => {
         setSelectedTab(newValue);
-    };
+    }, []);
+
+    const handleDrawerOpen = useCallback(() => {
+        setDrawerOpen(true);
+    }, []);
+
+    const handleDrawerClose = useCallback(() => {
+        setDrawerOpen(false);
+    }, []);
+
+    // Memoize the tab content to prevent re-renders when switching tabs
+    const tabContent = useMemo(() => ({
+        courseSearch: (
+            <MemoizedCourseSearchTab 
+                setCourseSearchTabData={setCourseSearchTabData} 
+                courseSearchData={courseSearchData} 
+            />
+        ),
+        gepSearch: (
+            <MemoizedGEPSearchTab 
+                setGepSearchTabData={setGepSearchTabData} 
+                gepSearchData={gepSearchData} 
+            />
+        ),
+        planSearch: (
+            <MemoizedPlanSearchTab 
+                setPlanSearchTabData={setPlanSearchTabData} 
+                planSearchData={planSearchData} 
+            />
+        )
+    }), [
+        setCourseSearchTabData, courseSearchData,
+        setGepSearchTabData, gepSearchData,
+        setPlanSearchTabData, planSearchData
+    ]);
 
     return (
         <CacheProvider value={myEmotionCache}>
@@ -91,23 +148,14 @@ export default function SlideOutDrawer() {
                        '&:hover': {
                          backgroundColor: 'rgb(20, 25, 35) !important',
                        },
-                    }}  onClick={() => setDrawerOpen(true)}>Course Search</Button>
+                    }}  onClick={handleDrawerOpen}>Course Search</Button>
 
                     <Dialog 
+                        keepMounted={true}
                         fullWidth 
                         maxWidth='lg' 
                         open={drawerOpen} 
-                        onClose={() => setDrawerOpen(false)} 
-                      
-                        // sx={(theme) => ({
-                        //     '& .MuiDialog-paper': {
-                        //         '--Paper-overlay': 'none',
-                        //         borderRadius: '10px',
-                        //         border: '1px solid',
-                        //         borderColor: (theme.vars || theme).palette.divider,
-                        //         backgroundColor: (theme.vars || theme).palette.background.paper,
-                        //     },
-                        // })} 
+                        onClose={handleDrawerClose} 
                         slotProps={{
                             paper: {
                               sx: {
@@ -123,7 +171,6 @@ export default function SlideOutDrawer() {
                     >
                         <TabContext value={selectedTab}>
                             <Box sx={{ 
-                                
                                 width: '100%', p: 2 }}>
                                 <TabList onChange={handleTabChange}>
                                     <Tab value="0" label="Course Search" />
@@ -131,14 +178,14 @@ export default function SlideOutDrawer() {
                                     <Tab value="2" label="Major Search" />
                                 </TabList>
                             </Box>
-                            <TabPanel value="0">
-                                <CourseSearch setCourseSearchTabData={setCourseSearchTabData} courseSearchData={courseSearchData} />
+                            <TabPanel value="0" keepMounted={true}>
+                                {tabContent.courseSearch}
                             </TabPanel>
-                            <TabPanel value="1">
-                                <GEPSearch setGepSearchTabData={setGepSearchTabData} gepSearchData={gepSearchData} />
+                            <TabPanel value="1" keepMounted={true}>
+                                {tabContent.gepSearch}
                             </TabPanel>
-                            <TabPanel value="2">
-                                <PlanSearch setPlanSearchTabData={setPlanSearchTabData} planSearchData={planSearchData} />
+                            <TabPanel value="2" keepMounted={true}>
+                                {tabContent.planSearch}
                             </TabPanel>
                         </TabContext>
                     </Dialog>

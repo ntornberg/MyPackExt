@@ -1,3 +1,5 @@
+
+
 import {waitForCart, waitForScheduleTable, ensureOverlayContainer} from "./utils/dom.ts";
 import { createRoot } from 'react-dom/client';
 
@@ -63,7 +65,7 @@ const debouncedScrapePlanner = debounceScraper(scrapePlanner);
 function injectXHRHookScript() {
     const script = document.createElement("script");
     script.src = chrome.runtime.getURL("realFetchHook.js");
-    script.onload = () => script.remove(); // Clean up
+    
     (document.head || document.documentElement).appendChild(script);
 }
 
@@ -80,7 +82,6 @@ const observer = new MutationObserver(() => {
                 const script = doc.createElement("script");
                 script.src = chrome.runtime.getURL("realFetchHook.js");
                 script.setAttribute("data-hooked", "true");  // Prevent future injections
-                script.onload = () => script.remove();
                 doc.documentElement.appendChild(script);
             }
         } catch (err) {
@@ -107,7 +108,7 @@ observer.observe(document.body, { childList: true, subtree: true });
          
         const scheduleElement = await waitForScheduleTable();
         scrapeScheduleTable(scheduleElement);
-      
+        
         // 3. Render your root component containing both FirstStartDialog and SlideOutDrawer
         root.render(
             <CacheProvider value={myEmotionCache}>

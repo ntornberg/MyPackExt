@@ -25,25 +25,58 @@ const DB_VERSION = 1;
  * @returns {Promise<IDBDatabase>} - A promise that resolves with the database connection
  */
 async function openDatabase(): Promise<IDBDatabase> {
+    AppLogger.info(`[CACHE DB OPEN] Opening IndexedDB database: ${DB_NAME}, version: ${DB_VERSION}`);
+    
     return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        // @ts-ignore
-        request.onerror = (event) => {
-            AppLogger.error(`[CACHE ERROR] Failed to open IndexedDB:`, request.error);
-            reject(request.error);
-        };
-        // @ts-ignore
-        request.onsuccess = (event) => {
-            resolve(request.result);
-        };
-        // @ts-ignore
-        request.onupgradeneeded = (event) => {
-            const db = request.result;
-            // Create object store for cache entries if it doesn't exist
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        const attemptOpen = () => {
+            try {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                
+                request.onerror = (_) => {
+                    const error = request.error || new Error('Unknown error opening database');
+                    AppLogger.error(`[CACHE DB ERROR] Failed to open IndexedDB: ${error.message}`);
+                    
+                    if (retryCount < maxRetries) {
+                        retryCount++;
+                        AppLogger.info(`[CACHE DB RETRY] Retrying database open (${retryCount}/${maxRetries})...`);
+                        setTimeout(attemptOpen, 500); // Wait 500ms before retry
+                    } else {
+                        reject(error);
+                    }
+                };
+                
+                request.onsuccess = (_) => {
+                    const db = request.result;
+                    AppLogger.info(`[CACHE DB SUCCESS] Successfully opened database: ${DB_NAME}`);
+                    
+                    // Handle connection errors
+                    db.onerror = (event) => {
+                        AppLogger.error(`[CACHE DB ERROR] Database error: ${(event.target as any).errorCode}`);
+                    };
+                    
+                    resolve(db);
+                };
+                
+                request.onupgradeneeded = (_) => {
+                    AppLogger.info(`[CACHE DB UPGRADE] Database upgrade needed for ${DB_NAME}`);
+                    const db = request.result;
+                    
+                    // Create object store for cache entries if it doesn't exist
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        AppLogger.info(`[CACHE DB CREATE] Creating object store: ${STORE_NAME}`);
+                        db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+                    }
+                };
+            } catch (error) {
+                AppLogger.error(`[CACHE DB ERROR] Exception opening database: ${error}`);
+                reject(error);
             }
         };
+        
+        attemptOpen();
     });
 }
 
@@ -54,39 +87,74 @@ async function openDatabase(): Promise<IDBDatabase> {
  * @param {CacheEntry} cacheEntry - The cache entry to store
  * @returns {Promise<void>}
  */
-async function storeInIndexedDB(cacheCategory: string, hash: string, cacheEntry: CacheEntry): Promise<void> {
-    try {
+async function storeInIndexedDB(cacheCategory: string, cacheEntries: Record<string,CacheEntry>): Promise<void> {
+
+    let db: IDBDatabase | null = null;
+    db = await openDatabase();
+    let entryPromises: Promise<Error | null>[] = [];
+    for(const [hash,cacheEntry] of Object.entries(cacheEntries)){
+   
+    const entryPromise = async (hash: string,cacheEntry: CacheEntry): Promise<Error | null> => {
+       
         
-        const db = await openDatabase();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_NAME], 'readwrite');
-            const store = transaction.objectStore(STORE_NAME);
+        try{
+            if (!db) {
+                const error = new Error('Failed to open database');
+                AppLogger.error(`[CACHE DB ERROR] ${error.message}`);
+                
+                return error;
+            }
             
-            // Store the entry with a composite key of category:hash
-            const request = store.put({
-                key: `${cacheCategory}:${hash}`,
-                category: cacheCategory,
-                hash: hash,
-                ...cacheEntry
-            });
-            
-            request.onsuccess = () => {
-                resolve();
-            };
-            
-            request.onerror = () => {
-                AppLogger.error(`[CACHE ERROR] Failed to store in IndexedDB:`, request.error);
-                reject(request.error);
-            };
-            
-            // Close the database when the transaction is complete
-            transaction.oncomplete = () => {
-                db.close();
-            };
-        });
-    } catch (error) {
-        AppLogger.error(`[CACHE ERROR] IndexedDB store error:`, error);
+            try {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                
+                // Store the entry with a composite key of category:hash
+                const request = store.put({
+                    key: `${cacheCategory}:${hash}`,
+                    category: cacheCategory,
+                    hash: hash,
+                    ...cacheEntry
+                });
+                
+                request.onsuccess = () => {
+                    //AppLogger.info(`[CACHE DB SUCCESS] Successfully stored in IndexedDB: ${cacheCategory}:${hash}...`);
+                    return;
+                };
+                
+                request.onerror = () => {
+                    AppLogger.error(`[CACHE DB ERROR] Failed to store in IndexedDB: ${request.error?.message || 'Unknown error'}`);
+                    return request.error;
+                };
+                
+                // Handle transaction errors
+                transaction.onerror = (_) => {
+                    AppLogger.error(`[CACHE DB ERROR] Transaction error: ${transaction.error?.message || 'Unknown error'}`);
+                    return transaction.error;
+                };
+                
+                // Close the database when the transaction is complete
+                transaction.oncomplete = () => {
+                    if (db) db.close();
+                };
+            } catch (transactionError) {
+                AppLogger.error(`[CACHE DB ERROR] Failed to create transaction: ${transactionError}`);
+                if (db) db.close();
+                return transactionError as Error;
+            }
+        } catch (error) {
+            AppLogger.error(`[CACHE DB ERROR] IndexedDB store error: ${error}`);
+            if (db) db.close();
+            return error as Error;
+        }
+        return null;
     }
+    entryPromises.push(entryPromise(hash,cacheEntry));
+}
+  const result = await Promise.all(entryPromises);
+  if(result.some(error => error !== null)){
+    AppLogger.error(`[CACHE DB ERROR] Failed to store all entries in IndexedDB: ${result.filter(error => error !== null).map(error => error?.message ?? 'Unknown error').join(', ')}`);
+}
 }
 
 /**
@@ -176,51 +244,83 @@ export async function getCacheCategory(cacheCategory: string): Promise<Record<st
  * @returns {Promise<CacheEntry | null>} - The cache entry or null if not found
  */
 async function getFromIndexedDB(cacheCategory: string, hash: string): Promise<CacheEntry | null> {
+   
+    
+    let db: IDBDatabase | null = null;
     try {
-        const db = await openDatabase();
+        db = await openDatabase();
+        
         return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_NAME], 'readonly');
-            const store = transaction.objectStore(STORE_NAME);
+            if (!db) {
+                const error = new Error('Failed to open database');
+                AppLogger.error(`[CACHE DB ERROR] ${error.message}`);
+                reject(error);
+                return;
+            }
             
-            // Use the composite key to retrieve the entry
-            const request = store.get(`${cacheCategory}:${hash}`);
-            
-            request.onsuccess = () => {
-                if (request.result) {
-                    const entry = {
-                        combinedData: request.result.combinedData,
-                        timestamp: request.result.timestamp,
-                        expiresAt: request.result.expiresAt
-                    };
-                    
-                    // Check if expired
-                    const now = Date.now();
-                    if (entry.timestamp && (now - entry.timestamp > CACHE_EXPIRATION)) {
-                        // Delete the expired entry
-                        const deleteTransaction = db.transaction([STORE_NAME], 'readwrite');
-                        const deleteStore = deleteTransaction.objectStore(STORE_NAME);
-                        deleteStore.delete(`${cacheCategory}:${hash}`);
-                        resolve(null);
+            try {
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                
+                // Use the composite key to retrieve the entry
+                const request = store.get(`${cacheCategory}:${hash}`);
+                
+                request.onsuccess = () => {
+                    if (request.result) {
+                        const entry = {
+                            combinedData: request.result.combinedData,
+                            timestamp: request.result.timestamp,
+                            expiresAt: request.result.expiresAt
+                        };
+                        
+                        // Check if expired
+                        const now = Date.now();
+                        if (entry.expiresAt && now > entry.expiresAt) {
+                            AppLogger.info(`[CACHE DB EXPIRED] Cache entry expired: ${cacheCategory}:${hash}...`);
+                            
+                            // Delete the expired entry in a separate transaction
+                            try {
+                                if (db) {
+                                    const deleteTransaction = db.transaction([STORE_NAME], 'readwrite');
+                                    const deleteStore = deleteTransaction.objectStore(STORE_NAME);
+                                    deleteStore.delete(`${cacheCategory}:${hash}`);
+                                    deleteTransaction.oncomplete = () => {
+                                        AppLogger.info(`[CACHE DB] Deleted expired entry: ${cacheCategory}:${hash}...`);
+                                    };
+                                }
+                            } catch (deleteError) {
+                                AppLogger.error(`[CACHE DB ERROR] Failed to delete expired entry: ${deleteError}`);
+                            }
+                            
+                            resolve(null);
+                        } else {
+                            AppLogger.info(`[CACHE DB HIT] Found valid entry in IndexedDB: ${cacheCategory}:${hash}...`);
+                            resolve(entry);
+                        }
                     } else {
-                        resolve(entry);
+                        AppLogger.info(`[CACHE DB MISS] No entry found in IndexedDB: ${cacheCategory}:${hash}...`);
+                        resolve(null);
                     }
-                } else {
-                    resolve(null);
-                }
-            };
-            
-            request.onerror = () => {
-                AppLogger.error(`[CACHE ERROR] Failed to get from IndexedDB:`, request.error);
-                reject(request.error);
-            };
-            
-            // Close the database when the transaction is complete
-            transaction.oncomplete = () => {
-                db.close();
-            };
+                };
+                
+                request.onerror = () => {
+                    AppLogger.error(`[CACHE DB ERROR] Failed to get from IndexedDB: ${request.error?.message || 'Unknown error'}`);
+                    reject(request.error);
+                };
+                
+                // Close the database when the transaction is complete
+                transaction.oncomplete = () => {
+                    if (db) db.close();
+                };
+            } catch (transactionError) {
+                AppLogger.error(`[CACHE DB ERROR] Failed to create transaction: ${transactionError}`);
+                if (db) db.close();
+                reject(transactionError);
+            }
         });
     } catch (error) {
-        AppLogger.error(`[CACHE ERROR] IndexedDB get error:`, error);
+        AppLogger.error(`[CACHE DB ERROR] IndexedDB get error: ${error}`);
+        if (db) db.close();
         return null;
     }
 }
@@ -336,37 +436,55 @@ function isChromeStorageAvailable(): boolean {
  */
 export async function getGenericCache(cacheCategory: string, hash: string): Promise<CacheEntry | null> {
     try {
+       // AppLogger.info(`[CACHE GET] Attempting to get ${cacheCategory} cache for hash: ${hash}...`);
+        
         // Check if Chrome storage is available
         if (isChromeStorageAvailable()) {
             // First try chrome.storage
-            const cached = await chrome.storage.local.get(cacheCategory);
-            if (cached && cached[cacheCategory]) {
-                const cache: Record<string, CacheEntry> = cached[cacheCategory];
-                const entry = cache[hash];
-                if (entry) {
-                    // Check if the cache entry has expired
-                    const now = Date.now();
-                    if (entry.timestamp && (now - entry.timestamp > CACHE_EXPIRATION)) {
-                        delete cache[hash];
-                        await chrome.storage.local.set({ [cacheCategory]: cache });
-                        return null;
+            try {
+                const cached = await chrome.storage.local.get(cacheCategory);
+                if (cached && cached[cacheCategory]) {
+                    const cache: Record<string, CacheEntry> = cached[cacheCategory];
+                    const entry = cache[hash];
+                    if (entry) {
+                        // Check if the cache entry has expired
+                        const now = Date.now();
+                        if (entry.timestamp && (now - entry.timestamp > CACHE_EXPIRATION)) {
+                            AppLogger.info(`[CACHE EXPIRED] ${cacheCategory} cache expired for hash: ${hash}...`);
+                            delete cache[hash];
+                            await chrome.storage.local.set({ [cacheCategory]: cache });
+                            return null;
+                        }
+                        
+                        //AppLogger.info(`[CACHE HIT] Found ${cacheCategory} in Chrome storage for hash: ${hash}...`);
+                        return entry;
                     }
-                    
-                   
-                    
-                    return entry;
                 }
+                //AppLogger.info(`[CACHE MISS] ${cacheCategory} not found in Chrome storage for hash: ${hash}...`);
+            } catch (chromeError) {
+                AppLogger.error(`[CACHE ERROR] Chrome storage get failed: ${chromeError}`, chromeError);
             }
+        } else {
+            AppLogger.info(`[CACHE INFO] Chrome storage not available, trying IndexedDB`);
         }
         
         // Try IndexedDB
-        const indexedResult = await getFromIndexedDB(cacheCategory, hash);
-        
-        
-        
-        return indexedResult;
+        try {
+            const indexedResult = await getFromIndexedDB(cacheCategory, hash);
+            
+            if (indexedResult) {
+                //AppLogger.info(`[CACHE HIT] Found ${cacheCategory} in IndexedDB for hash: ${hash}...`);
+            } else {
+                //AppLogger.info(`[CACHE MISS] ${cacheCategory} not found in IndexedDB for hash: ${hash}...`);
+            }
+            
+            return indexedResult;
+        } catch (indexedDBError) {
+            AppLogger.error(`[CACHE ERROR] IndexedDB get failed: ${indexedDBError}`, indexedDBError);
+            return null;
+        }
     } catch (error) {
-        AppLogger.error(`[CACHE ERROR] getGenericCache: Category: ${cacheCategory}, Key: ${hash}`, error);
+        AppLogger.error(`[CACHE ERROR] getGenericCache: Category: ${cacheCategory}, Key: ${hash}, Error: ${error}`, error);
         return null;
     }
 }
@@ -379,35 +497,66 @@ export async function getGenericCache(cacheCategory: string, hash: string): Prom
  * @param {string} jsonData - The JSON data to store.
  * @returns {Promise<void>}
  */
-export async function setGenericCache(cacheCategory: string, hash: string, jsonData: any, cacheExpirationOverride?: number): Promise<void> {
+export async function setGenericCache(cacheCategory: string, cacheEntries: Record<string,any>, cacheExpirationOverride?: number): Promise<void> {
     try {
         // Ensure jsonData is a string
-        const dataAsString = typeof jsonData === 'string' 
-            ? jsonData 
-            : JSON.stringify(jsonData);
+        if(cacheCategory === "gradeProfData"){
+            //AppLogger.info(`[CACHE SET] Setting ${cacheCategory} cache for hash: ${Object.keys(cacheEntries)}...`);
+        }
+        
+        const dataAsString = typeof cacheEntries === 'string' 
+            ? cacheEntries 
+            : JSON.stringify(cacheEntries);
         
         const dataSize = estimateSize(dataAsString);
-        const cacheEntry: CacheEntry = {
-            combinedData: dataAsString,
-            timestamp: Date.now(),
-            expiresAt: Date.now() + (cacheExpirationOverride || CACHE_EXPIRATION)
-        };
+        const cacheEntryList: Record<string,CacheEntry> = {};
+        for(const [hash,item] of Object.entries(cacheEntries)){
+            const cacheEntry: CacheEntry = {
+                combinedData: item,
+                timestamp: Date.now(),
+                expiresAt: Date.now() + (cacheExpirationOverride || CACHE_EXPIRATION)
+            };
+            cacheEntryList[hash] = cacheEntry;
+        }
         
       
-        
+        //AppLogger.info(`[CACHE SIZE] Data size for ${cacheCategory}: ${dataSize} bytes, threshold: ${SIZE_THRESHOLD}`);
         // Use IndexedDB for large items or if Chrome storage is not available
         if (dataSize > SIZE_THRESHOLD || !isChromeStorageAvailable()) {
-            await storeInIndexedDB(cacheCategory, hash, cacheEntry);
+            //AppLogger.info(`[CACHE STORAGE] Using IndexedDB for ${cacheCategory} due to size or Chrome unavailability`);
+            try {
+                await storeInIndexedDB(cacheCategory, cacheEntryList);
+                //AppLogger.info(`[CACHE SUCCESS] Successfully stored in IndexedDB: ${cacheCategory}:${Object.keys(cacheEntryList)}...`);
+            } catch (indexedDBError) {
+                AppLogger.error(`[CACHE ERROR] IndexedDB storage failed: ${indexedDBError}`, indexedDBError);
+                throw indexedDBError;
+            }
             return;
         }
         
         // Use chrome.storage for smaller items
-        const data = await chrome.storage.local.get([cacheCategory]);
-        const current = data[cacheCategory] || {};
-        current[hash] = cacheEntry;
-        await chrome.storage.local.set({ [cacheCategory]: current });
+        try {
+            //AppLogger.info(`[CACHE STORAGE] Using Chrome storage for ${cacheCategory}`);
+         
+                await chrome.storage.local.set({ [cacheCategory]: {
+                    ...(await chrome.storage.local.get(cacheCategory))[cacheCategory] ?? {},
+                    ...cacheEntryList
+                  }});
+            //AppLogger.info(`[CACHE SUCCESS] Successfully stored in Chrome storage: ${cacheCategory}:${Object.keys(cacheEntryList)}...`);
+        } catch (chromeStorageError) {
+            AppLogger.error(`[CACHE ERROR] Chrome storage failed: ${chromeStorageError}`, chromeStorageError);
+            // Fall back to IndexedDB if Chrome storage fails
+            try {
+                await storeInIndexedDB(cacheCategory, cacheEntryList);
+                //AppLogger.info(`[CACHE SUCCESS] Successfully stored in IndexedDB after Chrome storage failed`);
+            } catch (fallbackError) {
+                AppLogger.error(`[CACHE ERROR] Fallback to IndexedDB also failed: ${fallbackError}`, fallbackError);
+                throw fallbackError;
+            }
+        }
     } catch (error) {
-        AppLogger.error(`[CACHE ERROR] setGenericCache: Category: ${cacheCategory}, Key: ${hash}`, error);
+        AppLogger.error(`[CACHE ERROR] setGenericCache: Category: ${cacheCategory}, Error: ${error}`, error);
+        throw error;
     }
 }
 
