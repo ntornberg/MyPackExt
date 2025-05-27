@@ -537,12 +537,14 @@ export async function setGenericCache(cacheCategory: string, cacheEntries: Recor
         // Use chrome.storage for smaller items
         try {
             //AppLogger.info(`[CACHE STORAGE] Using Chrome storage for ${cacheCategory}`);
-         
-                await chrome.storage.local.set({ [cacheCategory]: {
-                    ...(await chrome.storage.local.get(cacheCategory))[cacheCategory] ?? {},
-                    ...cacheEntryList
-                  }});
-            //AppLogger.info(`[CACHE SUCCESS] Successfully stored in Chrome storage: ${cacheCategory}:${Object.keys(cacheEntryList)}...`);
+            const currentCache : Record<string,CacheEntry> = (await chrome.storage.local.get(cacheCategory))[cacheCategory] || {};
+            for(const [hash,cacheEntry] of Object.entries(cacheEntryList)){
+                currentCache[hash] = cacheEntry;
+            }
+            await chrome.storage.local.set({ [cacheCategory]:{...currentCache} });
+            AppLogger.info('Current Cache: ',currentCache);
+            AppLogger.info('Cache Entry List: ',cacheEntryList);
+            AppLogger.info(`[CACHE SUCCESS] Successfully stored in Chrome storage: ${cacheCategory}:${Object.keys(cacheEntryList)}...`);
         } catch (chromeStorageError) {
             AppLogger.error(`[CACHE ERROR] Chrome storage failed: ${chromeStorageError}`, chromeStorageError);
             // Fall back to IndexedDB if Chrome storage fails

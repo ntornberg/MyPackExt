@@ -84,7 +84,7 @@ export async function fetchSingleCourseData(
       AppLogger.error("No open courses data returned for", courseKey);
       
       // Cache null result to avoid future API calls
-      await setGenericCache(CACHE_KEYS.NULL_COURSES, {nullHashKey,key : { 
+      await setGenericCache(CACHE_KEYS.NULL_COURSES, {[nullHashKey]:{
         courseKey, 
         term, 
         reason: 'API returned null' 
@@ -95,7 +95,7 @@ export async function fetchSingleCourseData(
     }
     
     // Cache open courses data
-    await setGenericCache(CACHE_KEYS.OPEN_COURSES, {hashKey : openCoursesHashKey,cacheData : JSON.stringify(courseData)},120);
+    await setGenericCache(CACHE_KEYS.OPEN_COURSES, {[openCoursesHashKey]: JSON.stringify(courseData)});
     onProgress?.(40, `Cached open courses data for ${courseKey}`);
   }
   
@@ -172,7 +172,7 @@ export async function fetchSingleCourseData(
       gradeProfData = jsonResponse.data as BatchDataRequestResponse;
       // Cache grade/professor data
       
-      await setGenericCache(CACHE_KEYS.GRADE_PROF, {hashKey : gradeProfHashKey,cacheData : JSON.stringify(gradeProfData)});
+      await setGenericCache(CACHE_KEYS.GRADE_PROF, {[gradeProfHashKey]: JSON.stringify(gradeProfData)});
       onProgress?.(80, `Cached grade/professor data for ${courseKey}`);
     } catch (error) {
       AppLogger.error("Error fetching grade/professor data:", error);
@@ -324,7 +324,7 @@ export async function batchFetchCoursesData(
           if(!filteredCourseData){
           const nullCacheKey = `null-${courseData.code}`;
           const nullHashKey = await generateCacheKey(nullCacheKey);
-          await setGenericCache(CACHE_KEYS.NULL_COURSES, {nullHashKey,key : { 
+          await setGenericCache(CACHE_KEYS.NULL_COURSES, {[nullHashKey]:{ 
             courseKey : courseData.code, 
             term, 
             reason: 'API returned null' 

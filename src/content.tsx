@@ -78,7 +78,7 @@ const observer = new MutationObserver(() => {
         try {
             //const win = iframe.contentWindow;
             const doc = iframe.contentDocument;
-            if (doc && !doc.querySelector('script[data-hooked="true"]')) {
+            if (doc ) { // && !doc.querySelector('script[data-hooked="true"]')
                 const script = doc.createElement("script");
                 script.src = chrome.runtime.getURL("realFetchHook.js");
                 script.setAttribute("data-hooked", "true");  // Prevent future injections

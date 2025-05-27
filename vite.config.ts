@@ -25,11 +25,11 @@ export default defineConfig({
     react(),
     crx({
       manifest: manifestJson as ManifestV3Export, // Assert the manifest type
-      // Remove srcDir option, rely on default ('src')
     } as { manifest: ManifestV3Export }) // <-- Assert the type of the options object (adjusting type assertion slightly)
   ],
   build: {
     outDir: 'dist',
+    sourcemap: 'inline', // Changed from true to 'inline' for Chrome extension
     minify: false
   },
   resolve: {

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:debug": "vite build --minify=false --sourcemap",
+    "build:debug": "tsc -b && vite build --minify=false --sourcemap=inline",
     "lint": "eslint .",
     "preview": "vite preview"
   },

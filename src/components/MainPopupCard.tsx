@@ -115,7 +115,7 @@ export default function SlideOutDrawer() {
         gepSearch: (
             <MemoizedGEPSearchTab 
                 setGepSearchTabData={setGepSearchTabData} 
-                gepSearchData={gepSearchData} 
+                gepSearchData={gepSearchData}
             />
         ),
         planSearch: (
@@ -155,39 +155,62 @@ export default function SlideOutDrawer() {
                         fullWidth 
                         maxWidth='lg' 
                         open={drawerOpen} 
-                        onClose={handleDrawerClose} 
+                        onClose={handleDrawerClose}
+                        id="course-search-dialog"
                         slotProps={{
                             paper: {
                               sx: {
+                                height: '90vh',
+                                maxHeight: '90vh',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                overflow: 'hidden',
                                 backgroundImage: `radial-gradient(80% 80% at 50% -15%, rgb(0, 41, 82), transparent)`,
                                 backgroundColor: "rgb(5, 7, 10)", // fallback for the rest of the dialog
                                 boxShadow: `0 0 10px 4px rgba(33, 150, 243, 0.6)`,
-                              color: "white",
-                              border: "2px solid black",
-                              borderRadius: 2,
+                                color: "white",
+                                border: "2px solid black",
+                                borderRadius: 2,
                              
                             },
                         }}}
                     >
-                        <TabContext value={selectedTab}>
-                            <Box sx={{ 
-                                width: '100%', p: 2 }}>
+                        <Box sx={{ 
+                            width: '100%', 
+                            p: 2,
+                            borderBottom: '1px solid rgba(255,255,255,0.1)',
+                            flexShrink: 0
+                        }}>
+                            <TabContext value={selectedTab}>
                                 <TabList onChange={handleTabChange}>
                                     <Tab value="0" label="Course Search" />
                                     <Tab value="1" label="GEP Search" />
                                     <Tab value="2" label="Major Search" />
                                 </TabList>
-                            </Box>
-                            <TabPanel value="0" keepMounted={true}>
-                                {tabContent.courseSearch}
-                            </TabPanel>
-                            <TabPanel value="1" keepMounted={true}>
-                                {tabContent.gepSearch}
-                            </TabPanel>
-                            <TabPanel value="2" keepMounted={true}>
-                                {tabContent.planSearch}
-                            </TabPanel>
-                        </TabContext>
+                            </TabContext>
+                        </Box>
+                        
+                        <Box 
+                            id="dialog-scroll-container"
+                            sx={{ 
+                                flexGrow: 1,
+                                overflow: 'auto',
+                                display: 'flex',
+                                flexDirection: 'column'
+                            }}
+                        >
+                            <TabContext value={selectedTab}>
+                                <TabPanel value="0" keepMounted={true} sx={{ p: 0, flex: 1 }}>
+                                    {tabContent.courseSearch}
+                                </TabPanel>
+                                <TabPanel value="1" keepMounted={true} sx={{ p: 0, flex: 1 }}>
+                                    {tabContent.gepSearch}
+                                </TabPanel>
+                                <TabPanel value="2" keepMounted={true} sx={{ p: 0, flex: 1 }}>
+                                    {tabContent.planSearch}
+                                </TabPanel>
+                            </TabContext>
+                        </Box>
                     </Dialog>
                 </Box>
             </AppTheme>
