@@ -7,12 +7,8 @@ import {
   DialogContent,
   
   List,
-  ListItem,
-  ListItemText,
   TextField,
   Typography,
-  Collapse,
-  ButtonBase,
   Checkbox,
   FormControlLabel
 } from '@mui/material';
@@ -25,7 +21,8 @@ import { OpenCourseSectionsColumn, sortSections } from '../../types/DataGridCour
 import { fetchCourseSearchData } from '../../services/api';
 import type { RequiredCourse, MajorPlan, Subplan, MinorPlan } from '../../types/Plans';
 import type { MergedCourseData } from '../../utils/CourseSearch/MergeDataUtil';
-
+import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
 export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
   return (
     <Box sx={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -68,11 +65,11 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
     ? Object.keys(majorPlans[planSearchData.selectedMajor as keyof typeof majorPlans]?.subplans || {})
     : [];
 
-  const handleClick = (requirementKey: string) => {
-    AppLogger.info("Requirement clicked:", { requirementKey });
-    AppLogger.info("Open state:", planSearchData.open);
-    setPlanSearchTabData('open', requirementKey);
-  };
+  // const handleClick = (event: React.SyntheticEvent, nodeId: string) => {
+  //   AppLogger.info("Requirement clicked:", { nodeId });
+  //   AppLogger.info("Open state:", planSearchData.open);
+  //   setPlanSearchTabData('open', nodeId);
+  // };
 
   const planSearch = async () => {
     setPlanSearchTabData('progress', 10); // start
@@ -190,134 +187,198 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
     AppLogger.info(`[PLAN SEARCH] Requirements:`, requirements);
     if (Object.keys(requirements).length > 0) {
       requirementsList = (
-        <List >
+        <SimpleTreeView 
+          sx={{
+            '& .MuiTreeItem-root': {
+              '& .MuiTreeItem-content': {
+                backgroundColor: 'transparent !important',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                margin: '4px 0',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.08) !important',
+                },
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.12) !important',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.16) !important',
+                  },
+                },
+                '&.Mui-focused': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.12) !important',
+                },
+              },
+              '& .MuiTreeItem-label': {
+                fontSize: '1.2rem',
+                fontWeight: 600,
+                color: '#ffffff',
+                padding: '8px 0',
+              },
+              '& .MuiTreeItem-iconContainer': {
+                color: 'rgba(255, 255, 255, 0.7)',
+                '& svg': {
+                  fontSize: '1.2rem',
+                },
+              },
+            },
+          }}
+        >
           {Object.keys(requirements).map((requirementKey) => (
-            <Box
+            <TreeItem
               key={requirementKey}
-              sx={(theme) => ({
-                border: '2px solid',
-                
-                borderColor: (theme.vars || theme).palette.divider,
-                'background-color': 'none',
-                position: 'relative',
-                zIndex: 0,
-                borderRadius: 2,
-                mb: 3,
-                
-                p: 2,
-              })}
+              itemId={requirementKey}
+              label={requirementKey}
             >
-              <ListItem sx={{
-                'background-color': 'none',
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                width: '100%',
+                padding: '16px',
+                backgroundColor: 'transparent',
               }}>
-                <ButtonBase onClick={() => handleClick(requirementKey)}>
-                  <ListItemText 
-                    primary={requirementKey} 
-                    slotProps={{ primary: { fontWeight: 700, fontSize: '1.2rem' } }} 
-                  sx={() => ({
-                    'background-color': 'none',
-                  })} 
-                />
-                </ButtonBase>
-              </ListItem>
-              <Collapse in={planSearchData.open[requirementKey as keyof Record<string, boolean>]} timeout="auto" unmountOnExit>
-                <List component="div" disablePadding sx={{ 'background-color': 'none' }}>
-                 
-                  {requirements[requirementKey].courses.filter((course: RequiredCourse) => {
-                    if (planSearchData.hideNoSections) {
-                      return (planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections?.length > 0;
-                    }
-                    return true;
-                  }).map((course: RequiredCourse) => (
-                    <ListItem alignItems="flex-start" key={course.course_abr} sx={{ pl: 4 }}>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                        <ListItemText
-                          primary={`${course.course_descrip} ${course.course_abr} ${parseInt(course.catalog_num)}`}
-                          secondary={`${course.course_abr} ${course.catalog_num}`}
-                        />
+                {requirements[requirementKey].courses.filter((course: RequiredCourse) => {
+                  if (planSearchData.hideNoSections) {
+                    return (planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections?.length > 0;
+                  }
+                  return true;
+                }).map((course: RequiredCourse, index: number, filteredCourses: RequiredCourse[]) => (
+                  <Box key={`${course.course_abr} ${course.catalog_num}`} sx={{ mb: 3 }}>
+                    {/* Course Header */}
+                    <Typography 
+                      variant="h6" 
+                      sx={{ 
+                        color: 'rgba(255, 255, 255, 0.95)',
+                        fontSize: '1.1rem',
+                        fontWeight: 500,
+                        mb: 2,
+                        pb: 1,
+                        borderBottom: '2px solid rgba(255, 255, 255, 0.2)',
+                      }}
+                    >
+                      {course.course_descrip} ({course.course_abr} {parseInt(course.catalog_num)})
+                    </Typography>
+                    
+                    {/* Course Content */}
+                    <Box sx={{ 
+                      width: '100%', 
+                      mb: 2
+                    }}>
+                      {(planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections?.length > 0 ? (
                         <Box sx={{ 
-                          width: '100%', 
-                          mb: 4
+                          height: '400px', // Fixed height for DataGrid
+                          width: '100%',
+                          display: 'flex'
                         }}>
-                          {(planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections?.length > 0 ? (
-                            <Box sx={{ 
-                              height: '100%',
+                          <DataGrid
+                            getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
+                            rows={(planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`].sections.sort(sortSections)}
+                            columns={OpenCourseSectionsColumn}
+                            columnVisibilityModel={{ id: false }}
+                            disableRowSelectionOnClick
+                            pageSizeOptions={[5, 10, 25]}
+                            initialState={{
+                              pagination: {
+                                paginationModel: {
+                                  pageSize: 5,
+                                },
+                              },
+                            }}
+                            sx={{
                               width: '100%',
-                              display: 'flex'
-                            }}>
-                              <DataGrid
-                                getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
-                                rows={(planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`].sections.sort(sortSections)}
-                                columns={OpenCourseSectionsColumn}
-                                columnVisibilityModel={{ id: false }}
-                                disableRowSelectionOnClick
-                                pageSizeOptions={[5, 10, 25]}
-                                initialState={{
-                                  pagination: {
-                                    paginationModel: {
-                                      pageSize: 5,
-                                    },
-                                  },
-                                }}
-                                sx={{
-                                  width: '100%',
-                                  '& .MuiDataGrid-main': { overflow: 'visible' },
-                                  '& .MuiDataGrid-columnHeaders': {
-                                    backgroundColor: (theme) => theme.palette.background.paper,
-                                    minHeight: '64px !important',
-                                    lineHeight: '24px !important',
-                                  },
-                                  '& .MuiDataGrid-columnHeaderTitle': {
-                                    fontWeight: 'bold',
-                                    overflow: 'visible',
-                                    lineHeight: '1.2 !important',
-                                    whiteSpace: 'normal',
-                                    textOverflow: 'clip',
-                                    fontSize: {
-                                      xs: '0.75rem',
-                                      sm: '0.875rem',
-                                      md: '1rem'
-                                    }
-                                  },
-                                  '& .MuiDataGrid-cell': {
-                                    whiteSpace: 'normal',
-                                    padding: '8px 16px',
-                                    fontSize: {
-                                      xs: '0.75rem',
-                                      sm: '0.875rem',
-                                      md: '0.925rem'
-                                    }
-                                  },
-                                  '& .MuiDataGrid-row': {
-                                    width: '100%'
-                                  },
-                                  '& .MuiDataGrid-virtualScroller': {
-                                    width: '100%'
-                                  },
-                                  '& .MuiButtonBase-root': {
-                                    fontSize: {
-                                      xs: '0.7rem',
-                                      sm: '0.8rem',
-                                      md: '0.875rem'
-                                    }
-                                  }
-                                }}
-                              />
-                            </Box>
-                          ) : (
-                            <Typography variant="body1" sx={{ p: 2 }}>
-                              No sections available
-                            </Typography>
-                          )}
+                              height: '100%', // Use full height of container
+                              backgroundColor: 'transparent',
+                              border: '1px solid rgba(255, 255, 255, 0.1)',
+                              borderRadius: '8px',
+                              '& .MuiDataGrid-main': { overflow: 'visible' },
+                              '& .MuiDataGrid-columnHeaders': {
+                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                minHeight: '64px !important',
+                                lineHeight: '24px !important',
+                                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                              },
+                              '& .MuiDataGrid-columnHeaderTitle': {
+                                fontWeight: 'bold',
+                                overflow: 'visible',
+                                lineHeight: '1.2 !important',
+                                whiteSpace: 'normal',
+                                textOverflow: 'clip',
+                                color: 'white',
+                                fontSize: {
+                                  xs: '0.85rem',
+                                  sm: '0.95rem',
+                                  md: '1.1rem'
+                                }
+                              },
+                              '& .MuiDataGrid-cell': {
+                                whiteSpace: 'normal',
+                                padding: '8px 16px',
+                                color: 'rgba(255, 255, 255, 0.9)',
+                                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                                fontSize: {
+                                  xs: '0.8rem',
+                                  sm: '0.9rem',
+                                  md: '1rem'
+                                }
+                              },
+                              '& .MuiDataGrid-row': {
+                                width: '100%',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                },
+                              },
+                              '& .MuiDataGrid-virtualScroller': {
+                                width: '100%'
+                              },
+                              '& .MuiButtonBase-root': {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                fontSize: {
+                                  xs: '0.75rem',
+                                  sm: '0.85rem',
+                                  md: '0.95rem'
+                                },
+                                '& .MuiSvgIcon-root': {
+                                  color: 'rgba(255, 255, 255, 0.7)'
+                                }
+                              },
+                              '& .MuiDataGrid-footerContainer': {
+                                backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                                color: 'rgba(255, 255, 255, 0.7)',
+                              }
+                            }}
+                          />
                         </Box>
-                      </Box>
-                    </ListItem>
-                  ))}
-                </List>
-              </Collapse>
-            </Box>
+                      ) : (
+                        <Typography variant="body1" sx={{ 
+                          p: 3, 
+                          color: 'rgba(255, 255, 255, 0.6)',
+                          fontSize: '1rem',
+                          textAlign: 'center',
+                          fontStyle: 'italic'
+                        }}>
+                          No sections available
+                        </Typography>
+                      )}
+                    </Box>
+                    
+                    {/* Divider between courses (except for the last one) */}
+                    {index < filteredCourses.length - 1 && (
+                      <Box 
+                        sx={{ 
+                          width: '100%', 
+                          height: '1px', 
+                          backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+                          my: 3 
+                        }} 
+                      />
+                    )}
+                  </Box>
+                ))}
+              </Box>
+            </TreeItem>
           ))}
-        </List>
+        </SimpleTreeView>
       );
     }
   }

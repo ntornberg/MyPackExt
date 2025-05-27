@@ -1,7 +1,7 @@
 import { Box, CircularProgress, FormControlLabel, ListItem, ListItemText, Typography, Checkbox} from "@mui/material";
 import { Button, TextField, Autocomplete, List } from "@mui/material";
 import { AppLogger } from "../../utils/logger";
-import { useMemo, useCallback, useEffect, useState } from "react";
+import { useMemo, useCallback, useState } from "react";
 import { fetchGEPCourseData } from "../../services/api/CourseSearch/dataService";
 import { GEP_COURSES } from "../../Data/CourseSearch/gep_courses.typed";
 import type { MergedCourseData } from "../../utils/CourseSearch/MergeDataUtil";
@@ -12,7 +12,6 @@ import type { RequiredCourse } from "../../types/Plans";
 import { sortSections } from '../../types/DataGridCourse';
 import { type GEPData } from "../TabDataStore/TabData";
 import React from "react";
-import { useVirtualizer } from '@tanstack/react-virtual';
 import { SubjectMenuValues } from "../../Data/SubjectSearchValues";
 
 export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
@@ -176,115 +175,49 @@ export interface GroupedCourse {
   courseAbr: string; // Keep track of the abbreviation for keys/state
 }
 
-interface VirtualizedGEPTreeProps {
+interface GEPTreeProps {
   groupedData: GroupedCourse[];
   expandedGroups: Record<string, boolean>;
   onToggleGroup: (courseAbr: string) => void;
-  scrollElement: HTMLElement;
   courseData: Record<string, MergedCourseData> | {}; // For section details
 }
 
-const VirtualizedGEPTree: React.FC<VirtualizedGEPTreeProps> = React.memo((
-  { groupedData, expandedGroups, onToggleGroup, scrollElement, courseData }
+const GEPTree: React.FC<GEPTreeProps> = React.memo((
+  { groupedData, expandedGroups, onToggleGroup, courseData }
 ) => {
-  // 1. Flatten the data for virtualization
-  const flatListItems = useMemo(() => {
-    const items: Array<{ type: 'group' | 'course', data: GroupedCourse | RequiredCourse, groupAbr?: string }> = [];
-    groupedData.forEach(group => {
-      items.push({ type: 'group', data: group, groupAbr: group.courseAbr });
-      if (expandedGroups[group.courseAbr]) {
-        group.courses.forEach(course => {
-          items.push({ type: 'course', data: course, groupAbr: group.courseAbr });
-        });
-      }
-    });
-    return items;
-  }, [groupedData, expandedGroups]);
-
-  const rowVirtualizer = useVirtualizer({
-    count: flatListItems.length,
-    getScrollElement: () => scrollElement,
-    estimateSize: (index) => flatListItems[index].type === 'group' ? 48 : 280,
-    overscan: 10,
-    measureElement: (element: Element) => {
-      const htmlElement = element as (HTMLElement | null);
-      const height = htmlElement?.getBoundingClientRect().height;
-      const dataIndex = htmlElement?.dataset?.index;
-      const fallbackIndex = dataIndex ? parseInt(dataIndex) : 0;
-      const fallbackTypeIsGroup = flatListItems[fallbackIndex]?.type === 'group';
-      return height ?? (fallbackTypeIsGroup ? 48 : 280);
-    },
-  });
-
-  useEffect(() => {
-    if (scrollElement && flatListItems.length > 0) {
-      const timer = setTimeout(() => rowVirtualizer.measure(), 100);
-      return () => clearTimeout(timer);
-    }
-  }, [flatListItems, scrollElement, rowVirtualizer]);
-
-  const virtualItems = rowVirtualizer.getVirtualItems();
-
   return (
-    <div
-      style={{
-        height: rowVirtualizer.getTotalSize(),
-        width: '100%',
-        position: 'relative',
-      }}
-    >
-      {virtualItems.map((virtualItem) => {
-        const item = flatListItems[virtualItem.index];
-        if (!item) return null;
-
-        if (item.type === 'group') {
-          const group = item.data as GroupedCourse;
-          return (
-            <div
-              key={`group-${group.courseAbr}`}
-              ref={rowVirtualizer.measureElement}
-              data-index={virtualItem.index}
-              style={{
-                position: 'absolute',
-                top: 0, left: 0, width: '100%',
-                transform: `translateY(${virtualItem.start}px)`,
-                borderBottom: '1px solid #ccc',
-                padding: '10px',
-                cursor: 'pointer',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}
-              onClick={() => onToggleGroup(group.courseAbr)}
-            >
-              <Typography variant="h6">{group.displayTitle} ({group.courses.length})</Typography>
-              <Typography>{expandedGroups[group.courseAbr] ? '[-]' : '[+]'}</Typography>
-            </div>
-          );
-        } else { // type === 'course'
-          const course = item.data as RequiredCourse;
-          const courseKey = `${course.course_abr} ${course.catalog_num}`;
-          const courseDataEntry = (courseData as Record<string, MergedCourseData>)[courseKey];
-          return (
-            <div
-              key={`course-${courseKey}-${virtualItem.index}`}
-              ref={rowVirtualizer.measureElement}
-              data-index={virtualItem.index}
-              style={{
-                position: 'absolute',
-                top: 0, left: 0, width: '100%',
-                transform: `translateY(${virtualItem.start}px)`,
-                borderBottom: '1px solid #eee',
-              }}
-            >
+    <Box sx={{ width: '100%'}}>
+      {groupedData.map(group => (
+        <React.Fragment key={`group-fragment-${group.courseAbr}`}>
+          <div
+            key={`group-${group.courseAbr}`}
+            style={{
+              borderBottom: '1px solid #ccc',
+              padding: '10px',
+              cursor: 'pointer',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}
+            onClick={() => onToggleGroup(group.courseAbr)}
+          >
+            <Typography variant="h6">{group.displayTitle} ({group.courses.length})</Typography>
+            <Typography>{expandedGroups[group.courseAbr] ? '[-]' : '[+]'}</Typography>
+          </div>
+          {expandedGroups[group.courseAbr] && group.courses.map(course => {
+            const courseKey = `${course.course_abr} ${course.catalog_num}`;
+            const courseDataEntry = (courseData as Record<string, MergedCourseData>)[courseKey];
+            return (
               <ListItem 
+                key={`course-${courseKey}`}
                 alignItems="flex-start" 
                 sx={{
                   paddingLeft: '20px',
                   py: 1, 
                   minHeight: 'auto',
                   display: 'flex',
-                  flexDirection: 'column' 
+                  flexDirection: 'column',
+                  borderBottom: '1px solid #eee',
                 }}
               >
                 <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
@@ -299,21 +232,20 @@ const VirtualizedGEPTree: React.FC<VirtualizedGEPTreeProps> = React.memo((
                     </Box>
                   ) : (
                     <Typography variant="body1" sx={{ p: 2 }}>
-                      {courseData ? 'No sections available' : 'Search for a course to see sections'}
+                      No sections available for this course.
                     </Typography>
                   )}
                 </Box>
               </ListItem>
-            </div>
-          );
-        }
-      })}
-    </div>
+            );
+          })}
+        </React.Fragment>
+      ))}
+    </Box>
   );
 });
 
 export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepSearchTabData: (key: keyof GEPData, value: any) => void, gepSearchData: GEPData}) {
-    const [scrollElement, setScrollElement] = useState<HTMLElement | null>(null);
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
     const { 
@@ -327,27 +259,6 @@ export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepS
       progressLabel
     } = gepSearchData;
     
-    useEffect(() => {
-      const element = document.getElementById('dialog-scroll-container');
-      if (element) {
-        setScrollElement(element);
-        AppLogger.info("Found dialog scroll container for GEP search virtualization");
-      } else {
-        AppLogger.warn("Dialog scroll container not found. Virtualization may not work as expected initially.");
-        const retryInterval = setInterval(() => {
-            const el = document.getElementById('dialog-scroll-container');
-            if (el) {
-                setScrollElement(el);
-                AppLogger.info("Found dialog scroll container on retry.");
-                clearInterval(retryInterval);
-            } else {
-                AppLogger.info("Dialog scroll container still not found on retry.");
-            }
-        }, 1000);
-        return () => clearInterval(retryInterval);
-      }
-    }, []);
-
     const courseSearch = useCallback(async () => {
       // Reset expanded groups on new search
       setExpandedGroups({});
@@ -469,18 +380,14 @@ export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepS
           )}
         </List>
 
-        {isLoaded && scrollElement && groupedAndFilteredCourses.length > 0 && (
-          <VirtualizedGEPTree 
+        {isLoaded && groupedAndFilteredCourses.length > 0 && (
+          <GEPTree 
             groupedData={groupedAndFilteredCourses}
             expandedGroups={expandedGroups}
             onToggleGroup={handleToggleGroup}
-            scrollElement={scrollElement}
-            courseData={courseData} // Pass this down for section details
+            courseData={courseData}
             key={`gep-tree-${hideNoSections}-${groupedAndFilteredCourses.map(g=>g.courseAbr).join('-')}`}
           />
-        )}
-        {isLoaded && !scrollElement && groupedAndFilteredCourses.length > 0 && (
-            <Typography sx={{textAlign: 'center', p: 2}}>Waiting for scroll container...</Typography>
         )}
         {isLoaded && groupedAndFilteredCourses.length === 0 && (
           <Typography variant="body1" sx={{ p: 4, textAlign: 'center' }}>
