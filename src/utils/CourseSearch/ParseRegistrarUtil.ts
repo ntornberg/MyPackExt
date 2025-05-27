@@ -2,6 +2,8 @@
 import * as cheerio from 'cheerio';
 import { TermIdByName } from '../../Data/TermID';
 import { AppLogger } from '../logger';
+import type { CheerioAPI } from 'cheerio';
+import type { Element as DomHandlerElement, Text } from 'domhandler';
 
 export interface CourseSection {
     id: string;
@@ -29,24 +31,14 @@ export interface CourseData {
 }
 
 
-export function parseHTMLContent(html: string): CourseData | null {
- 
-  const parsed = JSON.parse(html);
-  const html_parse = parsed.html
-  const $ = cheerio.load(html_parse);
-  const $courseSection = $('.course');
-  if ($courseSection.length === 0) {
-    console.error("Could not find course section.");
-    AppLogger.error("Could not find course section.", { html_parse });
-    return null;
-  }
-  const code = $courseSection.find('h1').contents().first().text().trim();
-  const title = $courseSection.find('h1 small').text().trim();
-  const units = $courseSection.find('h1 .units').text().replace('Units:', '').trim();
-  const description = $courseSection.find('p').first().text().trim();
-  const prerequisite = $courseSection.find('p').eq(1).text().trim();
+function ParseCourseElement($: CheerioAPI, courseSection: cheerio.Cheerio<DomHandlerElement>): CourseData {
+  const code = courseSection.find('h1').contents().first().text().trim();
+  const title = courseSection.find('h1 small').text().trim();
+  const units = courseSection.find('h1 .units').text().replace('Units:', '').trim();
+  const description = courseSection.find('p').first().text().trim();
+  const prerequisite = courseSection.find('p').eq(1).text().trim();
   const sections: CourseSection[] = [];
-  $courseSection.find('table.section-table tbody tr').each((_, element) => {
+  courseSection.find('table.section-table tbody tr').each((_, element) => {
     const $row = $(element);
     const $cells = $row.find('td');
     if ($cells.length >= 8) {
@@ -66,9 +58,11 @@ export function parseHTMLContent(html: string): CourseData | null {
       const location = $cells.eq(5).text().trim();
       const $instructorLink = $cells.eq(6).find('a.instructor-link');
       const ins_list = [];
-      for(let i = 0; i < $instructorLink.length; i++) {
-        const ins_name = $($instructorLink[i]).text();
-        ins_list.push(ins_name)
+      for (let i = 0; i < $instructorLink.length; i++) {
+        if($instructorLink[i].children[0].type === 'text'){
+        const ins_name = ($instructorLink[i].children[0] as Text).data;
+        ins_list.push(ins_name);
+        }
       }
 
       const dates = $cells.eq(7).text().trim();
@@ -96,21 +90,45 @@ export function parseHTMLContent(html: string): CourseData | null {
       });
     }
   });
-  AppLogger.info("Sections: ", sections);
   return {
     code,
     title,
     units,
     description,
     prerequisite,
-    sections,
+    sections
   };
 }
+export function parseHTMLContent(html: string): CourseData | CourseData[] | null {
+  const parsed = JSON.parse(html);
+  const html_parse = parsed.html
+  const $ = cheerio.load(html_parse);
+  const $courseSection = $('.course');
+  if ($courseSection.length === 0) {
+    return null;
+  }
 
-export function formCourseURL(term: string, course_abr: string, catalog_num: string) {
+
+
+  if ($courseSection.length > 1) {
+    let courseDataArray: CourseData[] = [];
+    $courseSection.each((_,element) => {
+      const ele = $(element);
+      courseDataArray.push(ParseCourseElement($,ele));
+      return true;
+    });
+  
+    return courseDataArray;
+  } 
+else {
+  return ParseCourseElement($,$courseSection);
+}
+}
+
+export function formCourseURL(term: string, course_abr: string, catalog_num?: string | null) {
     const term_id = TermIdByName[term];
     
-    AppLogger.info('Looking up subject', { course_abr });
+    AppLogger.info('Looking up subject', { course_abr },catalog_num);
     if (!course_abr) {
         AppLogger.error('No subject found for course_abr', { course_abr });
         return null;
@@ -118,9 +136,10 @@ export function formCourseURL(term: string, course_abr: string, catalog_num: str
     const formData = new URLSearchParams();
     formData.append("term", term_id);
     formData.append("subject", course_abr);
-    formData.append("course-inequality", "=");
-    const course_number = parseInt(catalog_num);
-    formData.append("course-number", course_number.toString());
+    const inequality = catalog_num ?  "=" : ">=";
+    formData.append("course-inequality", inequality);
+    const course_number = catalog_num ? parseInt(catalog_num!).toString() :"0"  ;
+    formData.append("course-number", course_number);
     formData.append("course-career", "");
     formData.append("session", "");
     formData.append("start-time-inequality", "<=");

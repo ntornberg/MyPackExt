@@ -8,16 +8,17 @@
     "https://*.acs.ncsu.edu/*","https://webappprd.acs.ncsu.edu/*"
   ],
   "action": {
-    "default_popup": "./public/popup.html",
+    "default_popup": "index.html",
     "default_icon": "icon.png"
   },
   "background": {
-    "service_worker": "./src/background.js"
+    "service_worker": "src/background.ts",
+    "type": "module"
   },
   "content_scripts": [
     {
       "matches": ["https://portalsp.acs.ncsu.edu/*"],
-      "js": ["./src/content.js"],
+      "js": ["src/content.tsx"],
       "run_at": "document_start",
       "all_frames": true
     }

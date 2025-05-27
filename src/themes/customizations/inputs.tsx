@@ -592,6 +592,7 @@ export const inputsCustomizations: Components<Theme> = {
   MuiFormLabel: {
     styleOverrides: {
       root: ({ theme }) => ({
+        color: 'white',
         typography: theme.typography.caption,
         marginBottom: 8,
       }),

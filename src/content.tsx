@@ -1,3 +1,5 @@
+
+
 import {waitForCart, waitForScheduleTable, ensureOverlayContainer} from "./utils/dom.ts";
 import { createRoot } from 'react-dom/client';
 
@@ -26,6 +28,7 @@ AppLogger.info("MyPack Enhancer script started.");
 
 import createCache from '@emotion/cache';
 import { CacheProvider } from "@emotion/react";
+import FirstStartDialog from "./components/UserGuide/FirstStart.tsx";
 
 export function createEmotionCache() {
   
@@ -62,7 +65,7 @@ const debouncedScrapePlanner = debounceScraper(scrapePlanner);
 function injectXHRHookScript() {
     const script = document.createElement("script");
     script.src = chrome.runtime.getURL("realFetchHook.js");
-    script.onload = () => script.remove(); // Clean up
+    
     (document.head || document.documentElement).appendChild(script);
 }
 
@@ -75,11 +78,10 @@ const observer = new MutationObserver(() => {
         try {
             //const win = iframe.contentWindow;
             const doc = iframe.contentDocument;
-            if (doc && !doc.querySelector('script[data-hooked="true"]')) {
+            if (doc ) { // && !doc.querySelector('script[data-hooked="true"]')
                 const script = doc.createElement("script");
                 script.src = chrome.runtime.getURL("realFetchHook.js");
                 script.setAttribute("data-hooked", "true");  // Prevent future injections
-                script.onload = () => script.remove();
                 doc.documentElement.appendChild(script);
             }
         } catch (err) {
@@ -105,15 +107,12 @@ observer.observe(document.body, { childList: true, subtree: true });
         // 1. Ensure the container element exists in the DOM
          
         const scheduleElement = await waitForScheduleTable();
-        
         scrapeScheduleTable(scheduleElement);
-      
-
-        // 3. Render your root component (<SlideOutDrawer />) wrapped with CacheProvider
-        // SlideOutDrawer itself should contain your AppTheme/ThemeProvider inside it,
-        // like shown in the previous corrected code for SlideOutDrawer.
-        root.render(
+        
+        // 3. Render your root component containing both FirstStartDialog and SlideOutDrawer
+        root.render(
             <CacheProvider value={myEmotionCache}>
+                <FirstStartDialog />
                 <SlideOutDrawer />
             </CacheProvider>
         );

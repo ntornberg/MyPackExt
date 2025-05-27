@@ -1,8 +1,8 @@
-import { Button, ButtonBase } from "@mui/material";
+import { Alert, AlertTitle, Button, ButtonBase,   Popper } from "@mui/material";
 import type { GridRenderCellParams } from "@mui/x-data-grid";
 import { AppLogger } from "../../utils/logger";
 import { generateScriptContentUrl } from "../../services/ToCartService";
-import { ToCartAlert } from "../AddToCartAlert";
+import { useState, useRef } from "react";
 
 export const ToCartButtonCell = (params: GridRenderCellParams) => {
     const section = params.row;
@@ -60,7 +60,10 @@ export const ToCartButtonCell = (params: GridRenderCellParams) => {
             </Button>
         );
     }
-    
+    const [open, setOpen] = useState(false);
+    const [message, setMessage] = useState("");
+    const [severity, setSeverity] = useState<"success" | "error">("success");
+
     const handleAddToCart = async () => {
 
         AppLogger.info("Adding to cart: " + course_id + " " + classNumber + " " + catalog_nbr);
@@ -89,17 +92,34 @@ export const ToCartButtonCell = (params: GridRenderCellParams) => {
   const data = await res.json();
   
   if (data.status === "success") {
+    AppLogger.info("Data: ",data);
     AppLogger.info("Added to cart! " + data.message);
     
   } else {
     AppLogger.warn("Server returned:", data);
   }
-  return ToCartAlert(data);
+  if(data.title && data.message){
+    setMessage(data.message);
+    setSeverity("error");
+    setOpen(true);
+}else if(data.message){
+    setMessage(data.message);
+    setSeverity("error");
+    setOpen(true);
+}else{
+    setMessage("Error adding course to cart");
+    setSeverity("error");
+    setOpen(true);
 }
-    
+setTimeout(() => {
+  setOpen(false);
+}, 3000);
+}
+const anchorRef = useRef<HTMLButtonElement>(null);
     return (
+        <>
         <ButtonBase
-             
+             ref={anchorRef}
             onClick={handleAddToCart}
             sx={{
                 color: 'white',
@@ -117,5 +137,9 @@ export const ToCartButtonCell = (params: GridRenderCellParams) => {
               }}
         >Add to Cart
         </ButtonBase>
+        <Popper anchorEl={anchorRef.current} sx={{zIndex: 10000}} open={open}>
+            <Alert severity={severity}><AlertTitle>{message}</AlertTitle></Alert>
+        </Popper>
+        </>
     );
 }; 
