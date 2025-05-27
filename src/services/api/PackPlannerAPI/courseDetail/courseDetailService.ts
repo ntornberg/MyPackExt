@@ -29,6 +29,7 @@ async function fetchSingleCourseData(course: Course): Promise<SingleCourseDataRe
   
   // Check persistent cache
   const persistentCache = await getGenericCache("courseList", hash);
+  AppLogger.info("Persistent cache:", persistentCache);
   if (persistentCache && persistentCache.combinedData) {
     try {
       const cachedData = JSON.parse(persistentCache.combinedData) as SingleCourseDataResponse;
@@ -78,7 +79,7 @@ async function fetchSingleCourseData(course: Course): Promise<SingleCourseDataRe
     
     // Generate hash and store in persistent cache
     const courseHash = await generateCacheKey(course.abr + " " + course.instructor);
-    await setGenericCache("courseList", courseHash, JSON.stringify(combinedData));
+    await setGenericCache("courseList", {hashKey : courseHash,cacheData : JSON.stringify(combinedData)});
     
     return combinedData;
   } catch (error) {

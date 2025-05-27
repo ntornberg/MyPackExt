@@ -14,7 +14,7 @@ chrome.runtime.onMessage.addListener((message, _, sendResponse) => {
                 let data = null;
                 try {
                     data = await res.text();
-                    AppLogger.info(`[background] Fetch response text for course:`, { course_abr: message.course.course_abr, course_id: message.course.catalog_num, data });
+                    AppLogger.info(`[background] Fetch response text for course:`, data);
                 } catch (err) {
                     AppLogger.error('[background] Error reading response text:', err);
                 }

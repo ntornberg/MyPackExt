@@ -7,7 +7,7 @@ import type { CourseData, CourseSection } from "./ParseRegistrarUtil";
 export type ModifiedSection = CourseSection & {
     grade_distribution?: GradeData;
     professor_rating?: MatchedRateMyProf;
-    // Cart functionality fields
+    // Cart functionality fields`
     course_id?: string;
     catalog_nbr?: string;
     course_career?: string;

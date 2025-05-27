@@ -1,8 +1,7 @@
 import { Box, CircularProgress, FormControlLabel, ListItem, ListItemText, Typography, Checkbox} from "@mui/material";
-
-import { Button, DialogContent, TextField, List, Autocomplete } from "@mui/material";
+import { Button, TextField, Autocomplete, List } from "@mui/material";
 import { AppLogger } from "../../utils/logger";
-import { useMemo } from "react";
+import { useMemo, useCallback, useState } from "react";
 import { fetchGEPCourseData } from "../../services/api/CourseSearch/dataService";
 import { GEP_COURSES } from "../../Data/CourseSearch/gep_courses.typed";
 import type { MergedCourseData } from "../../utils/CourseSearch/MergeDataUtil";
@@ -10,26 +9,10 @@ import { TermIdByName } from "../../Data/TermID";
 import { OpenCourseSectionsColumn } from '../../types/DataGridCourse';
 import { DataGrid } from '@mui/x-data-grid';
 import type { RequiredCourse } from "../../types/Plans";
-import { styled } from '@mui/material/styles';
 import { sortSections } from '../../types/DataGridCourse';
 import { type GEPData } from "../TabDataStore/TabData";
-// Styled DialogContent with gradient background
-const StyledDialogContent = styled(DialogContent)(({ theme }) => ({
-
-  backgroundColor: 'none',
-  position: 'relative',
-  overflow: 'auto',
-  '& .MuiAutocomplete-popper': {
-    '& .MuiAutocomplete-listbox': {
-      '& .MuiAutocomplete-option': {
-        borderBottom: `1px solid ${theme.palette.divider}`,
-        '&:last-child': {
-          borderBottom: 'none'
-        }
-      }
-    }
-  }
-}));
+import React from "react";
+import { SubjectMenuValues } from "../../Data/SubjectSearchValues";
 
 export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
   return (
@@ -62,91 +45,263 @@ export function CircularProgressWithLabel({ value, label }: { value: number; lab
   );
 }
 
-export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepSearchTabData: (key: keyof GEPData, value: any) => void, gepSearchData: GEPData}) {
+interface AutocompletesProps {
+  selectedTerm: string | null;
+  searchSubject: string | null;
+  setGepSearchTabData: (key: keyof GEPData, value: any) => void;
+}
 
-    const courseSearch = async () => {
+// Memoize the term options to prevent recalculation
+const TERM_OPTIONS = Object.keys(TermIdByName);
+
+// Memoize the subject options to prevent recalculation  
+const SUBJECT_OPTIONS = Object.keys(GEP_COURSES);
+
+const MemoizedAutocompletes: React.FC<AutocompletesProps> = React.memo(({ 
+  selectedTerm,
+  searchSubject,
+  setGepSearchTabData
+}) => {
+  const handleTermChange = useCallback((_: React.SyntheticEvent, value: string | null) => {
+    setGepSearchTabData('selectedTerm', value);
+  }, [setGepSearchTabData]);
+
+  const handleSubjectChange = useCallback((_: React.SyntheticEvent, value: string | null) => {
+    setGepSearchTabData('searchSubject', value);
+  }, [setGepSearchTabData]);
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
+      <Autocomplete
+        sx={{ width: '100%' }}
+        id="term_selector"
+        options={TERM_OPTIONS}
+        value={selectedTerm}
+        defaultValue={TERM_OPTIONS[0]}
+        onChange={handleTermChange}
+        renderInput={(params) => 
+          <TextField {...params} label="Term" />
+        }
+      />
+      <Autocomplete
+        sx={{ width: '100%' }}
+        id="subject_selector"
+        options={SUBJECT_OPTIONS}
+        value={searchSubject}
+        onChange={handleSubjectChange}
+        renderInput={(params) => 
+          <TextField {...params} label="Subject" />
+        }
+      />
+    </Box>
+  );
+});
+
+// Memoized DataGrid component to prevent unnecessary re-renders - MOVED OUTSIDE COMPONENT
+const MemoizedDataGrid = React.memo(({ 
+  sections,
+  sortFunc 
+}: { 
+  sections: any[]; 
+  sortFunc: (a: any, b: any) => number 
+}) => (
+  <DataGrid
+    getRowId={(row) => row.id || row.classNumber || `${row.section}-${row.instructor_name?.[0] || ''}`}
+    rows={sections.sort(sortFunc)}
+    columns={OpenCourseSectionsColumn}
+    columnVisibilityModel={{ id: false }}
+    disableRowSelectionOnClick
+    pageSizeOptions={[5, 10, 25]}
+    initialState={{
+      pagination: {
+        paginationModel: {
+          pageSize: 5,
+        },
+      },
+    }}
+    sx={{
+      width: '100%',
+      '& .MuiDataGrid-main': { overflow: 'visible' },
+      '& .MuiDataGrid-columnHeaders': {
+        backgroundColor: (theme) => theme.palette.background.paper,
+        minHeight: '64px !important',
+        lineHeight: '24px !important',
+      },
+      '& .MuiDataGrid-columnHeaderTitle': {
+        fontWeight: 'bold',
+        overflow: 'visible',
+        lineHeight: '1.2 !important',
+        whiteSpace: 'normal',
+        textOverflow: 'clip',
+        fontSize: {
+          xs: '0.75rem',
+          sm: '0.875rem',
+          md: '1rem'
+        }
+      },
+      '& .MuiDataGrid-cell': {
+        whiteSpace: 'normal',
+        padding: '8px 16px',
+        fontSize: {
+          xs: '0.75rem',
+          sm: '0.875rem',
+          md: '0.925rem'
+        }
+      },
+      '& .MuiDataGrid-row': {
+        width: '100%'
+      },
+      '& .MuiDataGrid-virtualScroller': {
+        width: '100%'
+      },
+      '& .MuiButtonBase-root': {
+        fontSize: {
+          xs: '0.7rem',
+          sm: '0.8rem',
+          md: '0.875rem'
+        },
+        '& .MuiSvgIcon-root' :{
+          color: 'none'
+        }
+      }
+    }}
+  />
+));
+
+// Define the structure for grouped courses
+export interface GroupedCourse { 
+  displayTitle: string;
+  courses: RequiredCourse[];
+  courseAbr: string; // Keep track of the abbreviation for keys/state
+}
+
+interface GEPTreeProps {
+  groupedData: GroupedCourse[];
+  expandedGroups: Record<string, boolean>;
+  onToggleGroup: (courseAbr: string) => void;
+  courseData: Record<string, MergedCourseData> | {}; // For section details
+}
+
+const GEPTree: React.FC<GEPTreeProps> = React.memo((
+  { groupedData, expandedGroups, onToggleGroup, courseData }
+) => {
+  return (
+    <Box sx={{ width: '100%'}}>
+      {groupedData.map(group => (
+        <React.Fragment key={`group-fragment-${group.courseAbr}`}>
+          <div
+            key={`group-${group.courseAbr}`}
+            style={{
+              borderBottom: '1px solid #ccc',
+              padding: '10px',
+              cursor: 'pointer',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}
+            onClick={() => onToggleGroup(group.courseAbr)}
+          >
+            <Typography variant="h6">{group.displayTitle} ({group.courses.length})</Typography>
+            <Typography>{expandedGroups[group.courseAbr] ? '[-]' : '[+]'}</Typography>
+          </div>
+          {expandedGroups[group.courseAbr] && group.courses.map(course => {
+            const courseKey = `${course.course_abr} ${course.catalog_num}`;
+            const courseDataEntry = (courseData as Record<string, MergedCourseData>)[courseKey];
+            return (
+              <ListItem 
+                key={`course-${courseKey}`}
+                alignItems="flex-start" 
+                sx={{
+                  paddingLeft: '20px',
+                  py: 1, 
+                  minHeight: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderBottom: '1px solid #eee',
+                }}
+              >
+                <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                  <ListItemText
+                    primary={`${course.course_descrip} (${course.course_abr} ${parseInt(course.catalog_num)})`}
+                    secondary={courseKey}
+                    sx={{ mb: 1 }}
+                  />
+                  {courseDataEntry?.sections?.length > 0 ? (
+                    <Box sx={{ height: 'auto', minHeight: '250px', width: '100%', display: 'flex' }}>
+                      <MemoizedDataGrid sections={courseDataEntry.sections} sortFunc={sortSections} />
+                    </Box>
+                  ) : (
+                    <Typography variant="body1" sx={{ p: 2 }}>
+                      No sections available for this course.
+                    </Typography>
+                  )}
+                </Box>
+              </ListItem>
+            );
+          })}
+        </React.Fragment>
+      ))}
+    </Box>
+  );
+});
+
+export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepSearchTabData: (key: keyof GEPData, value: any) => void, gepSearchData: GEPData}) {
+    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+
+    const { 
+      selectedTerm, 
+      searchSubject, 
+      isLoaded, 
+      courses, // This will be the raw flat list from the API
+      courseData, 
+      hideNoSections,
+      progress,
+      progressLabel
+    } = gepSearchData;
+    
+    const courseSearch = useCallback(async () => {
+      // Reset expanded groups on new search
+      setExpandedGroups({});
       setGepSearchTabData('progress', 10);
       setGepSearchTabData('progressLabel', 'Initializing GEP course search...');
       setGepSearchTabData('isLoaded', false);
       AppLogger.info("Course search clicked with:", { 
-        selectedTerm: gepSearchData.selectedTerm, 
-        searchSubject: gepSearchData.searchSubject 
+        selectedTerm, 
+        searchSubject 
       });
       
       try {
-        if (gepSearchData.searchSubject && gepSearchData.selectedTerm) {
-          const courseInfo = (GEP_COURSES as any)[gepSearchData.searchSubject];
+        if (searchSubject && selectedTerm) {
+          const courseInfo = (GEP_COURSES as any)[searchSubject];
           if(courseInfo) {
-            const courses = Object.entries(courseInfo).map(([course_title, course_info]) => {
+            const coursesResult = Object.entries(courseInfo).map(([course_title, course_info_val]) => {
               const title = course_title as string;
-              const course_entry = course_info as {course_title: string, course_id: string};
+              const course_entry = course_info_val as {course_title: string, course_id: string};
               return {
                 course_id: course_entry.course_id,
-                course_abr: title.split('-')[0],
-                catalog_num: title.split('-')[1],
+                course_abr: title.split('-')[0].trim(), // Ensure course_abr is clean
+                catalog_num: title.split('-')[1].trim(),
                 course_descrip: course_entry.course_title,
-                term: gepSearchData.selectedTerm
-              };
+                term: selectedTerm
+              } as RequiredCourse; // Ensure correct type
             });
             
-            setGepSearchTabData('courses', courses);
-            setGepSearchTabData('progressLabel', `Processing ${courses.length} GEP courses for ${gepSearchData.searchSubject}`);
+            setGepSearchTabData('courses', coursesResult);
+            setGepSearchTabData('progressLabel', `Processing ${coursesResult.length} GEP courses for ${searchSubject}`);
             
-            // Use the progress callback with status message
-            const courseData = await fetchGEPCourseData(
-              courses, 
-              gepSearchData.selectedTerm, 
+            const courseDataResult = await fetchGEPCourseData(
+              coursesResult, 
+              selectedTerm, 
               (progressValue, statusMessage) => {
-                // Update progress state
                 setGepSearchTabData('progress', progressValue);
-                
-                // Update the progress label if status message is provided
                 if (statusMessage) {
                   setGepSearchTabData('progressLabel', statusMessage);
                 }
               }
             );
             
-            // Debug the returned course data
-            AppLogger.info("[GEP RENDER DEBUG] Received course data:", courseData);
-            
-            // Check which courses have sections
-            if (courseData) {
-              // Show a detailed sample of one course's data structure
-              const sampleCourseKey = Object.keys(courseData)[0];
-              if (sampleCourseKey) {
-                const sampleCourseData = courseData[sampleCourseKey];
-                AppLogger.info("[GEP DATA STRUCTURE] Example course data structure:", {
-                  key: sampleCourseKey,
-                  title: sampleCourseData.title,
-                  sections: {
-                    type: typeof sampleCourseData.sections,
-                    isArray: Array.isArray(sampleCourseData.sections),
-                    length: sampleCourseData.sections?.length || 0,
-                    // If there's a section, show its structure
-                    firstSection: sampleCourseData.sections?.length > 0 ? {
-                      section: sampleCourseData.sections[0].section,
-                      classNumber: sampleCourseData.sections[0].classNumber,
-                      instructor: sampleCourseData.sections[0].instructor_name
-                    } : 'No sections'
-                  }
-                });
-              }
-              
-              const coursesWithSections = Object.entries(courseData)
-                .filter(([_, data]) => data.sections && data.sections.length > 0)
-                .map(([key]) => key);
-              
-              AppLogger.info(`[GEP RENDER DEBUG] Courses with sections (${coursesWithSections.length}): ${coursesWithSections.join(', ')}`);
-              
-              const coursesWithoutSections = Object.entries(courseData)
-                .filter(([_, data]) => !data.sections || data.sections.length === 0)
-                .map(([key]) => key);
-              
-              AppLogger.info(`[GEP RENDER DEBUG] Courses without sections (${coursesWithoutSections.length}): ${coursesWithoutSections.join(', ')}`);
-            }
-            
-            setGepSearchTabData('courseData', courseData);
+            AppLogger.info("[GEP RENDER DEBUG] Received course data:", courseDataResult);
+            setGepSearchTabData('courseData', courseDataResult || {});
           }
         }
       } catch (error) {
@@ -157,200 +312,88 @@ export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepS
         setGepSearchTabData('progressLabel', 'Complete');
         setGepSearchTabData('isLoaded', true);
       }
-    };
+    }, [selectedTerm, searchSubject, setGepSearchTabData]);
 
-    // Memoize the filtered courses to prevent recalculation on every render
+    // 1. Filter courses first (as before)
     const filteredCourses = useMemo(() => {
-    
-        if (!gepSearchData.isLoaded || !gepSearchData.courses) {
-          AppLogger.info("[GEP FILTER] No courses or not loaded");
-          return [];
-        }
-        
-        if (!gepSearchData.hideNoSections || !gepSearchData.courseData) {
-          AppLogger.info("[GEP FILTER] Not filtering - returning all courses");
-          return gepSearchData.courses;
-        }
-        
-        // Apply filtering only when hideNoSections is true
-        AppLogger.info("[GEP FILTER] Filtering courses by sections");
-        
-        // Log section data structure for debugging
-        if (gepSearchData.courses.length > 0) {
-          const sampleCourse = gepSearchData.courses[0];
-          const sampleKey = `${sampleCourse.course_abr} ${sampleCourse.catalog_num}`;
-          const sampleData = (gepSearchData.courseData as Record<string, MergedCourseData>)[sampleKey];
-          
-          AppLogger.info("[GEP FILTER] Sample course data structure:", {
-            key: sampleKey,
-            hasCourseData: !!sampleData,
-            sections: sampleData ? {
-              type: typeof sampleData.sections,
-              isArray: Array.isArray(sampleData.sections),
-              length: sampleData.sections?.length || 0,
-              sampleSection: sampleData.sections?.length > 0 ? sampleData.sections[0] : null
-            } : 'No course data'
-          });
-        }
-        
-        // Perform filtering with minimal logging
-        const filtered = gepSearchData.courses.filter((course: RequiredCourse) => {
+        if (!isLoaded || !courses || courses.length === 0) return [];
+        if (!hideNoSections || !courseData) return courses;
+        return courses.filter((course: RequiredCourse) => {
           const key = `${course.course_abr} ${course.catalog_num}`;
-          const courseData = (gepSearchData.courseData as Record<string, MergedCourseData>)[key];
-          
-          // Return true if course has data AND has sections with length > 0
-          return courseData && courseData.sections && courseData.sections.length > 0;
+          const courseDataEntry = (courseData as Record<string, MergedCourseData>)[key];
+          return courseDataEntry && courseDataEntry.sections && courseDataEntry.sections.length > 0;
         });
+    }, [courses, hideNoSections, courseData, isLoaded]);
+
+    // 2. Group the filtered courses by course_abr
+    const groupedAndFilteredCourses = useMemo(() => {
+        if (!filteredCourses || filteredCourses.length === 0) return [];
         
-        AppLogger.info(`[GEP FILTER] Filtered ${gepSearchData.courses.length} courses to ${filtered.length} with sections`);
+        const groups: Record<string, GroupedCourse> = {};
         
-        return filtered;
-    }, [gepSearchData.courses, gepSearchData.hideNoSections, gepSearchData.courseData, gepSearchData.isLoaded]);
-    AppLogger.info("Filtered courses");
-    AppLogger.info(filteredCourses);
+        filteredCourses.forEach(course => {
+            const abr = course.course_abr;
+            if (!groups[abr]) {
+                groups[abr] = {
+                    courseAbr: abr,
+                    displayTitle: SubjectMenuValues[abr] || `${abr} - Unknown Subject`, // Fallback title
+                    courses: []
+                };
+            }
+            groups[abr].courses.push(course);
+        });
+        // Sort groups by displayTitle or courseAbr
+        return Object.values(groups).sort((a, b) => a.displayTitle.localeCompare(b.displayTitle));
+    }, [filteredCourses]);
+
+    const handleToggleGroup = useCallback((courseAbr: string) => {
+        setExpandedGroups(prev => ({
+            ...prev,
+            [courseAbr]: !prev[courseAbr]
+        }));
+    }, []);
+
+    const handleHideNoSectionsChange = useCallback((_: React.SyntheticEvent, checked: boolean) => {
+      setGepSearchTabData('hideNoSections', checked);
+    }, [setGepSearchTabData]);
+
     return (
-      <StyledDialogContent>
-        <Box sx={{ width: '100%', p: 2 }}>
-          <List>
-            <Autocomplete
-              sx={{ width: '50%', mb: 2 }}
-              id="term_selector"
-              options={Object.keys(TermIdByName)}
-              value={gepSearchData.selectedTerm}
-              defaultValue={TermIdByName[Object.keys(TermIdByName)[0]]}
-              onChange={(_, value) => setGepSearchTabData('selectedTerm', value)}
-              renderInput={(params) => 
-                <TextField {...params} label="Term" sx={{ padding: '10px' }} />
-              }
-            />
-            <Autocomplete
-              sx={{ width: '50%', mb: 2 }}
-              id="subject_selector"
-              options={Object.keys(GEP_COURSES)}
-              value={gepSearchData.searchSubject}
-              onChange={(_, value) => setGepSearchTabData('searchSubject', value)}
-              renderInput={(params) => 
-                <TextField {...params} label="Subject" sx={{ padding: '10px' }} />
-              }
-            />
-            <Button
-              variant='outlined'
-              sx={{ width: '50%' }}
-              onClick={courseSearch}
-            >
-              Search
-            </Button>
-            <FormControlLabel
-            control={<Checkbox checked={gepSearchData.hideNoSections} onChange={(_, checked) => setGepSearchTabData('hideNoSections', checked)} />}
-            label="Hide courses with no open sections"
+      <Box sx={{ width: '100%', p: 2 }}>
+        <List sx={{ width: '100%' }}>
+          <MemoizedAutocompletes 
+            selectedTerm={selectedTerm}
+            searchSubject={searchSubject}
+            setGepSearchTabData={setGepSearchTabData}
           />
-            {!gepSearchData.isLoaded && <CircularProgressWithLabel value={gepSearchData.progress} label={gepSearchData.progressLabel || ''} />}
-          </List>
-        </Box>
-        {gepSearchData.isLoaded && filteredCourses.length === 0 && (
+          <Button variant='outlined' sx={{ width: '50%', mt: 2 }} onClick={courseSearch}>
+            Search
+          </Button>
+          <FormControlLabel
+            control={<Checkbox checked={hideNoSections} onChange={handleHideNoSectionsChange} />}
+            label="Hide courses with no open sections"
+            sx={{ mt: 2, display: 'block' }}
+          />
+          {!isLoaded && (
+            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
+              <CircularProgressWithLabel value={progress} label={progressLabel || ''} />
+            </Box>
+          )}
+        </List>
+
+        {isLoaded && groupedAndFilteredCourses.length > 0 && (
+          <GEPTree 
+            groupedData={groupedAndFilteredCourses}
+            expandedGroups={expandedGroups}
+            onToggleGroup={handleToggleGroup}
+            courseData={courseData}
+            key={`gep-tree-${hideNoSections}-${groupedAndFilteredCourses.map(g=>g.courseAbr).join('-')}`}
+          />
+        )}
+        {isLoaded && groupedAndFilteredCourses.length === 0 && (
           <Typography variant="body1" sx={{ p: 4, textAlign: 'center' }}>
-            No courses with open sections found. {gepSearchData.hideNoSections && "Try unchecking 'Hide courses with no open sections'."}
+            No GEP courses found matching your criteria. {hideNoSections && "Try unchecking 'Hide courses with no open sections'."}
           </Typography>
         )}
-        
-        {/* Add key to force re-rendering when hideNoSections changes */}
-        
-        <List 
-          key={`course-list-${gepSearchData.hideNoSections ? 'filtered' : 'all'}`}
-        >
-        
-            {filteredCourses.map((course : RequiredCourse) => {
-                const key = `${course.course_abr} ${course.catalog_num}`;
-                const courseData = gepSearchData.courseData as Record<string, MergedCourseData>;
-                const hasSections = courseData[key]?.sections?.length > 0;
-                
-                return (
-                  <ListItem alignItems="flex-start" key={course.course_abr} sx={{ pl: 4 }}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                      <ListItemText
-                        primary={`${course.course_descrip} ${course.course_abr} ${parseInt(course.catalog_num)}`}
-                        secondary={`${course.course_abr} ${course.catalog_num}`}
-                      />
-                      {hasSections ? (
-                        <Box sx={{ 
-                          height: '100%',
-                          minHeight: 300,
-                          width: '100%',
-                          display: 'flex'
-                        }}>
-                          <DataGrid
-                            getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
-                            rows={courseData[key].sections.sort(sortSections)}
-                            columns={OpenCourseSectionsColumn}
-                            columnVisibilityModel={{ id: false }}
-                            disableRowSelectionOnClick
-                            pageSizeOptions={[5, 10, 25]}
-                            initialState={{
-                              pagination: {
-                                paginationModel: {
-                                  pageSize: 5,
-                                },
-                              },
-                            }}
-                            sx={{
-                              width: '100%',
-                              '& .MuiDataGrid-main': { overflow: 'visible' },
-                              '& .MuiDataGrid-columnHeaders': {
-                                backgroundColor: (theme) => theme.palette.background.paper,
-                                minHeight: '64px !important',
-                                lineHeight: '24px !important',
-                              },
-                              '& .MuiDataGrid-columnHeaderTitle': {
-                                fontWeight: 'bold',
-                                overflow: 'visible',
-                                lineHeight: '1.2 !important',
-                                whiteSpace: 'normal',
-                                textOverflow: 'clip',
-                                fontSize: {
-                                  xs: '0.75rem',
-                                  sm: '0.875rem',
-                                  md: '1rem'
-                                }
-                              },
-                              '& .MuiDataGrid-cell': {
-                                whiteSpace: 'normal',
-                                padding: '8px 16px',
-                                fontSize: {
-                                  xs: '0.75rem',
-                                  sm: '0.875rem',
-                                  md: '0.925rem'
-                                }
-                              },
-                              '& .MuiDataGrid-row': {
-                                width: '100%'
-                              },
-                              '& .MuiDataGrid-virtualScroller': {
-                                width: '100%'
-                              },
-                              '& .MuiButtonBase-root': {
-                                fontSize: {
-                                  xs: '0.7rem',
-                                  sm: '0.8rem',
-                                  md: '0.875rem'
-                                },
-                                '& .MuiSvgIcon-root' :{
-                                    color: 'none'
-                                }
-                              }
-                            }}
-                          />
-                        </Box>
-                      ) : (
-                        <Typography variant="body1" sx={{ p: 2 }}>
-                          {gepSearchData.courseData ? 'No sections available' : 'Search for a course to see sections'}
-                        </Typography>
-                      )}
-                    </Box>
-                  </ListItem>
-                );
-              })}
-        </List>
-      </StyledDialogContent>
-     
+      </Box>
     );
   }
