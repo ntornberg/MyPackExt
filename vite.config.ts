@@ -3,8 +3,6 @@ import react from '@vitejs/plugin-react';
 import { crx } from '@crxjs/vite-plugin';
 import type { ManifestV3Export } from '@crxjs/vite-plugin';
 import manifestJson from './public/manifest.json';
-// @ts-ignore
-import obfuscator from 'vite-plugin-javascript-obfuscator';
 
 export default defineConfig(({ mode }) => {
   const isProduction = mode === 'production';
@@ -13,57 +11,11 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [
-      react({
-        // Production optimizations for React
-        ...(isProduction && {
-          babel: {
-            plugins: [
-              ['@babel/plugin-transform-react-constant-elements'],
-              ['@babel/plugin-transform-react-inline-elements']
-            ]
-          }
-        })
-      }),
+      react(),
       crx({
         manifest: manifestJson as ManifestV3Export,
       }),
-      // Enable selective obfuscation only in production for specific files
-      ...(isProduction ? [
-        obfuscator({
-          include: [
-            '**/Data/**/*.ts',
-            '**/Data/**/*.js',
-            '**/services/api/**/*.ts',
-            '**/services/api/**/*.js',
-            '**/utils/**/*.ts',
-            '**/utils/**/*.js',
-            '**/cache/**/*.ts',
-            '**/cache/**/*.js'
-          ],
-          exclude: [
-            '**/node_modules/**',
-            '**/components/**',
-            '**/themes/**',
-            '**/types/**'
-          ],
-          options: {
-            compact: true,
-            controlFlowFlattening: true,
-            controlFlowFlatteningThreshold: 0.8,
-            deadCodeInjection: true,
-            deadCodeInjectionThreshold: 0.4,
-            stringArray: true,
-            stringArrayEncoding: ['base64'],
-            stringArrayThreshold: 0.75,
-            renameGlobals: false, // Keep false to avoid breaking imports
-            selfDefending: true,
-            stringArrayCallsTransform: true,
-            stringArrayCallsTransformThreshold: 0.5,
-            transformObjectKeys: true,
-            unicodeEscapeSequence: false
-          }
-        })
-      ] : [])
+      // Obfuscation removed for faster builds
     ],
     build: {
       outDir: 'dist',

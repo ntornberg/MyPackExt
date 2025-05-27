@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "MyPack Course Picker",
-  "version": "1.0",
+  "version": "3.0",
   "description": "Improved course selection UI with integrated tools",
   "permissions": ["storage"],
   "host_permissions": [

@@ -141,7 +141,7 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
       <Box sx={{ width: '100%', p: 2 }}>
         <List>
           <Autocomplete
-            sx={{ width: '50%', mb: 2 }}
+            sx={{ width: '50%', mb: 1 }}
             id="term_selector"
             options={Object.keys(TermIdByName)}
             defaultValue={TermIdByName[Object.keys(TermIdByName)[0]]}
@@ -152,7 +152,7 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
             }
           />
           <Autocomplete
-            sx={{ width: '50%', mb: 2 }}
+            sx={{ width: '50%', mb: 1 }}
             id="subject_selector"
             options={Object.keys(DEPT_COURSES)}
             value={courseSearchData.searchSubject}
@@ -162,7 +162,7 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
             }
           />
           <Autocomplete
-            sx={{ width: '50%', mb: 2 }}
+            sx={{ width: '50%', mb: 1 }}
             id="course_selector"
             options={courseSearchData.searchSubject 
               ? Object.entries(DEPT_COURSES[courseSearchData.searchSubject as keyof typeof DEPT_COURSES])
