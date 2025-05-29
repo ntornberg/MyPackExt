@@ -13,9 +13,7 @@ import {
   FormControlLabel
 } from "@mui/material";
 
-/* -------------------------------------------------------------------------- */
-/*                       Helper: localStorage key constant                    */
-/* -------------------------------------------------------------------------- */
+
 const LS_KEY = "firstStartDismissed";
 
 /**
@@ -50,7 +48,7 @@ export default function FirstStartDialog() {
         <UnorderedList
           items={[
             "Navigate to Planning & Enrollment → Enrollment Wizard, then click the new **Course Search** button in the page header.",
-            "Search by *department* and *catalog number*. Only sections that are **open** for registration are shown.",
+            "Search by department and catalog number. Only sections that are **open** for registration are shown.",
             "Each section card displays the professor, their Rate‑My‑Professor score, and historical grade distributions.",
             "Hover the info icon to view meeting time, location, and a mini‑calendar. Your current schedule appears in **red**; the prospective section in **green**. Overlaps are rendered semi‑transparent.",
             "Click **Add to Cart** to queue the section for enrollment. (Status feedback coming soon.)"
@@ -61,7 +59,7 @@ export default function FirstStartDialog() {
         <SectionHeading text="Plan Search tab" />
         <UnorderedList
           items={[
-            "Search for courses by **major, minor, or major sub‑plan** instead of typing catalog numbers.",
+            "Search for courses by major, minor, or major sub‑plan instead of typing catalog numbers.",
             "Requirements are based on Registrar data (accuracy may vary). Click a requirement to see matching courses and their open sections in the familiar grid view."
           ]}
         />

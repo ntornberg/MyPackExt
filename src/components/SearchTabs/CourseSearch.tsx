@@ -111,7 +111,7 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
         if (courseCode in deptCourses) {
           const courseInfo = deptCourses[courseCode as keyof typeof deptCourses] as unknown as DeptCourse;
           
-          // Extract just the catalog number (e.g., "316" from "CSC316")
+          // Extract just the catalog number 
           // This handles cases with different subject codes
           // Use a regex to extract the numeric portion (possibly with a letter suffix)
           const match = courseCode.match(/[0-9]+[A-Za-z]?$/);
@@ -135,7 +135,7 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
   };
 
  
-
+  
   return (
     <DialogContent>
       <Box sx={{ width: '100%', p: 2 }}>
@@ -198,6 +198,7 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
         flexDirection: 'column',
         mb: 4
       }}>
+        
         {courseData?.sections && courseData.sections.length > 0 ? (
           <Box sx={{ 
             width: '100%',
