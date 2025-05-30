@@ -96,19 +96,6 @@ async function sendMessageWithRetry(message: any, maxRetries = 3): Promise<any> 
  * Setup service worker connection monitoring
  */
 function setupServiceWorkerMonitoring() {
-  // Listen for service worker restart notifications
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message.type === "serviceWorkerRestarted") {
-      AppLogger.info('[Content] Service worker restarted, re-establishing connection');
-      isServiceWorkerConnected = true;
-      
-      // Re-establish port connection
-      setupKeepAliveConnection();
-      
-      sendResponse({ acknowledged: true });
-    }
-  });
-  
   // Setup initial keep-alive connection
   setupKeepAliveConnection();
   

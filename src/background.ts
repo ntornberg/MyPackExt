@@ -75,13 +75,6 @@ function setupMessageListener() {
       sendResponse({ type: "pong", timestamp: Date.now() });
       return false;
     }
-    
-    // Handle service worker restart notifications
-    if (message.type === "serviceWorkerRestarted") {
-      AppLogger.info('[Background] Service worker restart acknowledged');
-      sendResponse({ type: "restartAcknowledged" });
-      return false;
-    }
   });
   
   isListenerRegistered = true;
@@ -121,20 +114,6 @@ function initializeServiceWorker() {
   setupMessageListener();
   setupKeepAlive();
   setupPortConnection();
-  
-  // Send a broadcast to all tabs about service worker restart
-  chrome.tabs.query({}, (tabs) => {
-    tabs.forEach((tab) => {
-      if (tab.id) {
-        chrome.tabs.sendMessage(tab.id, { 
-          type: "serviceWorkerRestarted",
-          timestamp: Date.now() 
-        }).catch(() => {
-          // Ignore errors for tabs without content scripts
-        });
-      }
-    });
-  });
   
   AppLogger.info('[Background] Service worker initialization complete');
 }
