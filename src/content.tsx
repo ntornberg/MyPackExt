@@ -253,6 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.warn("MyPack Enhancer already initialized. Skipping...");
             return;
         }
+        chrome.runtime.sendMessage({type:"open_gradient"});
         window.__mypackEnhancerInitialized = true;
         
         // Setup service worker monitoring first

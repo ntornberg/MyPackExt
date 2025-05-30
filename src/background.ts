@@ -68,6 +68,9 @@ function setupMessageListener() {
       });
       
       return true; // Keep message channel open for async response
+    }else if(message.type === "open_gradient"){
+      const tab =await chrome.tabs.create({url: "https://gradient.ncsu.edu/"});
+      return true;
     }
     
     // Handle ping messages for connection testing
