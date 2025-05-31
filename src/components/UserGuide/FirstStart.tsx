@@ -10,11 +10,12 @@ import {
   ListItem,
   ListItemText,
   Checkbox,
-  FormControlLabel
+  FormControlLabel,
+  Box,
+  Divider
 } from "@mui/material";
 
-
-const LS_KEY = "firstStartDismissed";
+const LS_KEY = "firstStartDismissed2";
 
 /**
  * Displays a quick‑start guide the first time the user opens the extension.
@@ -39,48 +40,71 @@ export default function FirstStartDialog() {
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Extension Quick‑Start Guide</DialogTitle>
+    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+      <DialogTitle sx={{ pb: 1 }}>
+        <Typography variant="h5" component="h2" sx={{ fontWeight: 600 }}>
+          Welcome to MyPackExt! 🎓
+        </Typography>
+        <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 1 }}>
+          Your enhanced NC State course planning companion
+        </Typography>
+      </DialogTitle>
 
-      <DialogContent sx={{ maxWidth: 600 }}>
+      <DialogContent sx={{ maxWidth: 700, px: 3 }}>
+        {/* ===== IMPORTANT NOTICE ===== */}
+        <Box sx={{ mb: 3, p: 2, bgcolor: "warning.light", borderRadius: 1 }}>
+          <SectionHeading text="⚠️ Important Authentication Notice (Emergency Patch)" />
+          <UnorderedList
+            items={[
+              "Due to university policy, gradient data cannot be hosted directly on our servers.",
+              "The extension will open a new tab to MyPack Portal where you'll need to log in manually.",
+              "Once authenticated, the extension will automatically search for courses and serve them to you instantly.",
+              "Some features may be limited due to gradient request restrictions, but core functionality remains intact.",
+            ]}
+          />
+        </Box>
+
+        <Divider sx={{ my: 2 }} />
+
         {/* ===== COURSE SEARCH TAB ===== */}
-        <SectionHeading text="Course Search tab" />
+        <SectionHeading text="📚 Course Search" />
         <UnorderedList
           items={[
-            "Navigate to Planning & Enrollment → Enrollment Wizard, then click the new **Course Search** button in the page header.",
-            "Search by department and catalog number. Only sections that are **open** for registration are shown.",
-            "Each section card displays the professor, their Rate‑My‑Professor score, and historical grade distributions.",
-            "Hover the info icon to view meeting time, location, and a mini‑calendar. Your current schedule appears in **red**; the prospective section in **green**. Overlaps are rendered semi‑transparent.",
-            "Click **Add to Cart** to queue the section for enrollment. (Status feedback coming soon.)"
+            "Search courses by subject code, and course number",
+            "View real-time enrollment data, waitlist information, and seat availability",
+            "Access instructor ratings from RateMyProfessor integration",
+            "See grade distribution data to help inform your course selection",   
           ]}
         />
 
-        {/* ===== PLAN SEARCH TAB ===== */}
-        <SectionHeading text="Plan Search tab" />
+      
+
+      
+
+        {/* ===== FEATURES & TIPS ===== */}
+        <SectionHeading text="💡 Key Features & Tips" />
         <UnorderedList
           items={[
-            "Search for courses by major, minor, or major sub‑plan instead of typing catalog numbers.",
-            "Requirements are based on Registrar data (accuracy may vary). Click a requirement to see matching courses and their open sections in the familiar grid view."
+            "All data is updated in real-time from official university sources",
+            "The extension works seamlessly with the existing MyPack Portal interface",
           ]}
         />
 
-        {/* ===== GEP SEARCH TAB ===== */}
-        <SectionHeading text="GEP Search tab" />
+        {/* ===== SUPPORT & FEEDBACK ===== */}
+        <SectionHeading text="🤝 Support & Development" />
         <UnorderedList
           items={[
-            "Find classes that fulfill General Education Program requirements.",
-            "Interface mirrors the other tabs; UX polish is on the roadmap."
+            "This extension is actively developed and regularly updated",
+            "Your feedback and bug reports help improve the experience for everyone",
+            "Feature requests are welcome and considered for future releases",
           ]}
         />
 
-        {/* ===== GENERAL NOTES ===== */}
-        <SectionHeading text="General notes" />
-        <UnorderedList
-          items={[
-            "The extension is still in active development and lightly tested.",
-            "Feedback and bug reports are very welcome!"
-          ]}
-        />
+        <Box sx={{ mt: 3, p: 2, bgcolor: "info.light", borderRadius: 1 }}>
+          <Typography variant="body2" sx={{ fontStyle: "italic", textAlign: "center" }}>
+            Ready to enhance your course planning experience? Click "Get Started" to begin! 🚀
+          </Typography>
+        </Box>
       </DialogContent>
 
       <DialogActions sx={{ justifyContent: "space-between", px: 3, pb: 2 }}>
@@ -91,10 +115,10 @@ export default function FirstStartDialog() {
               onChange={(_, val) => setDontShowAgain(val)}
             />
           }
-          label="Don't show again"
+          label="Don't show this guide again"
         />
-        <Button variant="contained" onClick={handleClose} autoFocus>
-          Got it!
+        <Button variant="contained" onClick={handleClose} autoFocus size="large">
+          Get Started!
         </Button>
       </DialogActions>
     </Dialog>
@@ -107,7 +131,7 @@ export default function FirstStartDialog() {
 
 function SectionHeading({ text }: { text: string }) {
   return (
-    <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+    <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600, color: "primary.main" }}>
       {text}
     </Typography>
   );
@@ -115,11 +139,15 @@ function SectionHeading({ text }: { text: string }) {
 
 function UnorderedList({ items }: { items: string[] }) {
   return (
-    <List dense sx={{ pl: 2, listStyleType: "disc" }}>
+    <List dense sx={{ pl: 2 }}>
       {items.map((item, idx) => (
-        <ListItem key={idx} sx={{ display: "list-item", py: 0 }}>
+        <ListItem key={idx} sx={{ display: "list-item", py: 0.5, pl: 0 }}>
           <ListItemText
-            primary={<Typography variant="body2">{item}</Typography>}
+            primary={
+              <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
+                • {item}
+              </Typography>
+            }
           />
         </ListItem>
       ))}

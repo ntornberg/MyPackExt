@@ -10,6 +10,7 @@ import type { BatchDataRequestResponse } from '../types';
 import type { GradeData,MatchedRateMyProf } from '../../../types';
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../../config';
 import type { RootObject } from '../../../utils/GradientWorker/GradientRequestRawResponseType';
+import { parseGradientResponse } from './ParseGradientResponse';
 
 /**
  * Constants for cache namespaces
@@ -79,7 +80,7 @@ export async function fetchSingleCourseData(
     // Fetch open courses if not in cache
     AppLogger.info("Open courses cache miss for:", courseKey, "fetching from API");
     onProgress?.(30, `Fetching open courses data for ${courseKey}`);
-    courseData = await searchOpenCoursesByParams(term, courseAbr, catalogNum);
+    courseData = await searchOpenCoursesByParams(term, courseAbr, catalogNum);  // Course abr is actually CSC - Computer Science here, not intended behavior however course search only takes first part lol
     
     if (!courseData) {
       AppLogger.error("No open courses data returned for", courseKey);
@@ -154,8 +155,9 @@ export async function fetchSingleCourseData(
   } else {
     // Fetch grade/professor data if not in cache
     onProgress?.(70, `Fetching grade/professor data for ${courseKey}`);
+    // Professor data fetch
     try {
-      const url = `${SUPABASE_URL}/functions/v1/clever-function`;
+      const url = `${SUPABASE_URL}/functions/v1/quick-service`;
       const apiResponse = await fetch(url, {
         method: 'POST',
         headers: {
@@ -164,6 +166,10 @@ export async function fetchSingleCourseData(
         },
         body: JSON.stringify(courseSectionsWithProfs)
       });
+      if (!apiResponse.ok) {
+        throw new Error(`API error: ${apiResponse.status} ${apiResponse.statusText}`);
+      }
+      // Grade data fetch
       function sendGradientData() : Promise<{success: boolean, data: RootObject}>{
         return new Promise((resolve,_)=>{
         chrome.runtime.sendMessage({type: "get_gradient_data", data: {
@@ -177,14 +183,16 @@ export async function fetchSingleCourseData(
     });
   
   }
-  const response =await sendGradientData();
-
-  if (!apiResponse.ok) {
-    throw new Error(`API error: ${apiResponse.status} ${apiResponse.statusText}`);
-  }
+       
       const jsonResponse = await apiResponse.json();
-      gradeProfData = jsonResponse.data as BatchDataRequestResponse;
-      // Cache grade/professor data
+      const profData = jsonResponse.data as MatchedRateMyProf[];
+      const gradeResponse = await sendGradientData();
+      AppLogger.info("Parsing ",courseAbr,catalogNum,gradeResponse.data);
+      const gradeData = parseGradientResponse(courseAbr.split(" ")[0],catalogNum,gradeResponse.data) as GradeData[];
+      gradeProfData = {
+        courses: gradeData,
+        profs: profData
+      };
       
       await setGenericCache(CACHE_KEYS.GRADE_PROF, {[gradeProfHashKey]: JSON.stringify(gradeProfData)});
       onProgress?.(80, `Cached grade/professor data for ${courseKey}`);
