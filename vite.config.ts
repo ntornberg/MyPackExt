@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       sourcemap: isDevelopment ? 'inline' : (isStaging ? true : false),
-      minify: isProduction ? 'terser' : false,
+        minify: isProduction ? 'terser' : false,
       target: 'es2020',
       rollupOptions: {
         output: {

@@ -23,5 +23,5 @@
     "noUncheckedSideEffectImports": true,
     "allowSyntheticDefaultImports": true
   },
-  "include": ["src"]
+  "include": ["src", "src/utils/GradientWorker/gradient_worker.ts"]
 }

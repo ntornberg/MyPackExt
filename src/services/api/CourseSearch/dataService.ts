@@ -163,7 +163,11 @@ export async function fetchSingleCourseData(
         },
         body: JSON.stringify(courseSectionsWithProfs)
       });
-      
+      chrome.runtime.sendMessage({type: "get_gradient_data", data: {
+        subject: courseSectionsWithProfs[0].course_title.split(" ")[0],
+        course: courseSectionsWithProfs[0].course_title.split(" ")[1],
+        instructor: [courseSectionsWithProfs[0].instructor_name]
+      }});
       if (!apiResponse.ok) {
         throw new Error(`API error: ${apiResponse.status} ${apiResponse.statusText}`);
       }
@@ -426,7 +430,7 @@ export async function batchFetchCoursesData(
       },
       body: JSON.stringify(sectionsToFetch)
     });
-    
+   
     if (!apiResponse.ok) {
       throw new Error(`API error: ${apiResponse.status} ${apiResponse.statusText}`);
     }

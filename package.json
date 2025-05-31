@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "build:debug": "tsc -b && vite build --minify=false --sourcemap=inline",
-    "build:prod": "node scripts/build-config.js production && tsc -b && vite build --mode production",
-    "build:staging": "node scripts/build-config.js staging && tsc -b && vite build --mode staging",
-    "build:analyze": "tsc -b && vite build --mode production --analyze",
+    "build": "tsc -b && vite build && vite build --config vite.gradientWorker.config.ts",
+    "build:debug": "tsc -b && vite build --minify=false --sourcemap=inline && vite build --config vite.gradientWorker.config.ts",
+    "build:prod": "node scripts/build-config.js production && tsc -b && vite build --mode production && vite build --config vite.gradientWorker.config.ts",
+    "build:staging": "node scripts/build-config.js staging && tsc -b && vite build --mode staging && vite build --config vite.gradientWorker.config.ts",
+    "build:analyze": "tsc -b && vite build --mode production --analyze && vite build --config vite.gradientWorker.config.ts",
     "setup:env": "node scripts/build-config.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -43,11 +43,13 @@
     "cheerio": "^1.0.0",
     "devextreme-react": "^24.2.7",
     "jsonpath-plus": "^10.3.0",
+    "path": "^0.12.7",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-gauge-component": "^1.2.64",
     "react-window": "^1.8.11",
-    "recharts": "^2.15.3"
+    "recharts": "^2.15.3",
+    "url": "^0.11.4"
   },
   "devDependencies": {
     "@babel/plugin-transform-react-constant-elements": "^7.25.9",

@@ -3,7 +3,7 @@
   "name": "MyPack Course Picker",
   "version": "3.5",
   "description": "Improved course selection UI with integrated tools",
-  "permissions": ["storage", "alarms", "tabs"],
+  "permissions": ["storage", "alarms", "tabs", "scripting"],
   "host_permissions": [
     "https://*.acs.ncsu.edu/*","https://webappprd.acs.ncsu.edu/*"
   ],
@@ -30,7 +30,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["realFetchHook.js"],
+      "resources": ["realFetchHook.js","gradient_worker.js"],
       "matches": ["<all_urls>"]
     }
     ]

@@ -40,7 +40,7 @@ function setupMessageListener() {
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     AppLogger.info('[Background] Received message:', message);
-    
+  
     if (message.type === "fetchData") {
       AppLogger.info('[Background] Fetching URL:', message.url, 'with formData:', message.formData);
       
@@ -69,7 +69,29 @@ function setupMessageListener() {
       
       return true; // Keep message channel open for async response
     }else if(message.type === "open_gradient"){
-      const tab =await chrome.tabs.create({url: "https://gradient.ncsu.edu/"});
+      chrome.tabs.query({url: "https://gradient.ncsu.edu/"},(tabs)=>{
+        if(tabs.length < 1){
+          chrome.tabs.create({url: "https://gradient.ncsu.edu/"},(tab)=>{
+            chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+             if(tabId === tab.id){
+               if(changeInfo.status === "complete"){
+                 chrome.scripting.executeScript({
+                   target: {tabId},
+                   files:[chrome.runtime.getURL("gradient_worker.js")]
+                 });
+               }
+             }
+            });
+           });
+        }
+      });
+      
+     
+      return true; // Relays message to gradient_worker.ts
+    }else if(message.type === "get_gradient_data"){
+      chrome.runtime.sendMessage({type: "get_gradient_data", data: message.data},(response)=>{
+        sendResponse({success: true, data: response.data});
+      });
       return true;
     }
     

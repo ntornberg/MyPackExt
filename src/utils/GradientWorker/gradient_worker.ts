@@ -1,0 +1,43 @@
+
+import { type GradientDataRequest } from "./GradientRequestType";
+const observer = new MutationObserver((mutations) => {
+    for(let _ of mutations){
+        if(document.querySelector('[id="app"]')){
+            observer.disconnect();
+            chrome.runtime.sendMessage({type: "gradient_loaded"});
+            console.log("Gradient loaded");
+            get_gradient_data();
+        }
+    }
+});
+
+observer.observe(document.body, {childList: true, subtree: true});
+function get_gradient_data(){
+    chrome.runtime.onMessage.addListener((message: GradientDataRequest,_,sendResponse)=>{
+        if(message.type === "get_gradient_data"){
+            const data = message.data;
+            const url = "https://gradient.ncsu.edu/api/course-distributions?";
+            const params = new URLSearchParams();
+            params.append("semester[]","7");
+            params.append("semester[]","8");
+            params.append("semester[]","1");
+            params.append("semester[]","6");
+            params.append("course",data.course);
+            if(data.instructor.length > 0){
+                for(let instructor of data.instructor){
+                    params.append("instructor[]",instructor);
+                }
+            }
+            params.append("years[]","2024");
+            params.append("years[]","2023");
+            params.append("years[]","2022");
+            params.append("years[]","2021");
+            fetch(url + params.toString()).then(async (response) => {
+                const json = await response.json();
+                sendResponse({success: true, data: json});
+            });
+            
+        }
+    });
+}
+
