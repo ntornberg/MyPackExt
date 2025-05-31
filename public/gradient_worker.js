@@ -1,4 +1,3 @@
-
 const observer = new MutationObserver((mutations) => {
     for(let _ of mutations){
         if(document.querySelector('[id="app"]')){
@@ -6,6 +5,7 @@ const observer = new MutationObserver((mutations) => {
             chrome.runtime.sendMessage({type: "gradient_loaded"});
             console.log("Gradient loaded");
             get_gradient_data();
+            return true;
         }
     }
 });
@@ -37,8 +37,12 @@ function get_gradient_data(){
                 const json = await response.json();
                 console.log("gradient_data",json);
                 sendResponse({success: true, data: json});
+            }).catch(error => {
+                console.error("Error fetching gradient data:", error);
+                sendResponse({success: false, error: error.toString()});
             });
             
+            return true; // Keep message channel open for async response
         }
     });
 }
