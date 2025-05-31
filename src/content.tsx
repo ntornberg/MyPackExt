@@ -258,14 +258,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Setup service worker monitoring first
         setupServiceWorkerMonitoring();
         
-        const overlayElement = ensureOverlayContainer();
-        const root = createRoot(overlayElement);
+       
         AppLogger.info("Initializing MyPack Drawer");
         // 1. Ensure the container element exists in the DOM
         
         const scheduleElement = await waitForScheduleTable();
         scrapeScheduleTable(scheduleElement);
-        
+        const overlayElement = ensureOverlayContainer();
+        const root = createRoot(overlayElement);
         // 3. Render your root component containing both FirstStartDialog and SlideOutDrawer
         root.render(
             <CacheProvider value={myEmotionCache}>

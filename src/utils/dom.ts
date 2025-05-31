@@ -78,16 +78,16 @@ export function waitForScheduleTable(): Promise<Element> {
 }
 export function ensureOverlayContainer(): HTMLDivElement {
     let overlayRootElement = document.getElementById('extension-overlay-root');
+    
     if (!overlayRootElement) {
         overlayRootElement = document.createElement('div');
         overlayRootElement.id = 'extension-overlay-root';
         
-
         const drawerContainer = document.createElement('div');
         drawerContainer.id = 'slide-out-drawer-container';
         overlayRootElement.appendChild(drawerContainer);
         
-
+        // Style the overlay container
         overlayRootElement.style.position = 'fixed';
         overlayRootElement.style.top = '0';
         overlayRootElement.style.left = '0';
@@ -96,7 +96,7 @@ export function ensureOverlayContainer(): HTMLDivElement {
         overlayRootElement.style.zIndex = '1000';
         overlayRootElement.style.pointerEvents = 'none';
         
-
+        // Style the drawer container
         drawerContainer.style.position = 'absolute';
         drawerContainer.style.top = '0';
         drawerContainer.style.right = '0px';
@@ -105,25 +105,11 @@ export function ensureOverlayContainer(): HTMLDivElement {
         drawerContainer.style.transition = 'right 0.3s ease-in-out';
         drawerContainer.style.zIndex = '1001';
         
+        // Append to DOM
+        document.body.appendChild(overlayRootElement);
+    }
 
-        if (!document.body) {
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', () => {
-                    document.body.appendChild(overlayRootElement!);
-                });
-            } else {
-                document.documentElement.appendChild(overlayRootElement);
-            }
-        } else {
-            document.body.appendChild(overlayRootElement);
-        }
-    }
-    
-    const el = document.getElementById('slide-out-drawer-container');
-    if (!el) {
-        throw new Error("slide-out-drawer-container not found");
-    }
-    return el as HTMLDivElement;
+    return document.getElementById('slide-out-drawer-container') as HTMLDivElement;
 }
 /**
  * Waits for the planner/cart table ('#classSearchTable') within the enroll wizard container in an iframe.
