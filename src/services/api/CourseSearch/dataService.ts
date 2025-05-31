@@ -95,7 +95,7 @@ export async function fetchSingleCourseData(
     }
     
     // Cache open courses data
-    await setGenericCache(CACHE_KEYS.OPEN_COURSES, {[openCoursesHashKey]: JSON.stringify(courseData)});
+    await setGenericCache(CACHE_KEYS.OPEN_COURSES, {[openCoursesHashKey]: JSON.stringify(courseData)},120);
     onProgress?.(40, `Cached open courses data for ${courseKey}`);
   }
   
@@ -316,13 +316,13 @@ export async function batchFetchCoursesData(
           for(const course of filteredCourseData){
           const hashKey = openCoursesHashKeys[course.code];
           const cacheData = JSON.stringify(course);
-          await setGenericCache(CACHE_KEYS.OPEN_COURSES,{hashKey,cacheData})
+          await setGenericCache(CACHE_KEYS.OPEN_COURSES,{[hashKey]:cacheData},120)
           openCoursesCache[course.code] = course;
          }
         }else{  
           const filteredCourseData = openCoursesToFetch[`${courseData.code}`]
           if(!filteredCourseData){
-          const nullCacheKey = `null-${courseData.code}`;
+          const nullCacheKey = `null-${courseData.code}`;   
           const nullHashKey = await generateCacheKey(nullCacheKey);
           await setGenericCache(CACHE_KEYS.NULL_COURSES, {[nullHashKey]:{ 
             courseKey : courseData.code, 
@@ -333,7 +333,7 @@ export async function batchFetchCoursesData(
           const cacheKey = openCoursesHashKeys[courseData.code];
           const cacheData = JSON.stringify(courseData);
           const hashKey = await generateCacheKey(cacheKey);
-          await setGenericCache(CACHE_KEYS.OPEN_COURSES,{hashKey,cacheData})
+          await setGenericCache(CACHE_KEYS.OPEN_COURSES,{[hashKey]:cacheData},120)
           openCoursesCache[courseData.code] = courseData;
         }
         }
@@ -482,16 +482,17 @@ export async function batchFetchCoursesData(
       setCachePromises.push(set_cache_prom(section.course_title,section.instructor_name,term));
     });
     
-   
     const responses = await Promise.all(setCachePromises);
-    let courseMap : Record<string,BatchDataRequestResponse> = {};
+    const courseMap: Record<string, BatchDataRequestResponse> = {};
+    
     // Convert responses to a map of hash keys to course data
-    for  (const response of responses) {
-      if(response.courses){
+    for (const response of responses) {
+      if (response.courses) {
         const hashKey = await generateCacheKey(response.cache_key);
         courseMap[hashKey] = response.courses;
       }
     }
+    
     await setGenericCache(CACHE_KEYS.GRADE_PROF, courseMap);
     AppLogger.info("Cache Responses",responses);
   // Add to result
