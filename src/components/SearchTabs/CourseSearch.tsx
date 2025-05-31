@@ -111,7 +111,7 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
         if (courseCode in deptCourses) {
           const courseInfo = deptCourses[courseCode as keyof typeof deptCourses] as unknown as DeptCourse;
           
-          // Extract just the catalog number (e.g., "316" from "CSC316")
+          // Extract just the catalog number 
           // This handles cases with different subject codes
           // Use a regex to extract the numeric portion (possibly with a letter suffix)
           const match = courseCode.match(/[0-9]+[A-Za-z]?$/);
@@ -135,13 +135,13 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
   };
 
  
-
+  
   return (
     <DialogContent>
       <Box sx={{ width: '100%', p: 2 }}>
         <List>
           <Autocomplete
-            sx={{ width: '50%', mb: 2 }}
+            sx={{ width: '50%', mb: 1 }}
             id="term_selector"
             options={Object.keys(TermIdByName)}
             defaultValue={TermIdByName[Object.keys(TermIdByName)[0]]}
@@ -152,7 +152,7 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
             }
           />
           <Autocomplete
-            sx={{ width: '50%', mb: 2 }}
+            sx={{ width: '50%', mb: 1 }}
             id="subject_selector"
             options={Object.keys(DEPT_COURSES)}
             value={courseSearchData.searchSubject}
@@ -162,7 +162,7 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
             }
           />
           <Autocomplete
-            sx={{ width: '50%', mb: 2 }}
+            sx={{ width: '50%', mb: 1 }}
             id="course_selector"
             options={courseSearchData.searchSubject 
               ? Object.entries(DEPT_COURSES[courseSearchData.searchSubject as keyof typeof DEPT_COURSES])
@@ -198,6 +198,7 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
         flexDirection: 'column',
         mb: 4
       }}>
+        
         {courseData?.sections && courseData.sections.length > 0 ? (
           <Box sx={{ 
             width: '100%',

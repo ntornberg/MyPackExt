@@ -266,7 +266,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
                     }}>
                       {(planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections?.length > 0 ? (
                         <Box sx={{ 
-                          height: '400px', // Fixed height for DataGrid
+                          height: '100%', // Fixed height for DataGrid
                           width: '100%',
                           display: 'flex'
                         }}>
@@ -390,7 +390,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
         <List>
           
           <Autocomplete
-            sx={{ width: '50%', mb: 2 }}
+            sx={{ width: '50%', mb: 1 }}
             id="term_selector"
             options={Object.keys(TermIdByName)}
             value={planSearchData.selectedTerm}
@@ -401,7 +401,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
           />
           
           <Autocomplete
-            sx={{ width: '50%', mb: 2 }}
+            sx={{ width: '50%', mb: 1 }}
             id="major_selector"
             options={major_options}
             value={planSearchData.selectedMajor}
@@ -412,7 +412,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
           />
           
           <Autocomplete
-            sx={{ width: '50%', mb: 2 }}
+            sx={{ width: '50%', mb: 1 }}
             id="minor_selector"
             options={minor_options}
             value={planSearchData.selectedMinor}
@@ -423,7 +423,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
           />
           
           <Autocomplete
-            sx={{ width: '50%', mb: 2 }}
+            sx={{ width: '50%', mb: 1 }}
             id="subplan_selector"
             options={subplanOptions}
             value={planSearchData.selectedSubplan}
@@ -435,7 +435,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
           
           <Button
             variant='outlined'
-            sx={{ width: '50%', mb: 2 }}
+            sx={{ width: '50%', mb: 1 }}
             onClick={planSearch}
           >
             Search
