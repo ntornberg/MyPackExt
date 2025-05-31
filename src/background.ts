@@ -78,15 +78,17 @@ function setupMessageListener() {
               AppLogger.info("[Background] Tab updated:", tabId, changeInfo);
              if(tabId === tab.id){
                if(changeInfo.status === "complete"){
+                 AppLogger.info("[Background] Attempting to inject gradient worker script");
+                 
                  chrome.scripting.executeScript({
                    target: {tabId},
-                   files:[chrome.runtime.getURL("gradient_worker.js")]
-                 }, () =>{
-                  if (chrome.runtime.lastError) {
-                    AppLogger.error("[Background] Script failed to inject:", chrome.runtime.lastError.message);
-                  } else {
-                    AppLogger.info("[Background] Gradient worker injected");
-                  }
+                   files: ["gradient_worker.js"]
+                 }, () => {
+                   if (chrome.runtime.lastError) {
+                     AppLogger.error("[Background] Script failed to inject:", chrome.runtime.lastError.message);
+                   } else {
+                     AppLogger.info("[Background] Gradient worker injected successfully");
+                   }
                  });
                }
              }
@@ -99,8 +101,25 @@ function setupMessageListener() {
      
       return true; // Relays message to gradient_worker.ts
     }else if(message.type === "get_gradient_data"){
-      chrome.runtime.sendMessage({type: "get_gradient_data", data: message.data},(response)=>{
-        sendResponse({success: true, data: response.data});
+      // Find the gradient.ncsu.edu tab and send the message there
+      chrome.tabs.query({url: "https://gradient.ncsu.edu/*"}, (tabs) => {
+        if (tabs.length > 0) {
+          const gradientTab = tabs[0];
+          AppLogger.info("[Background] Sending gradient data request to tab:", gradientTab.id);
+          
+          chrome.tabs.sendMessage(gradientTab.id!, {type: "get_gradient_data", data: message.data}, (response) => {
+            if (chrome.runtime.lastError) {
+              AppLogger.error("[Background] Error sending message to gradient tab:", chrome.runtime.lastError.message);
+              sendResponse({success: false, error: chrome.runtime.lastError.message});
+            } else {
+              AppLogger.info("[Background] Gradient data received:", response);
+              sendResponse({success: true, data: response?.data});
+            }
+          });
+        } else {
+          AppLogger.error("[Background] No gradient.ncsu.edu tab found");
+          sendResponse({success: false, error: "No gradient tab found"});
+        }
       });
       return true;
     }else if(message.type === "gradient_loaded"){

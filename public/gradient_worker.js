@@ -1,19 +1,44 @@
-const s = new MutationObserver((t) => {
-  for (let a of t)
-    document.querySelector('[id="app"]') && (s.disconnect(), chrome.runtime.sendMessage({ type: "gradient_loaded" }), console.log("Gradient loaded"), i());
-});
-s.observe(document.body, { childList: !0, subtree: !0 });
-function i() {
-  chrome.runtime.onMessage.addListener((t, a, o) => {
-    if (t.type === "get_gradient_data") {
-      const r = t.data, d = "https://gradient.ncsu.edu/api/course-distributions?", e = new URLSearchParams();
-      if (e.append("semester[]", "7"), e.append("semester[]", "8"), e.append("semester[]", "1"), e.append("semester[]", "6"), e.append("course", r.course), r.instructor.length > 0)
-        for (let n of r.instructor)
-          e.append("instructor[]", n);
-      e.append("years[]", "2024"), e.append("years[]", "2023"), e.append("years[]", "2022"), e.append("years[]", "2021"), fetch(d + e.toString()).then(async (n) => {
-        const c = await n.json();
-        o({ success: !0, data: c });
-      });
+
+const observer = new MutationObserver((mutations) => {
+    for(let _ of mutations){
+        if(document.querySelector('[id="app"]')){
+            observer.disconnect();
+            chrome.runtime.sendMessage({type: "gradient_loaded"});
+            console.log("Gradient loaded");
+            get_gradient_data();
+        }
     }
-  });
+});
+
+observer.observe(document.body, {childList: true, subtree: true});
+function get_gradient_data(){
+  console.log("waiting for get_gradient_data");
+    chrome.runtime.onMessage.addListener((message,_,sendResponse)=>{
+        console.log("get_gradient_data",message);
+        if(message.type === "get_gradient_data"){
+            const data = message.data;
+            const url = "https://gradient.ncsu.edu/api/course-distributions?";
+            const params = new URLSearchParams();
+            params.append("semester[]","7");
+            params.append("semester[]","8");
+            params.append("semester[]","1");
+            params.append("semester[]","6");
+            params.append("course",data.course);
+            if(data.instructor.length > 0){
+                for(let instructor of data.instructor){
+                    params.append("instructor[]",instructor);
+                }
+            }
+            params.append("years[]","2024");
+            params.append("years[]","2023");
+            params.append("years[]","2022");
+            params.append("years[]","2021");
+            fetch(url + params.toString()).then(async (response) => {
+                const json = await response.json();
+                console.log("gradient_data",json);
+                sendResponse({success: true, data: json});
+            });
+            
+        }
+    });
 }

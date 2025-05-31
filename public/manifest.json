@@ -5,7 +5,7 @@
   "description": "If the menu isn't working please refresh mypack and if that doesn't work please toggle the extension off and on again.",
   "permissions": ["storage", "alarms", "tabs", "scripting"],
   "host_permissions": [
-    "https://*.acs.ncsu.edu/*","https://webappprd.acs.ncsu.edu/*"
+    "https://*.acs.ncsu.edu/*","https://webappprd.acs.ncsu.edu/*","https://gradient.ncsu.edu/*"
   ],
   "action": {
     "default_popup": "index.html",
