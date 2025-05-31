@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "MyPack Course Picker",
-  "version": "3.5.1",
+  "name": "MyPack Plus",
+  "version": "3.5.2",
   "description": "If the menu isn't working please refresh mypack and if that doesn't work please toggle the extension off and on again.",
   "permissions": ["storage", "alarms"],
   "host_permissions": [
