@@ -5,6 +5,9 @@ import { AppLogger } from "../../../utils/logger";
 export function parseGradientResponse(subject: string,course: string,response: RootObject): GradeData[] {
     AppLogger.info("Parsing gradient response for:", response);
     const courses: Record<string, {a_total: number | null, b_total: number | null, c_total: number | null, d_total: number | null, f_total: number | null,total: number | null}[]> = {}; // Instructor name -> grade data
+    if(!response.individual){
+        return [];
+    }
     response.individual.forEach((course) => {
         AppLogger.info("Course:", course);
         if(courses[course.instructorName]){
