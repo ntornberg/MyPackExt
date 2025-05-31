@@ -263,9 +263,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. Ensure the container element exists in the DOM
         
         const scheduleElement = await waitForScheduleTable();
-        scrapeScheduleTable(scheduleElement);
         const overlayElement = ensureOverlayContainer();
         const root = createRoot(overlayElement);
+        scrapeScheduleTable(scheduleElement);
+        
         // 3. Render your root component containing both FirstStartDialog and SlideOutDrawer
         root.render(
             <CacheProvider value={myEmotionCache}>
