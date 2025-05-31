@@ -19,6 +19,7 @@ function get_gradient_data(){
             const data = message.data;
             const url = "https://gradient.ncsu.edu/api/course-distributions?";
             const params = new URLSearchParams();
+            params.append("subject",data.subject);
             params.append("semester[]","7");
             params.append("semester[]","8");
             params.append("semester[]","1");
@@ -34,6 +35,7 @@ function get_gradient_data(){
             params.append("years[]","2022");
             params.append("years[]","2021");
             fetch(url + params.toString()).then(async (response) => {
+                console.log("gradient_data",response);
                 const json = await response.json();
                 console.log("gradient_data",json);
                 sendResponse({success: true, data: json});

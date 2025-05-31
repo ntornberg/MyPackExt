@@ -9,6 +9,7 @@ import type { MergedCourseData } from '../../../utils/CourseSearch/MergeDataUtil
 import type { BatchDataRequestResponse } from '../types';
 import type { GradeData,MatchedRateMyProf } from '../../../types';
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../../config';
+import type { RootObject } from '../../../utils/GradientWorker/GradientRequestRawResponseType';
 
 /**
  * Constants for cache namespaces
@@ -163,15 +164,24 @@ export async function fetchSingleCourseData(
         },
         body: JSON.stringify(courseSectionsWithProfs)
       });
-      chrome.runtime.sendMessage({type: "get_gradient_data", data: {
+      function sendGradientData() : Promise<{success: boolean, data: RootObject}>{
+        return new Promise((resolve,_)=>{
+        chrome.runtime.sendMessage({type: "get_gradient_data", data: {
         subject: courseSectionsWithProfs[0].course_title.split(" ")[0],
         course: courseSectionsWithProfs[0].course_title.split(" ")[1],
         instructor: [courseSectionsWithProfs[0].instructor_name]
-      }});
-      if (!apiResponse.ok) {
-        throw new Error(`API error: ${apiResponse.status} ${apiResponse.statusText}`);
-      }
-      
+      }},(response)=>{
+        AppLogger.info("[DataService] Gradient data received:", response);
+        resolve(response);
+      });
+    });
+  
+  }
+  const response =await sendGradientData();
+
+  if (!apiResponse.ok) {
+    throw new Error(`API error: ${apiResponse.status} ${apiResponse.statusText}`);
+  }
       const jsonResponse = await apiResponse.json();
       gradeProfData = jsonResponse.data as BatchDataRequestResponse;
       // Cache grade/professor data
@@ -215,6 +225,7 @@ export async function fetchSingleCourseData(
  * @param courses Array of required courses to fetch data for
  * @param term Academic term
  * @param onProgress Optional callback for tracking progress
+ * 
  * @returns Promise with course data mapped by course key
  */
 export async function batchFetchCoursesData(
