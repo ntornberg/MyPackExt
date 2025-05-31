@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.warn("MyPack Enhancer already initialized. Skipping...");
             return;
         }
-        chrome.runtime.sendMessage({type:"open_gradient"});
+       
         window.__mypackEnhancerInitialized = true;
         
         // Setup service worker monitoring first
@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const scheduleElement = await waitForScheduleTable();
         scrapeScheduleTable(scheduleElement);
-        
+        chrome.runtime.sendMessage({type:"open_gradient"});
         // 3. Render your root component containing both FirstStartDialog and SlideOutDrawer
         root.render(
             <CacheProvider value={myEmotionCache}>

@@ -69,21 +69,31 @@ function setupMessageListener() {
       
       return true; // Keep message channel open for async response
     }else if(message.type === "open_gradient"){
+      
       chrome.tabs.query({url: "https://gradient.ncsu.edu/"},(tabs)=>{
         if(tabs.length < 1){
           chrome.tabs.create({url: "https://gradient.ncsu.edu/"},(tab)=>{
+            AppLogger.info("[Background] Tab created:", tab.id);
             chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+              AppLogger.info("[Background] Tab updated:", tabId, changeInfo);
              if(tabId === tab.id){
                if(changeInfo.status === "complete"){
                  chrome.scripting.executeScript({
                    target: {tabId},
                    files:[chrome.runtime.getURL("gradient_worker.js")]
+                 }, () =>{
+                  if (chrome.runtime.lastError) {
+                    AppLogger.error("[Background] Script failed to inject:", chrome.runtime.lastError.message);
+                  } else {
+                    AppLogger.info("[Background] Gradient worker injected");
+                  }
                  });
                }
              }
             });
            });
         }
+
       });
       
      
@@ -93,6 +103,8 @@ function setupMessageListener() {
         sendResponse({success: true, data: response.data});
       });
       return true;
+    }else if(message.type === "gradient_loaded"){
+     AppLogger.info("[Background] Gradient loaded");
     }
     
     // Handle ping messages for connection testing
