@@ -1,5 +1,6 @@
-import type { BatchDataRequestResponse } from "../../services/api";
-import type { MatchedRateMyProf, GradeData } from "../../types";
+
+import type { BatchDataRequestResponse } from "../../services/api/types";
+import type { MatchedRateMyProf, GradeData } from "../../types/SupaBaseResponseType";
 import type { RequiredCourse } from "../../types/Plans";
 import { AppLogger } from "../logger";
 import { groupSections } from "./GroupSections";

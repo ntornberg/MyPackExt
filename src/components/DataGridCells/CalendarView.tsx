@@ -7,7 +7,6 @@ import {getCacheCategory} from '../../cache/CourseRetrieval';
 import {useState, useEffect} from 'react';
 
 import CreateCalender, { toMinutes } from './CalenderResizeListener';
-import { AppLogger } from '../../utils/logger';
 import type {  ModifiedSection } from '../../utils/CourseSearch/MergeDataUtil';
 
 
@@ -67,7 +66,6 @@ export const CalendarView = (params: ModifiedSection) => {
         const fetchData = async () => {
             try {
                 const courses = await getCacheCategory('scheduleTableData');
-                AppLogger.info(`[GEP DEBUG] Courses:`, courses);
                 const events: ScheduleEvent[] = [];
                 let eventId = 1;
 
@@ -107,9 +105,6 @@ export const CalendarView = (params: ModifiedSection) => {
                         }
 
                         if (meeting_days.length > 0 && start_time && end_time) {
-                         
-                            
-
                             events.push({
                                 id: eventId++,
                                 subj: courseData?.code || '',
@@ -123,16 +118,12 @@ export const CalendarView = (params: ModifiedSection) => {
 
                     // Process course data
                     for (const course of Object.values(courses)) {
-  
-
                         let schedule_entry: ScheduleTableEntry | null = null;
                         if (typeof course.combinedData !== 'string') {
                             schedule_entry = course.combinedData as unknown as ScheduleTableEntry;
                         }else{
                             schedule_entry = JSON.parse(course.combinedData) as unknown as ScheduleTableEntry;
                         }
-                        AppLogger.info(`[GEP DEBUG] Schedule Entry:`, schedule_entry);
-                        AppLogger.info(`[GEP DEBUG] Schedule Entry Section Details:`, schedule_entry?.section_details);
 
                         if (schedule_entry?.section_details) {
                             for (const section of schedule_entry.section_details) {

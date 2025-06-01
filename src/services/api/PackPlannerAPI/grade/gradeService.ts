@@ -2,8 +2,8 @@ import { createRoot } from 'react-dom/client';
 import React from "react";
 import { createShadowHost } from '../../../../utils/dom';
 import { GradeCard } from '../../../../components/DegreeAuditCards/GradeCard';
-import type { Course } from '../../../../types';
-import type { GradeData } from '../../../../types';
+import type { Course } from '../../../../types/SupaBaseResponseType';
+import type { GradeData } from '../../../../types/SupaBaseResponseType';
 import type { SingleCourseDataResponse } from '../../types';
 
 /**

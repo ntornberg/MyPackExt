@@ -30,7 +30,7 @@ export interface CourseData {
     sections: CourseSection[];
 }
 
-
+// Holy shit
 function ParseCourseElement($: CheerioAPI, courseSection: cheerio.Cheerio<DomHandlerElement>): CourseData {
   const code = courseSection.find('h1').contents().first().text().trim();
   const title = courseSection.find('h1 small').text().trim();

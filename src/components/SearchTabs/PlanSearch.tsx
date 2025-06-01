@@ -3,7 +3,6 @@ import {
   Autocomplete,
   Box,
   Button,
-  CircularProgress,
   DialogContent,
   
   List,
@@ -17,7 +16,6 @@ import { minorPlans } from '../../Data/PlanSearch/MinorPlans';
 import { TermIdByName } from '../../Data/TermID';
 import { AppLogger } from '../../utils/logger';
 import { sortSections } from '../../types/DataGridCourse';
-import { fetchCourseSearchData } from '../../services/api';
 import type { RequiredCourse, MajorPlan, Subplan, MinorPlan } from '../../types/Plans';
 import type { MergedCourseData, GroupedSections } from '../../utils/CourseSearch/MergeDataUtil';
 import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
@@ -30,98 +28,9 @@ import { CourseInfoCell } from '../DataGridCells/CourseInfoCell';
 import { RateMyProfessorCell } from '../DataGridCells/RateMyProfessorCell';
 import { GradeDistributionCell } from '../DataGridCells/GradeDistributionCell';
 import { InfoCell } from '../DataGridCells/InfoCell';
-
-const customStyles = `
-  .custom-datatable .p-datatable-thead > tr > th {
-    background-color: rgb(5, 7, 10) !important;
-    color: white !important;
-    border-color: rgb(30, 35, 45) !important;
-  }
-  
-  .custom-datatable .p-datatable-tbody > tr:nth-child(even) {
-    background-color: rgb(11, 14, 20) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-tbody > tr:nth-child(odd) {
-    background-color: rgb(20, 25, 35) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-tbody > tr:hover {
-    background-color: rgb(25, 30, 40) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-tbody > tr > td {
-    border-color: rgb(30, 35, 45) !important;
-  }
-  
-  .custom-datatable .p-row-toggler {
-    color: white !important;
-  }
-  
-  .custom-datatable .p-row-toggler:hover {
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-scrollable-body {
-    background-color: rgb(20, 25, 35) !important;
-  }
-  
-  /* Expanded row styling */
-  .custom-datatable .p-datatable-row-expansion {
-    background-color: rgb(15, 18, 25) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-row-expansion .card {
-    background-color: rgb(20, 25, 35) !important;
-    border: 1px solid rgb(30, 35, 45) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-row-expansion h5,
-  .custom-datatable .p-datatable-row-expansion h6 {
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-row-expansion .border-300 {
-    border-color: rgb(30, 35, 45) !important;
-  }
-`;
-
-export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
-  return (
-    <Box sx={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
-      <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-        <CircularProgress variant="determinate" value={value} />
-        <Box
-          sx={{
-            top: 0,
-            left: 0,
-            bottom: 0,
-            right: 0,
-            position: 'absolute',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Typography variant="caption" component="div" color="text.secondary">
-            {`${Math.round(value)}%`}
-          </Typography>
-        </Box>
-      </Box>
-      {label && (
-        <Typography variant="caption" component="div" color="text.secondary" sx={{ mt: 1, textAlign: 'center', maxWidth: '200px' }}>
-          {label}
-        </Typography>
-      )}
-    </Box>
-  );
-}
+import { CircularProgressWithLabel } from '../shared/CircularProgressWithLabel';
+import { customDataTableStyles } from '../../styles/dataTableStyles';
+import { fetchCourseSearchData } from '../../services/api/CourseSearch/dataService';
 
 export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setPlanSearchTabData: (key: keyof PlanSearchData, value: any) => void, planSearchData: PlanSearchData}) {
  
@@ -334,7 +243,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
                           width: '100%',
                           display: 'flex'
                         }}>
-                          <style>{customStyles}</style>
+                          <style>{customDataTableStyles}</style>
                           <DataTable
                             dataKey="id"
                             value={Object.values((planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`].sections).sort(sortSections)}

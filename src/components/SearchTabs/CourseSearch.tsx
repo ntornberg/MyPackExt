@@ -6,7 +6,6 @@ import {
   List, 
   TextField,
   DialogContent,
-  CircularProgress,
   Typography,
 } from '@mui/material';
 import { TermIdByName } from '../../Data/TermID';
@@ -23,99 +22,11 @@ import { StatusAndSlotsCell } from '../DataGridCells/StatusAndSlotsCell';
 import { CourseInfoCell } from '../DataGridCells/CourseInfoCell';
 import { RateMyProfessorCell } from '../DataGridCells/RateMyProfessorCell';
 import { GradeDistributionCell } from '../DataGridCells/GradeDistributionCell';
+import { CircularProgressWithLabel } from '../shared/CircularProgressWithLabel';
+import { customDataTableStyles } from '../../styles/dataTableStyles';
 
 import type { GroupedSections, ModifiedSection } from '../../utils/CourseSearch/MergeDataUtil';
 import { InfoCell } from '../DataGridCells/InfoCell';
-const customStyles = `
-  .custom-datatable .p-datatable-thead > tr > th {
-    background-color: rgb(5, 7, 10) !important;
-    color: white !important;
-    border-color: rgb(30, 35, 45) !important;
-  }
-  
-  .custom-datatable .p-datatable-tbody > tr:nth-child(even) {
-    background-color: rgb(11, 14, 20) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-tbody > tr:nth-child(odd) {
-    background-color: rgb(20, 25, 35) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-tbody > tr:hover {
-    background-color: rgb(25, 30, 40) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-tbody > tr > td {
-    border-color: rgb(30, 35, 45) !important;
-  }
-  
-  .custom-datatable .p-row-toggler {
-    color: white !important;
-  }
-  
-  .custom-datatable .p-row-toggler:hover {
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-scrollable-body {
-    background-color: rgb(20, 25, 35) !important;
-  }
-  
-  /* Expanded row styling */
-  .custom-datatable .p-datatable-row-expansion {
-    background-color: rgb(15, 18, 25) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-row-expansion .card {
-    background-color: rgb(20, 25, 35) !important;
-    border: 1px solid rgb(30, 35, 45) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-row-expansion h5,
-  .custom-datatable .p-datatable-row-expansion h6 {
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-row-expansion .border-300 {
-    border-color: rgb(30, 35, 45) !important;
-  }
-`;
-export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
-  return (
-    <Box sx={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
-      <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-        <CircularProgress variant="determinate" value={value} />
-        <Box
-          sx={{
-            top: 0,
-            left: 0,
-            bottom: 0,
-            right: 0,
-            position: 'absolute',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Typography variant="caption" component="div" color="text.secondary">
-            {`${Math.round(value)}%`}
-          </Typography>
-        </Box>
-      </Box>
-      {label && (
-        <Typography variant="caption" component="div" color="text.secondary" sx={{ mt: 1, textAlign: 'center', maxWidth: '200px' }}>
-          {label}
-        </Typography>
-      )}
-    </Box>
-  );
-}
 
 // Define the department course type
 interface DeptCourse {
@@ -125,9 +36,6 @@ interface DeptCourse {
 
 export default function CourseSearch({setCourseSearchTabData, courseSearchData}: {setCourseSearchTabData: (key: keyof CourseSearchData, value: any) => void, courseSearchData: CourseSearchData}) {
 
-  // To store the selected course data from dropdown
-  
-  
   // Use the memoized search hook
   const { 
     search, 
@@ -205,10 +113,8 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
 
   const [expandedRows, setExpandedRows] = useState<DataTableExpandedRows | DataTableValueArray | undefined>(undefined);
   const rowExpansionTemplate = (data: GroupedSections) => {
-   
-
     AppLogger.info("Row expansion template", { data });
-    if (!data.labs) return null; // TODO: There must be a better way to do this
+    if (!data.labs) return null; // No labs to show
     return (
       <Box sx={{ width: '50%', display: 'flex', flexDirection: 'column' }}>
       <DataTable value={data.labs} paginator rows={10} rowsPerPageOptions={[10, 25, 50]}>
@@ -228,7 +134,6 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
             sx={{ width: '50%', mb: 1 }}
             id="term_selector"
             options={Object.keys(TermIdByName)}
-            defaultValue={TermIdByName[Object.keys(TermIdByName)[0]]}
             value={courseSearchData.selectedTerm}
             onChange={(_, value) => setCourseSearchTabData('selectedTerm', value)}
             renderInput={(params) => 
@@ -283,16 +188,16 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
         mb: 4
       }}>
         
-        {courseData?.sections && Object.keys(courseData.sections).length> 0 ? (
+        {courseData?.sections && Object.keys(courseData.sections).length > 0 ? (
           <Box sx={{ 
             width: '100%',
             display: 'flex',
             flexDirection: 'column'
           }}>
-            <style>{customStyles}</style>
+            <style>{customDataTableStyles}</style>
             <DataTable 
               dataKey="uniqueRowId"
-              value={courseData.sections ? Object.values(courseData.sections).sort(sortSections).flatMap((section, index) => {
+              value={Object.values(courseData.sections).sort(sortSections).flatMap((section, index) => {
                 // If section has lecture and labs, return the grouped section (for expansion)
                 if (section.lecture && section.labs && section.labs.length > 0) {
                   return [{...section, uniqueRowId: `grouped-${section.lecture.section || index}`}];
@@ -310,7 +215,7 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
                 }
                 // Fallback
                 return [];
-              }) : []}
+              })}
               paginator
               expandedRows={expandedRows}
               onRowToggle={(e) => setExpandedRows(e.data)}

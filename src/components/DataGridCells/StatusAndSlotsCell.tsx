@@ -9,7 +9,7 @@ function getEnrollmentColor(enrollment: string | undefined): string {
     const max = parseInt(match[2], 10);
     if (isNaN(current) || isNaN(max) || max === 0) return '#bdbdbd';
     const ratio = current / max;
-    
+    // This doesn't even work
     if (ratio < 0.5) {
         // Red to yellow
         const g = Math.round(255 * (ratio / 0.5));

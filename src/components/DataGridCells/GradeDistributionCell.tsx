@@ -8,18 +8,16 @@ import {
   Typography,
 } from '@mui/material';
 import { PieChart } from '@mui/x-charts/PieChart';
-import type { GradeData } from '../../types';
-import { AppLogger } from '../../utils/logger';
+import type { GradeData } from '../../types/SupaBaseResponseType';
 import type { ModifiedSection } from '../../utils/CourseSearch/MergeDataUtil';
 
 
 export const GradeDistributionCell = (params: ModifiedSection) => {
   const [open, setOpen] = useState(false);
-  const { grade_distribution } = params;
-  AppLogger.info(`[GEP DEBUG] Row:`, params);
+  const gradeData = params.grade_distribution;
   
-  if (!grade_distribution) {
-    return <Typography variant="body2">No grade data</Typography>;
+  if (!gradeData) {
+    return null;
   }
 
   const handleOpen = () => {
@@ -38,7 +36,7 @@ export const GradeDistributionCell = (params: ModifiedSection) => {
     f_average, 
     course_name,
     instructor_name 
-  } = grade_distribution as GradeData;
+  } = gradeData as GradeData;
   
   const total = a_average + b_average + c_average + d_average + f_average;
   

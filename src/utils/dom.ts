@@ -22,18 +22,15 @@ export function createShadowHost(id: string): { host: HTMLDivElement, container:
  * @returns {HTMLTableCellElement} - The extension cell.
  */
 export function ensureExtensionCell(row: HTMLTableRowElement): HTMLTableCellElement {
-    // look for a cell we already added
     let cell = row.querySelector<HTMLTableCellElement>('td.mypack-extension-cell');
     if (cell) {
-        cell.innerHTML = '';            // clear previous widgets
+        cell.innerHTML = '';
         return cell;
     }
 
-    // otherwise make a new <td>
     cell = row.ownerDocument!.createElement('td');
     cell.className = 'mypack-extension-cell';
-    cell.colSpan = row.cells.length;   // span across the whole inner table
-
+    cell.colSpan = row.cells.length;  
     Object.assign(cell.style, {
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(200px,1fr))',
@@ -42,7 +39,7 @@ export function ensureExtensionCell(row: HTMLTableRowElement): HTMLTableCellElem
         whiteSpace: 'normal',
     });
 
-    row.appendChild(cell);              // ←-- same row, so it shows beside the details
+    row.appendChild(cell);       
     return cell;
 }
 

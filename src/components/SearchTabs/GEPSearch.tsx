@@ -1,4 +1,4 @@
-import { Box, CircularProgress, FormControlLabel, ListItem, ListItemText, Typography, Checkbox} from "@mui/material";
+import { Box, FormControlLabel, ListItem, ListItemText, Typography, Checkbox} from "@mui/material";
 import { Button, TextField, Autocomplete, List } from "@mui/material";
 import { AppLogger } from "../../utils/logger";
 import { useMemo, useCallback, useState } from "react";
@@ -20,98 +20,8 @@ import { RateMyProfessorCell } from '../DataGridCells/RateMyProfessorCell';
 import { GradeDistributionCell } from '../DataGridCells/GradeDistributionCell';
 import { InfoCell } from '../DataGridCells/InfoCell';
 import type { GroupedSections } from '../../utils/CourseSearch/MergeDataUtil';
-
-const customStyles = `
-  .custom-datatable .p-datatable-thead > tr > th {
-    background-color: rgb(5, 7, 10) !important;
-    color: white !important;
-    border-color: rgb(30, 35, 45) !important;
-  }
-  
-  .custom-datatable .p-datatable-tbody > tr:nth-child(even) {
-    background-color: rgb(11, 14, 20) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-tbody > tr:nth-child(odd) {
-    background-color: rgb(20, 25, 35) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-tbody > tr:hover {
-    background-color: rgb(25, 30, 40) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-tbody > tr > td {
-    border-color: rgb(30, 35, 45) !important;
-  }
-  
-  .custom-datatable .p-row-toggler {
-    color: white !important;
-  }
-  
-  .custom-datatable .p-row-toggler:hover {
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-scrollable-body {
-    background-color: rgb(20, 25, 35) !important;
-  }
-  
-  /* Expanded row styling */
-  .custom-datatable .p-datatable-row-expansion {
-    background-color: rgb(15, 18, 25) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-row-expansion .card {
-    background-color: rgb(20, 25, 35) !important;
-    border: 1px solid rgb(30, 35, 45) !important;
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-row-expansion h5,
-  .custom-datatable .p-datatable-row-expansion h6 {
-    color: white !important;
-  }
-  
-  .custom-datatable .p-datatable-row-expansion .border-300 {
-    border-color: rgb(30, 35, 45) !important;
-  }
-`;
-
-export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
-  return (
-    <Box sx={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
-      <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-        <CircularProgress variant="determinate" value={value} />
-        <Box
-          sx={{
-            top: 0,
-            left: 0,
-            bottom: 0,
-            right: 0,
-            position: 'absolute',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Typography variant="caption" component="div" color="text.secondary">
-            {`${Math.round(value)}%`}
-          </Typography>
-        </Box>
-      </Box>
-      {label && (
-        <Typography variant="caption" component="div" color="text.secondary" sx={{ mt: 1, textAlign: 'center', maxWidth: '200px' }}>
-          {label}
-        </Typography>
-      )}
-    </Box>
-  );
-}
+import { CircularProgressWithLabel } from '../shared/CircularProgressWithLabel';
+import { customDataTableStyles } from '../../styles/dataTableStyles';
 
 interface AutocompletesProps {
   selectedTerm: string | null;
@@ -165,7 +75,7 @@ const MemoizedAutocompletes: React.FC<AutocompletesProps> = React.memo(({
   );
 });
 
-// Memoized DataTable component to prevent unnecessary re-renders - MOVED OUTSIDE COMPONENT
+// Memoized DataTable component to prevent unnecessary re-renders
 const MemoizedDataTable = React.memo(({ 
   sections,
   sortFunc 
@@ -174,7 +84,7 @@ const MemoizedDataTable = React.memo(({
   sortFunc: (a: GroupedSections, b: GroupedSections) => number 
 }) => (
   <>
-    <style>{customStyles}</style>
+    <style>{customDataTableStyles}</style>
     <DataTable 
       dataKey="id"
       value={sections.sort(sortFunc)}
@@ -326,7 +236,6 @@ export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepS
               }
             );
             
-            AppLogger.info("[GEP RENDER DEBUG] Received course data:", courseDataResult);
             setGepSearchTabData('courseData', courseDataResult || {});
           }
         }

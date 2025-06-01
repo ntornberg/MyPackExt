@@ -4,6 +4,7 @@ import { AppLogger } from "../logger";
 import type { GroupedSections } from "./MergeDataUtil";
 import type { CourseSection } from "./ParseRegistrarUtil";
 
+// Used to group labs
 export function groupSections(sections: CourseSection[],  courseSections?: Record<string, ModifiedSection>) {
     const groupedSections : Record<string, GroupedSections> = {};
     for (const section of sections) {

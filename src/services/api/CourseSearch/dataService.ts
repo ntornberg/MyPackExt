@@ -7,7 +7,7 @@ import type { RequiredCourse, Requirement } from '../../../types/Plans';
 import type { CourseData } from '../../../utils/CourseSearch/ParseRegistrarUtil';
 import type { MergedCourseData } from '../../../utils/CourseSearch/MergeDataUtil';
 import type { BatchDataRequestResponse } from '../types';
-import type { GradeData, MatchedRateMyProf } from '../../../types';
+import type { GradeData, MatchedRateMyProf } from '../../../types/SupaBaseResponseType';
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../../config';
 import { groupSections } from '../../../utils/CourseSearch/GroupSections';
 
@@ -222,7 +222,6 @@ export async function batchFetchCoursesData(
 
   // Report initial progress
   onProgress?.(5, `Starting batch processing for ${courses.length} courses`);
-  AppLogger.info(`[BATCH DEBUG] Starting batch processing for ${courses.length} courses, term: ${term}`);
 
   if (!courses || courses.length === 0) {
     onProgress?.(100, "No courses to process");
@@ -231,7 +230,6 @@ export async function batchFetchCoursesData(
 
   // Phase 1: Check Open Courses Cache
   onProgress?.(10, "Checking open courses cache");
-  AppLogger.info(`[BATCH DEBUG] Phase 1: Checking open courses cache for ${courses.length} courses`);
 
   // Generate cache keys and prepare lookup data
   const courseKeyMapping: Record<string, RequiredCourse> = {}; // Used to find the course id when merging the data
@@ -248,10 +246,6 @@ export async function batchFetchCoursesData(
     courseKeyMapping[courseKey] = course;
 
     const openCoursesCacheKey = courseKey + ' ' + term;
-    // Log just the cache key format once
-    if (course === courses[0]) {
-      AppLogger.info(`[CACHE KEY FORMAT] Cache key format: "${openCoursesCacheKey}" -> hash`);
-    }
     const hashKey = await generateCacheKey(openCoursesCacheKey);
     openCoursesHashKeys[courseKey] = hashKey;
 
@@ -262,7 +256,6 @@ export async function batchFetchCoursesData(
 
     if (cachedNull) {
       // This course is known to return null, skip it
-      AppLogger.info(`[CACHE NULL] Course ${courseKey} known to return null, skipping`);
       return { cached: true, courseKey, isNull: true };
     }
 
@@ -270,11 +263,8 @@ export async function batchFetchCoursesData(
     const cachedData = await getGenericCache(CACHE_KEYS.OPEN_COURSES, hashKey);
 
     if (cachedData) {
-      // Cache hit - only log sample data for the first hit
+      // Cache hit
       const cachedCourseData = JSON.parse(cachedData.combinedData);
-
-
-
       openCoursesCache[courseKey] = cachedCourseData;
       return { cached: true, courseKey };
     } else {
@@ -287,32 +277,22 @@ export async function batchFetchCoursesData(
   // Wait for all cache check promises to complete
   await Promise.all(openCoursesCachePromises);
 
-  AppLogger.info(`[BATCH DEBUG] Cache check complete. ${Object.keys(openCoursesCache).length} courses from cache, ${openCoursesToFetch.length} to fetch.`);
-
   // Phase 2: Fetch Missing Open Courses Data (in parallel)
   if (Object.keys(openCoursesToFetch).length > 0) {
     onProgress?.(20, `Fetching open courses data for ${openCoursesToFetch.length} courses`);
-    AppLogger.info(`[BATCH DEBUG] Phase 2: Fetching ${openCoursesToFetch.length} courses from API`);
 
     // Create a promise for each course to fetch
-    //const groupedCourses = GroupCourses(openCoursesToFetch);
     const subjects_to_fetch = [...new Set(Object.values(openCoursesToFetch).map((course) => course.course_abr))]
-    AppLogger.info("Fetching subjects", subjects_to_fetch);
     const fetchPromises = subjects_to_fetch.map(async (subject) => {
-      //const courseKey = `${course.course_abr} ${course.catalog_num}`;
       try {
-        AppLogger.info("Term:", term);
         onProgress?.(25, `Fetching open courses data for ${subject}`);
         const courseData = await batchSearchOpenCourses(term, subject);
-        AppLogger.info("Found courses", courseData);
         if (courseData) {
 
           if (Array.isArray(courseData)) {
             const filteredCourseData = courseData.filter((course) => {
-
               return openCoursesToFetch[`${course.code}`];
             })
-            AppLogger.info("Filtered", filteredCourseData)
             for (const course of filteredCourseData) {
               const hashKey = openCoursesHashKeys[course.code];
               const cacheData = JSON.stringify(course);
@@ -342,7 +322,6 @@ export async function batchFetchCoursesData(
 
           return { success: true, subject };
         } else {
-
           return { success: false, subject };
         }
       } catch (error) {
@@ -353,14 +332,6 @@ export async function batchFetchCoursesData(
 
     await Promise.all(fetchPromises);
   }
-
-  AppLogger.info(`[BATCH DEBUG] Phase 2 complete. Have data for ${Object.keys(openCoursesCache).length} courses.`);
-
-  // Log courses with and without sections after fetching
-  Object.entries(openCoursesCache).forEach(([key, data]) => {
-    const sectionsCount = data?.sections?.length || 0;
-    AppLogger.info(`[BATCH DEBUG] Course ${key}: ${sectionsCount} sections available`);
-  });
 
   // Phase 4: Fetch Grade/Professor Data (per course)
   onProgress?.(50, "Processing grade/professor data for each course");
@@ -383,7 +354,6 @@ export async function batchFetchCoursesData(
   }, {});
 
   if (profList) {
-    // Convert nested forEach loops to async function with Promise.all
     const fetchProfDataPromises = Object.entries(profList).flatMap(([courseKey, sectionList]) => {
       return sectionList.map(async (section) => {
         const gradeProfCacheKey = `${courseKey}-${section.instructor_name}-${term}`;
@@ -455,13 +425,11 @@ export async function batchFetchCoursesData(
   const mergedData = mergeData(openCoursesCache, gradeProfData, courseKeyMapping);
 
   Object.values(sectionsToFetch).forEach((section, _) => {
-    // TODO: Possible bug where you return grade data for a section that has no instructor because of a partial hash key don't fix now later probelm
-
+    // Possible bug where you return grade data for a section that has no instructor because of a partial hash key (who knows)
 
     const set_cache_prom = async (course_title: string, instructor_name: string, s_term: string) => {
       const course_hash_key = `${course_title}-${instructor_name}-${s_term}`;
       const course_data = mergedData[course_title];
-      AppLogger.info("Attempting to set cache for ", course_title, instructor_name, s_term);
       
       if (!cachedProfKeys[course_hash_key]) {
         const batchFetchCourses: BatchDataRequestResponse = {
@@ -506,25 +474,8 @@ export async function batchFetchCoursesData(
   }
 
   await setGenericCache(CACHE_KEYS.GRADE_PROF, courseMap);
-  AppLogger.info("Cache Responses", responses);
   // Add to result
   Object.assign(result, mergedData);
-
-  // Log final result
-  AppLogger.info(`[BATCH DEBUG] Final result summary:`);
-  AppLogger.info(`[BATCH DEBUG] - Total courses: ${Object.keys(result).length}`);
-
-  const coursesWithSections = Object.entries(result)
-    .filter(([_, data]) => data.sections && Object.keys(data.sections).length > 0)
-    .map(([key]) => key);
-
-  AppLogger.info(`[BATCH DEBUG] - Courses with sections (${coursesWithSections.length}): ${coursesWithSections.join(', ')}`);
-
-  const coursesWithoutSections = Object.entries(result)
-    .filter(([_, data]) => !data.sections || Object.keys(data.sections).length === 0)
-    .map(([key]) => key);
-
-  AppLogger.info(`[BATCH DEBUG] - Courses without sections (${coursesWithoutSections.length}): ${coursesWithoutSections.join(', ')}`);
 
   onProgress?.(100, `Completed processing ${courses.length} courses`);
   return result;
@@ -594,15 +545,11 @@ export async function fetchGEPCourseData(
 ): Promise<Record<string, MergedCourseData> | null> {
   // Initial progress
   onProgress?.(10, `Initializing search for ${courses.length} GEP courses`);
-  AppLogger.info(`[GEP DEBUG] Starting fetchGEPCourseData for ${courses.length} courses, term: ${term}`);
 
   if (courses.length === 0) {
     onProgress?.(100, "No GEP courses to process");
     return null;
   }
-
-  // Log courses being searched
-  AppLogger.info(`[GEP DEBUG] Courses to fetch:`, courses.map(c => `${c.course_abr} ${c.catalog_num}`));
 
   // Use the new batch processing function
   try {
@@ -615,8 +562,6 @@ export async function fetchGEPCourseData(
         onProgress?.(scaledProgress, statusMessage);
       }
     );
-
-
 
     if (Object.keys(batchResults).length === 0) {
       AppLogger.warn("No course data found for any GEP requirements");
