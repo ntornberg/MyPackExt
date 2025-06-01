@@ -14,7 +14,7 @@ import { DEPT_COURSES } from '../../Data/CourseSearch/department_courses.typed';
 import { AppLogger } from '../../utils/logger';
 import { fetchSingleCourseData } from '../../services/api/CourseSearch/dataService';
 import {  sortSections } from '../../types/DataGridCourse';
-import { DataTable } from 'primereact/datatable';
+import { DataTable, type DataTableValueArray, type DataTableExpandedRows } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { useMemoizedSearch } from '../../hooks/useMemoizedSearch';
 import type { CourseSearchData } from '../TabDataStore/TabData';
@@ -24,8 +24,68 @@ import { CourseInfoCell } from '../DataGridCells/CourseInfoCell';
 import { RateMyProfessorCell } from '../DataGridCells/RateMyProfessorCell';
 import { GradeDistributionCell } from '../DataGridCells/GradeDistributionCell';
 
-import type { GroupedSections } from '../../utils/CourseSearch/MergeDataUtil';
+import type { GroupedSections, ModifiedSection } from '../../utils/CourseSearch/MergeDataUtil';
 import { InfoCell } from '../DataGridCells/InfoCell';
+const customStyles = `
+  .custom-datatable .p-datatable-thead > tr > th {
+    background-color: rgb(5, 7, 10) !important;
+    color: white !important;
+    border-color: rgb(30, 35, 45) !important;
+  }
+  
+  .custom-datatable .p-datatable-tbody > tr:nth-child(even) {
+    background-color: rgb(11, 14, 20) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-tbody > tr:nth-child(odd) {
+    background-color: rgb(20, 25, 35) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-tbody > tr:hover {
+    background-color: rgb(25, 30, 40) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-tbody > tr > td {
+    border-color: rgb(30, 35, 45) !important;
+  }
+  
+  .custom-datatable .p-row-toggler {
+    color: white !important;
+  }
+  
+  .custom-datatable .p-row-toggler:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-scrollable-body {
+    background-color: rgb(20, 25, 35) !important;
+  }
+  
+  /* Expanded row styling */
+  .custom-datatable .p-datatable-row-expansion {
+    background-color: rgb(15, 18, 25) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-row-expansion .card {
+    background-color: rgb(20, 25, 35) !important;
+    border: 1px solid rgb(30, 35, 45) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-row-expansion h5,
+  .custom-datatable .p-datatable-row-expansion h6 {
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-row-expansion .border-300 {
+    border-color: rgb(30, 35, 45) !important;
+  }
+`;
 export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
   return (
     <Box sx={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -142,18 +202,24 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
     }
   };
 
- const rowExpansionTemplate = (data: GroupedSections) => {
-  if (!data.labs) return null; // TODO: There must be a better way to do this
-  return (
-    <DataTable value={data.labs} paginator rows={10} rowsPerPageOptions={[10, 25, 50]}>
-      <Column field="to_cart_button" header="" body={ToCartButtonCell} />
-      <Column field="section" header="Section" body={CourseInfoCell} />
-      <Column field="availability" header="Status" body={StatusAndSlotsCell} />
-      <Column field="info" header="Info" body={InfoCell} />
-    </DataTable>
-  );
- };
-  const [expandedRows, setExpandedRows] = useState([]);
+
+  const [expandedRows, setExpandedRows] = useState<DataTableExpandedRows | DataTableValueArray | undefined>(undefined);
+  const rowExpansionTemplate = (data: GroupedSections) => {
+   
+
+    AppLogger.info("Row expansion template", { data });
+    if (!data.labs) return null; // TODO: There must be a better way to do this
+    return (
+      <Box sx={{ width: '50%', display: 'flex', flexDirection: 'column' }}>
+      <DataTable value={data.labs} paginator rows={10} rowsPerPageOptions={[10, 25, 50]}>
+        <Column field="id" header="ID" body={(row : ModifiedSection) => row.section}/>
+        <Column field="to_cart_button" header="" body={ToCartButtonCell} />
+        <Column field="section" header="Section" body={CourseInfoCell} />
+        <Column field="availability" header="Status" body={StatusAndSlotsCell} />
+      </DataTable>
+      </Box>
+    );
+   };
   return (
     <DialogContent>
       <Box sx={{ width: '100%', p: 2 }}>
@@ -223,28 +289,46 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
             display: 'flex',
             flexDirection: 'column'
           }}>
-            
+            <style>{customStyles}</style>
             <DataTable 
-              dataKey={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
-              value={Object.values(courseData.sections).sort(sortSections)}
+              dataKey="uniqueRowId"
+              value={courseData.sections ? Object.values(courseData.sections).sort(sortSections).flatMap((section, index) => {
+                // If section has lecture and labs, return the grouped section (for expansion)
+                if (section.lecture && section.labs && section.labs.length > 0) {
+                  return [{...section, uniqueRowId: `grouped-${section.lecture.section || index}`}];
+                }
+                // If section has lecture but no labs, return just the lecture
+                if (section.lecture && (!section.labs || section.labs.length === 0)) {
+                  return [{...section, uniqueRowId: `lecture-only-${section.lecture.section || index}`}];
+                }
+                // If no lecture but has labs, return individual lab rows
+                if (section.labs && section.labs.length > 0) {
+                  return section.labs.reduce((acc : (GroupedSections & {uniqueRowId: string})[], lab, labIndex) => {
+                    acc.push({labs: null, lecture: lab, uniqueRowId: `lab-only-${lab.section || `${index}-${labIndex}`}`});
+                    return acc;
+                  }, []);
+                }
+                // Fallback
+                return [];
+              }) : []}
               paginator
               expandedRows={expandedRows}
+              onRowToggle={(e) => setExpandedRows(e.data)}
               rowExpansionTemplate={rowExpansionTemplate}
-              onRowExpand={(e) => setExpandedRows(e.data.id)}
-              rows={10}
+              rows={100}
+              className="custom-datatable"
               rowsPerPageOptions={[10, 25, 50]}
-              rowGroupMode="subheader"
              
             >
               <Column expander={(row) => row.labs && row.labs.length > 0}></Column>
-              <Column field="to_cart_button" header="" body={ToCartButtonCell} />
-              <Column field="availability" header="Status" body={StatusAndSlotsCell} />
-              <Column field="section" header="Course Info" body={CourseInfoCell} />
+              <Column field="to_cart_button" header="" body={(params : GroupedSections) => params.lecture   && ToCartButtonCell(params.lecture)} />
+              <Column field="availability" header="Status" body={(params : GroupedSections) => params.lecture && StatusAndSlotsCell(params.lecture)} />
+              <Column field="section" header="Course Info" body={(params : GroupedSections) => params.lecture && CourseInfoCell(params.lecture)} />
               <Column field="instructor_name" header="Instructor" body={(row : GroupedSections) => Array.isArray(row.lecture?.instructor_name) ? row.lecture?.instructor_name.join(', ') : row.lecture?.instructor_name} />
 
-              <Column field="professor_rating" header="Rating" body={RateMyProfessorCell} />
-              <Column field="grade_distribution" header="Grades" body={GradeDistributionCell} />
-              <Column field="info" header="Info" body={InfoCell} />
+              <Column field="professor_rating" header="Rating" body={(params : GroupedSections) => params.lecture && RateMyProfessorCell(params.lecture)} />
+              <Column field="grade_distribution" header="Grades" body={(params : GroupedSections) => params.lecture && GradeDistributionCell(params.lecture)} />
+              <Column field="info" header="Info" body={(params : GroupedSections) => params.lecture && InfoCell(params.lecture)} />
             </DataTable>
 
             

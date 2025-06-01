@@ -59,7 +59,7 @@ export interface ScheduleEvent {
 
 export const CalendarView = (params: ModifiedSection) => {
     // @ts-ignore
-    const {dayTime, courseData} = params.row;
+    const {dayTime, courseData} = params;
 
     const [eventData, setEventData] = useState<ScheduleEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -112,7 +112,7 @@ export const CalendarView = (params: ModifiedSection) => {
 
                             events.push({
                                 id: eventId++,
-                                subj: courseData.code,
+                                subj: courseData?.code || '',
                                 start: start_time,
                                 end: end_time,
                                 days: meeting_days.map((dayValue) => { return {day: dayValue,isOverlapping: false}}),

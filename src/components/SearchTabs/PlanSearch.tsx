@@ -12,17 +12,86 @@ import {
   Checkbox,
   FormControlLabel
 } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
 import { majorPlans } from '../../Data/PlanSearch/MajorPlans';
 import { minorPlans } from '../../Data/PlanSearch/MinorPlans';
 import { TermIdByName } from '../../Data/TermID';
 import { AppLogger } from '../../utils/logger';
-import { OpenCourseSectionsColumn, sortSections } from '../../types/DataGridCourse';
+import { sortSections } from '../../types/DataGridCourse';
 import { fetchCourseSearchData } from '../../services/api';
 import type { RequiredCourse, MajorPlan, Subplan, MinorPlan } from '../../types/Plans';
-import type { MergedCourseData } from '../../utils/CourseSearch/MergeDataUtil';
+import type { MergedCourseData, GroupedSections } from '../../utils/CourseSearch/MergeDataUtil';
 import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { ToCartButtonCell } from '../DataGridCells/ToCartButtonCell';
+import { StatusAndSlotsCell } from '../DataGridCells/StatusAndSlotsCell';
+import { CourseInfoCell } from '../DataGridCells/CourseInfoCell';
+import { RateMyProfessorCell } from '../DataGridCells/RateMyProfessorCell';
+import { GradeDistributionCell } from '../DataGridCells/GradeDistributionCell';
+import { InfoCell } from '../DataGridCells/InfoCell';
+
+const customStyles = `
+  .custom-datatable .p-datatable-thead > tr > th {
+    background-color: rgb(5, 7, 10) !important;
+    color: white !important;
+    border-color: rgb(30, 35, 45) !important;
+  }
+  
+  .custom-datatable .p-datatable-tbody > tr:nth-child(even) {
+    background-color: rgb(11, 14, 20) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-tbody > tr:nth-child(odd) {
+    background-color: rgb(20, 25, 35) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-tbody > tr:hover {
+    background-color: rgb(25, 30, 40) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-tbody > tr > td {
+    border-color: rgb(30, 35, 45) !important;
+  }
+  
+  .custom-datatable .p-row-toggler {
+    color: white !important;
+  }
+  
+  .custom-datatable .p-row-toggler:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-scrollable-body {
+    background-color: rgb(20, 25, 35) !important;
+  }
+  
+  /* Expanded row styling */
+  .custom-datatable .p-datatable-row-expansion {
+    background-color: rgb(15, 18, 25) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-row-expansion .card {
+    background-color: rgb(20, 25, 35) !important;
+    border: 1px solid rgb(30, 35, 45) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-row-expansion h5,
+  .custom-datatable .p-datatable-row-expansion h6 {
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-row-expansion .border-300 {
+    border-color: rgb(30, 35, 45) !important;
+  }
+`;
+
 export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
   return (
     <Box sx={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -234,7 +303,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
               }}>
                 {requirements[requirementKey].courses.filter((course: RequiredCourse) => {
                   if (planSearchData.hideNoSections) {
-                    return Object.keys((planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections).length > 0;
+                    return (planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections && Object.keys((planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections).length > 0;
                   }
                   return true;
                 }).map((course: RequiredCourse, index: number, filteredCourses: RequiredCourse[]) => (
@@ -259,90 +328,29 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
                       width: '100%', 
                       mb: 2
                     }}>
-                      {Object.keys((planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections).length > 0 ? (
+                      { (planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections && Object.keys((planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections).length > 0 ? (
                         <Box sx={{ 
                           height: '100%', // Fixed height for DataGrid
                           width: '100%',
                           display: 'flex'
                         }}>
-                          <DataGrid
-                            getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
-                            rows={Object.values((planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`].sections).sort(sortSections)}
-                            columns={OpenCourseSectionsColumn}
-                            columnVisibilityModel={{ id: false }}
-                            disableRowSelectionOnClick
-                            pageSizeOptions={[5, 10, 25]}
-                            initialState={{
-                              pagination: {
-                                paginationModel: {
-                                  pageSize: 5,
-                                },
-                              },
-                            }}
-                            sx={{
-                              width: '100%',
-                              height: '100%', // Use full height of container
-                              backgroundColor: 'transparent',
-                              border: '1px solid rgba(255, 255, 255, 0.1)',
-                              borderRadius: '8px',
-                              '& .MuiDataGrid-main': { overflow: 'visible' },
-                              '& .MuiDataGrid-columnHeaders': {
-                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                minHeight: '64px !important',
-                                lineHeight: '24px !important',
-                                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                              },
-                              '& .MuiDataGrid-columnHeaderTitle': {
-                                fontWeight: 'bold',
-                                overflow: 'visible',
-                                lineHeight: '1.2 !important',
-                                whiteSpace: 'normal',
-                                textOverflow: 'clip',
-                                color: 'white',
-                                fontSize: {
-                                  xs: '0.85rem',
-                                  sm: '0.95rem',
-                                  md: '1.1rem'
-                                }
-                              },
-                              '& .MuiDataGrid-cell': {
-                                whiteSpace: 'normal',
-                                padding: '8px 16px',
-                                color: 'rgba(255, 255, 255, 0.9)',
-                                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                                fontSize: {
-                                  xs: '0.8rem',
-                                  sm: '0.9rem',
-                                  md: '1rem'
-                                }
-                              },
-                              '& .MuiDataGrid-row': {
-                                width: '100%',
-                                '&:hover': {
-                                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                                },
-                              },
-                              '& .MuiDataGrid-virtualScroller': {
-                                width: '100%'
-                              },
-                              '& .MuiButtonBase-root': {
-                                color: 'rgba(255, 255, 255, 0.7)',
-                                fontSize: {
-                                  xs: '0.75rem',
-                                  sm: '0.85rem',
-                                  md: '0.95rem'
-                                },
-                                '& .MuiSvgIcon-root': {
-                                  color: 'rgba(255, 255, 255, 0.7)'
-                                }
-                              },
-                              '& .MuiDataGrid-footerContainer': {
-                                backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-                                color: 'rgba(255, 255, 255, 0.7)',
-                              }
-                            }}
-                          />
+                          <style>{customStyles}</style>
+                          <DataTable
+                            dataKey="id"
+                            value={Object.values((planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`].sections).sort(sortSections)}
+                            paginator
+                            rows={5}
+                            rowsPerPageOptions={[5, 10, 25]}
+                            className="custom-datatable"
+                          >
+                            <Column field="to_cart_button" header="" body={(params: GroupedSections) => params.lecture && ToCartButtonCell(params.lecture)} />
+                            <Column field="availability" header="Status" body={(params: GroupedSections) => params.lecture && StatusAndSlotsCell(params.lecture)} />
+                            <Column field="section" header="Course Info" body={(params: GroupedSections) => params.lecture && CourseInfoCell(params.lecture)} />
+                            <Column field="instructor_name" header="Instructor" body={(row: GroupedSections) => Array.isArray(row.lecture?.instructor_name) ? row.lecture?.instructor_name.join(', ') : row.lecture?.instructor_name} />
+                            <Column field="professor_rating" header="Rating" body={(params: GroupedSections) => params.lecture && RateMyProfessorCell(params.lecture)} />
+                            <Column field="grade_distribution" header="Grades" body={(params: GroupedSections) => params.lecture && GradeDistributionCell(params.lecture)} />
+                            <Column field="info" header="Info" body={(params: GroupedSections) => params.lecture && InfoCell(params.lecture)} />
+                          </DataTable>
                         </Box>
                       ) : (
                         <Typography variant="body1" sx={{ 

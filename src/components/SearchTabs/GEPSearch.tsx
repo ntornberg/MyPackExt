@@ -6,13 +6,81 @@ import { fetchGEPCourseData } from "../../services/api/CourseSearch/dataService"
 import { GEP_COURSES } from "../../Data/CourseSearch/gep_courses.typed";
 import type { MergedCourseData } from "../../utils/CourseSearch/MergeDataUtil";
 import { TermIdByName } from "../../Data/TermID";
-import { OpenCourseSectionsColumn } from '../../types/DataGridCourse';
-import { DataGrid } from '@mui/x-data-grid';
 import type { RequiredCourse } from "../../types/Plans";
 import { sortSections } from '../../types/DataGridCourse';
 import { type GEPData } from "../TabDataStore/TabData";
 import React from "react";
 import { SubjectMenuValues } from "../../Data/SubjectSearchValues";
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { ToCartButtonCell } from '../DataGridCells/ToCartButtonCell';
+import { StatusAndSlotsCell } from '../DataGridCells/StatusAndSlotsCell';
+import { CourseInfoCell } from '../DataGridCells/CourseInfoCell';
+import { RateMyProfessorCell } from '../DataGridCells/RateMyProfessorCell';
+import { GradeDistributionCell } from '../DataGridCells/GradeDistributionCell';
+import { InfoCell } from '../DataGridCells/InfoCell';
+import type { GroupedSections } from '../../utils/CourseSearch/MergeDataUtil';
+
+const customStyles = `
+  .custom-datatable .p-datatable-thead > tr > th {
+    background-color: rgb(5, 7, 10) !important;
+    color: white !important;
+    border-color: rgb(30, 35, 45) !important;
+  }
+  
+  .custom-datatable .p-datatable-tbody > tr:nth-child(even) {
+    background-color: rgb(11, 14, 20) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-tbody > tr:nth-child(odd) {
+    background-color: rgb(20, 25, 35) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-tbody > tr:hover {
+    background-color: rgb(25, 30, 40) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-tbody > tr > td {
+    border-color: rgb(30, 35, 45) !important;
+  }
+  
+  .custom-datatable .p-row-toggler {
+    color: white !important;
+  }
+  
+  .custom-datatable .p-row-toggler:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-scrollable-body {
+    background-color: rgb(20, 25, 35) !important;
+  }
+  
+  /* Expanded row styling */
+  .custom-datatable .p-datatable-row-expansion {
+    background-color: rgb(15, 18, 25) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-row-expansion .card {
+    background-color: rgb(20, 25, 35) !important;
+    border: 1px solid rgb(30, 35, 45) !important;
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-row-expansion h5,
+  .custom-datatable .p-datatable-row-expansion h6 {
+    color: white !important;
+  }
+  
+  .custom-datatable .p-datatable-row-expansion .border-300 {
+    border-color: rgb(30, 35, 45) !important;
+  }
+`;
 
 export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
   return (
@@ -97,75 +165,33 @@ const MemoizedAutocompletes: React.FC<AutocompletesProps> = React.memo(({
   );
 });
 
-// Memoized DataGrid component to prevent unnecessary re-renders - MOVED OUTSIDE COMPONENT
-const MemoizedDataGrid = React.memo(({ 
+// Memoized DataTable component to prevent unnecessary re-renders - MOVED OUTSIDE COMPONENT
+const MemoizedDataTable = React.memo(({ 
   sections,
   sortFunc 
 }: { 
-  sections: any[]; 
-  sortFunc: (a: any, b: any) => number 
+  sections: GroupedSections[]; 
+  sortFunc: (a: GroupedSections, b: GroupedSections) => number 
 }) => (
-  <DataGrid
-    getRowId={(row) => row.id || row.classNumber || `${row.section}-${row.instructor_name?.[0] || ''}`}
-    rows={sections.sort(sortFunc)}
-    columns={OpenCourseSectionsColumn}
-    columnVisibilityModel={{ id: false }}
-    disableRowSelectionOnClick
-    pageSizeOptions={[5, 10, 25]}
-    initialState={{
-      pagination: {
-        paginationModel: {
-          pageSize: 5,
-        },
-      },
-    }}
-    sx={{
-      width: '100%',
-      '& .MuiDataGrid-main': { overflow: 'visible' },
-      '& .MuiDataGrid-columnHeaders': {
-        backgroundColor: (theme) => theme.palette.background.paper,
-        minHeight: '64px !important',
-        lineHeight: '24px !important',
-      },
-      '& .MuiDataGrid-columnHeaderTitle': {
-        fontWeight: 'bold',
-        overflow: 'visible',
-        lineHeight: '1.2 !important',
-        whiteSpace: 'normal',
-        textOverflow: 'clip',
-        fontSize: {
-          xs: '0.75rem',
-          sm: '0.875rem',
-          md: '1rem'
-        }
-      },
-      '& .MuiDataGrid-cell': {
-        whiteSpace: 'normal',
-        padding: '8px 16px',
-        fontSize: {
-          xs: '0.75rem',
-          sm: '0.875rem',
-          md: '0.925rem'
-        }
-      },
-      '& .MuiDataGrid-row': {
-        width: '100%'
-      },
-      '& .MuiDataGrid-virtualScroller': {
-        width: '100%'
-      },
-      '& .MuiButtonBase-root': {
-        fontSize: {
-          xs: '0.7rem',
-          sm: '0.8rem',
-          md: '0.875rem'
-        },
-        '& .MuiSvgIcon-root' :{
-          color: 'none'
-        }
-      }
-    }}
-  />
+  <>
+    <style>{customStyles}</style>
+    <DataTable 
+      dataKey="id"
+      value={sections.sort(sortFunc)}
+      paginator
+      rows={5}
+      rowsPerPageOptions={[5, 10, 25]}
+      className="custom-datatable"
+    >
+      <Column field="to_cart_button" header="" body={(params: GroupedSections) => params.lecture && ToCartButtonCell(params.lecture)} />
+      <Column field="availability" header="Status" body={(params: GroupedSections) => params.lecture && StatusAndSlotsCell(params.lecture)} />
+      <Column field="section" header="Course Info" body={(params: GroupedSections) => params.lecture && CourseInfoCell(params.lecture)} />
+      <Column field="instructor_name" header="Instructor" body={(row: GroupedSections) => Array.isArray(row.lecture?.instructor_name) ? row.lecture?.instructor_name.join(', ') : row.lecture?.instructor_name} />
+      <Column field="professor_rating" header="Rating" body={(params: GroupedSections) => params.lecture && RateMyProfessorCell(params.lecture)} />
+      <Column field="grade_distribution" header="Grades" body={(params: GroupedSections) => params.lecture && GradeDistributionCell(params.lecture)} />
+      <Column field="info" header="Info" body={(params: GroupedSections) => params.lecture && InfoCell(params.lecture)} />
+    </DataTable>
+  </>
 ));
 
 // Define the structure for grouped courses
@@ -228,7 +254,7 @@ const GEPTree: React.FC<GEPTreeProps> = React.memo((
                   />
                   {courseDataEntry?.sections && Object.keys(courseDataEntry.sections).length > 0 ? (
                     <Box sx={{ height: 'auto', minHeight: '250px', width: '100%', display: 'flex' }}>
-                      <MemoizedDataGrid sections={Object.values(courseDataEntry.sections)} sortFunc={sortSections} />
+                      <MemoizedDataTable sections={Object.values(courseDataEntry.sections)} sortFunc={sortSections} />
                     </Box>
                   ) : (
                     <Typography variant="body1" sx={{ p: 2 }}>

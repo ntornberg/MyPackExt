@@ -29,7 +29,7 @@ function getEnrollmentColor(enrollment: string | undefined): string {
 }
 
 export const StatusAndSlotsCell = (params: ModifiedSection) => {
-    const { availability, enrollment } = params;
+    const { availability, enrollment,section } = params;
     
     let statusColor = "success";
     if(availability === "Open"){
@@ -57,6 +57,16 @@ export const StatusAndSlotsCell = (params: ModifiedSection) => {
                 size="small"
                 sx={{ 
                     backgroundColor: chipColor, 
+                    color: '#fff', 
+                    fontWeight: 600,
+                    fontSize: {xs: '0.7rem', sm: '0.75rem', md: '0.8rem'}
+                }} 
+            />
+            <Chip 
+                label={section} 
+                size="small"
+                sx={{ 
+                    backgroundColor: '#000', 
                     color: '#fff', 
                     fontWeight: 600,
                     fontSize: {xs: '0.7rem', sm: '0.75rem', md: '0.8rem'}
