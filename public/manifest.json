@@ -1,7 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "MyPackPLus",
+
+  "name": "MyPack Plus",
   "version": "3.5.3",
+
   "description": "If the menu isn't working please refresh mypack and if that doesn't work please toggle the extension off and on again.",
   "permissions": ["storage"],
   "host_permissions": [
