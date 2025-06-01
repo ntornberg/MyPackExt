@@ -43,6 +43,7 @@
     "cheerio": "^1.0.0",
     "devextreme-react": "^24.2.7",
     "jsonpath-plus": "^10.3.0",
+    "primereact": "^10.9.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-gauge-component": "^1.2.64",

@@ -19,6 +19,7 @@ const LS_KEY = "firstStartDismissed";
 /**
  * Displays a quick‑start guide the first time the user opens the extension.
  * A persistent "Don't show again" checkbox lets them skip the dialog next time.
+ * //TODO: this needs to be redone this looks stupid
  */
 export default function FirstStartDialog() {
   const [open, setOpen] = useState(false);

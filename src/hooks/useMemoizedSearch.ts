@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import type { MergedCourseData } from '../utils/CourseSearch/MergeDataUtil';
-import { AppLogger } from '../utils/logger';
+
 
 type ProgressCallback = (progress: number, message?: string) => void;
 
@@ -75,7 +75,6 @@ export const useMemoizedSearch = (
           cacheRef.current[cacheKey] = result;
           setData(result);
         }
-        AppLogger.info(`[GEP DEBUG] Result:`, result);
         return result;
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Unknown error occurred');

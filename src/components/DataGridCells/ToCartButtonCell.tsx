@@ -1,12 +1,11 @@
 import { Alert, AlertTitle, Button, ButtonBase, Popper } from "@mui/material";
-import type { GridRenderCellParams } from "@mui/x-data-grid";
 import { AppLogger } from "../../utils/logger";
 import { generateScriptContentUrl } from "../../services/ToCartService";
 import { useState, useRef } from "react";
+import type {  ModifiedSection } from "../../utils/CourseSearch/MergeDataUtil";
 
-export const ToCartButtonCell = (params: GridRenderCellParams) => {
-    const section = params.row;
-    
+export const ToCartButtonCell = (params: ModifiedSection) => {
+    const section = params;
     // Extract the necessary parameters from the row
     const {
         course_id,

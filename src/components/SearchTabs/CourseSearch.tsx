@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { 
   Autocomplete, 
   Box, 
@@ -6,48 +6,27 @@ import {
   List, 
   TextField,
   DialogContent,
-  CircularProgress,
   Typography,
 } from '@mui/material';
 import { TermIdByName } from '../../Data/TermID';
 import { DEPT_COURSES } from '../../Data/CourseSearch/department_courses.typed';
 import { AppLogger } from '../../utils/logger';
 import { fetchSingleCourseData } from '../../services/api/CourseSearch/dataService';
-import { OpenCourseSectionsColumn, sortSections } from '../../types/DataGridCourse';
-import { DataGrid } from '@mui/x-data-grid';
+import {  sortSections } from '../../types/DataGridCourse';
+import { DataTable, type DataTableValueArray, type DataTableExpandedRows } from 'primereact/datatable';
+import { Column } from 'primereact/column';
 import { useMemoizedSearch } from '../../hooks/useMemoizedSearch';
 import type { CourseSearchData } from '../TabDataStore/TabData';
+import { ToCartButtonCell } from '../DataGridCells/ToCartButtonCell';
+import { StatusAndSlotsCell } from '../DataGridCells/StatusAndSlotsCell';
+import { CourseInfoCell } from '../DataGridCells/CourseInfoCell';
+import { RateMyProfessorCell } from '../DataGridCells/RateMyProfessorCell';
+import { GradeDistributionCell } from '../DataGridCells/GradeDistributionCell';
+import { CircularProgressWithLabel } from '../shared/CircularProgressWithLabel';
+import { customDataTableStyles } from '../../styles/dataTableStyles';
 
-export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
-  return (
-    <Box sx={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
-      <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-        <CircularProgress variant="determinate" value={value} />
-        <Box
-          sx={{
-            top: 0,
-            left: 0,
-            bottom: 0,
-            right: 0,
-            position: 'absolute',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Typography variant="caption" component="div" color="text.secondary">
-            {`${Math.round(value)}%`}
-          </Typography>
-        </Box>
-      </Box>
-      {label && (
-        <Typography variant="caption" component="div" color="text.secondary" sx={{ mt: 1, textAlign: 'center', maxWidth: '200px' }}>
-          {label}
-        </Typography>
-      )}
-    </Box>
-  );
-}
+import type { GroupedSections, ModifiedSection } from '../../utils/CourseSearch/MergeDataUtil';
+import { InfoCell } from '../DataGridCells/InfoCell';
 
 // Define the department course type
 interface DeptCourse {
@@ -57,9 +36,6 @@ interface DeptCourse {
 
 export default function CourseSearch({setCourseSearchTabData, courseSearchData}: {setCourseSearchTabData: (key: keyof CourseSearchData, value: any) => void, courseSearchData: CourseSearchData}) {
 
-  // To store the selected course data from dropdown
-  
-  
   // Use the memoized search hook
   const { 
     search, 
@@ -134,8 +110,22 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
     }
   };
 
- 
-  
+
+  const [expandedRows, setExpandedRows] = useState<DataTableExpandedRows | DataTableValueArray | undefined>(undefined);
+  const rowExpansionTemplate = (data: GroupedSections) => {
+    AppLogger.info("Row expansion template", { data });
+    if (!data.labs) return null; // No labs to show
+    return (
+      <Box sx={{ width: '50%', display: 'flex', flexDirection: 'column' }}>
+      <DataTable value={data.labs} paginator rows={10} rowsPerPageOptions={[10, 25, 50]}>
+        <Column field="id" header="ID" body={(row : ModifiedSection) => row.section}/>
+        <Column field="to_cart_button" header="" body={ToCartButtonCell} />
+        <Column field="section" header="Section" body={CourseInfoCell} />
+        <Column field="availability" header="Status" body={StatusAndSlotsCell} />
+      </DataTable>
+      </Box>
+    );
+   };
   return (
     <DialogContent>
       <Box sx={{ width: '100%', p: 2 }}>
@@ -144,7 +134,6 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
             sx={{ width: '50%', mb: 1 }}
             id="term_selector"
             options={Object.keys(TermIdByName)}
-            defaultValue={TermIdByName[Object.keys(TermIdByName)[0]]}
             value={courseSearchData.selectedTerm}
             onChange={(_, value) => setCourseSearchTabData('selectedTerm', value)}
             renderInput={(params) => 
@@ -199,71 +188,55 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
         mb: 4
       }}>
         
-        {courseData?.sections && courseData.sections.length > 0 ? (
+        {courseData?.sections && Object.keys(courseData.sections).length > 0 ? (
           <Box sx={{ 
             width: '100%',
             display: 'flex',
             flexDirection: 'column'
           }}>
-            
-            <DataGrid
-              getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
-              rows={courseData.sections.sort(sortSections)}
-              columns={OpenCourseSectionsColumn}
-              columnVisibilityModel={{ id: false }}
-              disableRowSelectionOnClick
-              pageSizeOptions={[5, 10, 25]}
-              initialState={{
-                pagination: {
-                  paginationModel: {
-                    pageSize: 5,
-                  },
-                },
-              }}
-              sx={{
-                width: '100%',
-                '& .MuiDataGrid-main': { overflow: 'visible' },
-                '& .MuiDataGrid-columnHeaders': {
-                  backgroundColor: (theme) => theme.palette.background.paper,
-                  minHeight: '64px !important',
-                  lineHeight: '24px !important',
-                },
-                '& .MuiDataGrid-columnHeaderTitle': {
-                  fontWeight: 'bold',
-                  overflow: 'visible',
-                  lineHeight: '1.2 !important',
-                  whiteSpace: 'normal',
-                  textOverflow: 'clip',
-                  fontSize: {
-                    xs: '0.75rem',
-                    sm: '0.875rem',
-                    md: '1rem'
-                  }
-                },
-                '& .MuiDataGrid-cell': {
-                  whiteSpace: 'normal',
-                  padding: '8px 16px',
-                  fontSize: {
-                    xs: '0.75rem',
-                    sm: '0.875rem',
-                    md: '0.925rem'
-                  }
-                },
-                '& .MuiDataGrid-row': {
-                  width: '100%'
-                },
-                '& .MuiDataGrid-virtualScroller': {
-                  width: '100%'
-                },
-                '& .MuiButtonBase-root': {
-                  fontSize: {
-                    xs: '0.7rem',
-                    sm: '0.8rem',
-                    md: '0.875rem'
-                  }
+            <style>{customDataTableStyles}</style>
+            <DataTable 
+              dataKey="uniqueRowId"
+              value={Object.values(courseData.sections).sort(sortSections).flatMap((section, index) => {
+                // If section has lecture and labs, return the grouped section (for expansion)
+                if (section.lecture && section.labs && section.labs.length > 0) {
+                  return [{...section, uniqueRowId: `grouped-${section.lecture.section || index}`}];
                 }
-              }}
-            />
+                // If section has lecture but no labs, return just the lecture
+                if (section.lecture && (!section.labs || section.labs.length === 0)) {
+                  return [{...section, uniqueRowId: `lecture-only-${section.lecture.section || index}`}];
+                }
+                // If no lecture but has labs, return individual lab rows
+                if (section.labs && section.labs.length > 0) {
+                  return section.labs.reduce((acc : (GroupedSections & {uniqueRowId: string})[], lab, labIndex) => {
+                    acc.push({labs: null, lecture: lab, uniqueRowId: `lab-only-${lab.section || `${index}-${labIndex}`}`});
+                    return acc;
+                  }, []);
+                }
+                // Fallback
+                return [];
+              })}
+              paginator
+              expandedRows={expandedRows}
+              onRowToggle={(e) => setExpandedRows(e.data)}
+              rowExpansionTemplate={rowExpansionTemplate}
+              rows={100}
+              className="custom-datatable"
+              rowsPerPageOptions={[10, 25, 50]}
+             
+            >
+              <Column expander={(row) => row.labs && row.labs.length > 0}></Column>
+              <Column field="to_cart_button" header="" body={(params : GroupedSections) => params.lecture   && ToCartButtonCell(params.lecture)} />
+              <Column field="availability" header="Status" body={(params : GroupedSections) => params.lecture && StatusAndSlotsCell(params.lecture)} />
+              <Column field="section" header="Course Info" body={(params : GroupedSections) => params.lecture && CourseInfoCell(params.lecture)} />
+              <Column field="instructor_name" header="Instructor" body={(row : GroupedSections) => Array.isArray(row.lecture?.instructor_name) ? row.lecture?.instructor_name.join(', ') : row.lecture?.instructor_name} />
+
+              <Column field="professor_rating" header="Rating" body={(params : GroupedSections) => params.lecture && RateMyProfessorCell(params.lecture)} />
+              <Column field="grade_distribution" header="Grades" body={(params : GroupedSections) => params.lecture && GradeDistributionCell(params.lecture)} />
+              <Column field="info" header="Info" body={(params : GroupedSections) => params.lecture && InfoCell(params.lecture)} />
+            </DataTable>
+
+            
           </Box>
         ) : (
           <Typography variant="body1" sx={{ p: 2 }}>

@@ -1,6 +1,7 @@
 import type { RequiredCourse } from "../../types/Plans";
 import type { MergedCourseData } from '../../utils/CourseSearch/MergeDataUtil';
 import { TermIdByName } from '../../Data/TermID';
+// Keeps track of search info when switching dialog tabs.
 export type CourseSearchData = {
     selectedTerm: string | null;
     searchSubject: string | null;

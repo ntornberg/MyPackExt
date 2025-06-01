@@ -1,4 +1,4 @@
-import { Box, CircularProgress, FormControlLabel, ListItem, ListItemText, Typography, Checkbox} from "@mui/material";
+import { Box, FormControlLabel, ListItem, ListItemText, Typography, Checkbox} from "@mui/material";
 import { Button, TextField, Autocomplete, List } from "@mui/material";
 import { AppLogger } from "../../utils/logger";
 import { useMemo, useCallback, useState } from "react";
@@ -6,44 +6,22 @@ import { fetchGEPCourseData } from "../../services/api/CourseSearch/dataService"
 import { GEP_COURSES } from "../../Data/CourseSearch/gep_courses.typed";
 import type { MergedCourseData } from "../../utils/CourseSearch/MergeDataUtil";
 import { TermIdByName } from "../../Data/TermID";
-import { OpenCourseSectionsColumn } from '../../types/DataGridCourse';
-import { DataGrid } from '@mui/x-data-grid';
 import type { RequiredCourse } from "../../types/Plans";
 import { sortSections } from '../../types/DataGridCourse';
 import { type GEPData } from "../TabDataStore/TabData";
 import React from "react";
 import { SubjectMenuValues } from "../../Data/SubjectSearchValues";
-
-export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
-  return (
-    <Box sx={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
-      <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-        <CircularProgress variant="determinate" value={value} />
-        <Box
-          sx={{
-            top: 0,
-            left: 0,
-            bottom: 0,
-            right: 0,
-            position: 'absolute',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Typography variant="caption" component="div" color="text.secondary">
-            {`${Math.round(value)}%`}
-          </Typography>
-        </Box>
-      </Box>
-      {label && (
-        <Typography variant="caption" component="div" color="text.secondary" sx={{ mt: 1, textAlign: 'center', maxWidth: '200px' }}>
-          {label}
-        </Typography>
-      )}
-    </Box>
-  );
-}
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { ToCartButtonCell } from '../DataGridCells/ToCartButtonCell';
+import { StatusAndSlotsCell } from '../DataGridCells/StatusAndSlotsCell';
+import { CourseInfoCell } from '../DataGridCells/CourseInfoCell';
+import { RateMyProfessorCell } from '../DataGridCells/RateMyProfessorCell';
+import { GradeDistributionCell } from '../DataGridCells/GradeDistributionCell';
+import { InfoCell } from '../DataGridCells/InfoCell';
+import type { GroupedSections } from '../../utils/CourseSearch/MergeDataUtil';
+import { CircularProgressWithLabel } from '../shared/CircularProgressWithLabel';
+import { customDataTableStyles } from '../../styles/dataTableStyles';
 
 interface AutocompletesProps {
   selectedTerm: string | null;
@@ -97,75 +75,33 @@ const MemoizedAutocompletes: React.FC<AutocompletesProps> = React.memo(({
   );
 });
 
-// Memoized DataGrid component to prevent unnecessary re-renders - MOVED OUTSIDE COMPONENT
-const MemoizedDataGrid = React.memo(({ 
+// Memoized DataTable component to prevent unnecessary re-renders
+const MemoizedDataTable = React.memo(({ 
   sections,
   sortFunc 
 }: { 
-  sections: any[]; 
-  sortFunc: (a: any, b: any) => number 
+  sections: GroupedSections[]; 
+  sortFunc: (a: GroupedSections, b: GroupedSections) => number 
 }) => (
-  <DataGrid
-    getRowId={(row) => row.id || row.classNumber || `${row.section}-${row.instructor_name?.[0] || ''}`}
-    rows={sections.sort(sortFunc)}
-    columns={OpenCourseSectionsColumn}
-    columnVisibilityModel={{ id: false }}
-    disableRowSelectionOnClick
-    pageSizeOptions={[5, 10, 25]}
-    initialState={{
-      pagination: {
-        paginationModel: {
-          pageSize: 5,
-        },
-      },
-    }}
-    sx={{
-      width: '100%',
-      '& .MuiDataGrid-main': { overflow: 'visible' },
-      '& .MuiDataGrid-columnHeaders': {
-        backgroundColor: (theme) => theme.palette.background.paper,
-        minHeight: '64px !important',
-        lineHeight: '24px !important',
-      },
-      '& .MuiDataGrid-columnHeaderTitle': {
-        fontWeight: 'bold',
-        overflow: 'visible',
-        lineHeight: '1.2 !important',
-        whiteSpace: 'normal',
-        textOverflow: 'clip',
-        fontSize: {
-          xs: '0.75rem',
-          sm: '0.875rem',
-          md: '1rem'
-        }
-      },
-      '& .MuiDataGrid-cell': {
-        whiteSpace: 'normal',
-        padding: '8px 16px',
-        fontSize: {
-          xs: '0.75rem',
-          sm: '0.875rem',
-          md: '0.925rem'
-        }
-      },
-      '& .MuiDataGrid-row': {
-        width: '100%'
-      },
-      '& .MuiDataGrid-virtualScroller': {
-        width: '100%'
-      },
-      '& .MuiButtonBase-root': {
-        fontSize: {
-          xs: '0.7rem',
-          sm: '0.8rem',
-          md: '0.875rem'
-        },
-        '& .MuiSvgIcon-root' :{
-          color: 'none'
-        }
-      }
-    }}
-  />
+  <>
+    <style>{customDataTableStyles}</style>
+    <DataTable 
+      dataKey="id"
+      value={sections.sort(sortFunc)}
+      paginator
+      rows={5}
+      rowsPerPageOptions={[5, 10, 25]}
+      className="custom-datatable"
+    >
+      <Column field="to_cart_button" header="" body={(params: GroupedSections) => params.lecture && ToCartButtonCell(params.lecture)} />
+      <Column field="availability" header="Status" body={(params: GroupedSections) => params.lecture && StatusAndSlotsCell(params.lecture)} />
+      <Column field="section" header="Course Info" body={(params: GroupedSections) => params.lecture && CourseInfoCell(params.lecture)} />
+      <Column field="instructor_name" header="Instructor" body={(row: GroupedSections) => Array.isArray(row.lecture?.instructor_name) ? row.lecture?.instructor_name.join(', ') : row.lecture?.instructor_name} />
+      <Column field="professor_rating" header="Rating" body={(params: GroupedSections) => params.lecture && RateMyProfessorCell(params.lecture)} />
+      <Column field="grade_distribution" header="Grades" body={(params: GroupedSections) => params.lecture && GradeDistributionCell(params.lecture)} />
+      <Column field="info" header="Info" body={(params: GroupedSections) => params.lecture && InfoCell(params.lecture)} />
+    </DataTable>
+  </>
 ));
 
 // Define the structure for grouped courses
@@ -226,9 +162,9 @@ const GEPTree: React.FC<GEPTreeProps> = React.memo((
                     secondary={courseKey}
                     sx={{ mb: 1 }}
                   />
-                  {courseDataEntry?.sections?.length > 0 ? (
+                  {courseDataEntry?.sections && Object.keys(courseDataEntry.sections).length > 0 ? (
                     <Box sx={{ height: 'auto', minHeight: '250px', width: '100%', display: 'flex' }}>
-                      <MemoizedDataGrid sections={courseDataEntry.sections} sortFunc={sortSections} />
+                      <MemoizedDataTable sections={Object.values(courseDataEntry.sections)} sortFunc={sortSections} />
                     </Box>
                   ) : (
                     <Typography variant="body1" sx={{ p: 2 }}>
@@ -300,7 +236,6 @@ export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepS
               }
             );
             
-            AppLogger.info("[GEP RENDER DEBUG] Received course data:", courseDataResult);
             setGepSearchTabData('courseData', courseDataResult || {});
           }
         }
@@ -321,7 +256,7 @@ export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepS
         return courses.filter((course: RequiredCourse) => {
           const key = `${course.course_abr} ${course.catalog_num}`;
           const courseDataEntry = (courseData as Record<string, MergedCourseData>)[key];
-          return courseDataEntry && courseDataEntry.sections && courseDataEntry.sections.length > 0;
+          return courseDataEntry && courseDataEntry.sections && Object.keys(courseDataEntry.sections).length > 0;
         });
     }, [courses, hideNoSections, courseData, isLoaded]);
 

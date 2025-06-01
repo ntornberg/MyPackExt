@@ -1,4 +1,4 @@
-import type { GradeData, MatchedRateMyProf } from '../../types';
+import type { GradeData, MatchedRateMyProf } from '../../types/SupaBaseResponseType';
 
 /**
  * Interface for a single course data response from the API

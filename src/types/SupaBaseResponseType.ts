@@ -1,4 +1,4 @@
-﻿// --- Course Data Structure ---
+﻿// Course Data from the API
 export type Course = {
     title: string;
     id: string;

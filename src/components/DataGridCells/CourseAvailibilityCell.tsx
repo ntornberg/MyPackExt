@@ -1,8 +1,8 @@
 import { Chip } from "@mui/material";
-import type { GridRenderCellParams } from "@mui/x-data-grid";
+import type { ModifiedSection } from "../../utils/CourseSearch/MergeDataUtil";
 
-export const CourseAvailibilityCell = (params: GridRenderCellParams) => {
-    const { availability } = params.row;
+export const CourseAvailibilityCell = (params: ModifiedSection) => {
+    const { availability } = params;
     let color = "success";
     if(availability === "Open"){
         color = "success";
