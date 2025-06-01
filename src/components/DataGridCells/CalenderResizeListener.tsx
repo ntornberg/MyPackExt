@@ -111,7 +111,7 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
         </Typography>
       ))}
 
-      {/* ───── time-axis (col 1, row 2) ───── */}
+      {/*time axis ( needs to be refactored way too big*/}
       <Box
         sx={{
           gridColumn: 1,
@@ -136,7 +136,7 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
                 userSelect: 'none',
               }}
             >
-              {/* Shorter format on mobile */}
+              {/* ts doesn't even work on mobile this is useless */}
               {window.innerWidth < 600
                 ? `${((h + 11) % 12) + 1}${h < 12 ? 'a' : 'p'}`
                 : `${((h + 11) % 12) + 1}${h < 12 ? 'AM' : 'PM'}`}
@@ -145,7 +145,7 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
         })}
       </Box>
 
-      {/* ───── body (events area) ───── */}
+      {/* Main body of the*/}
       <Box
         ref={bodyRef}
         sx={{

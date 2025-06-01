@@ -16,24 +16,18 @@ import {scrapePlanner, scrapeScheduleTable} from "./services/scraper.ts";
 import {debounce} from "./utils/common.ts";
 import {setupListener} from "./services/PreloadCache/siteResponseStorage.ts";
 import SlideOutDrawer from "./components/MainPopupCard.tsx";
-// Stores courses from the main schedule table// Stores courses from the planner/cart
 
 AppLogger.info("MyPack Enhancer script started.");
 
 import createCache from '@emotion/cache';
 import { CacheProvider } from "@emotion/react";
 import FirstStartDialog from "./components/UserGuide/FirstStart.tsx";
-
-// Service worker connection management
-let keepAlivePort: chrome.runtime.Port | null = null;
-let isServiceWorkerConnected = true;
-
+// Is this even needed? 
 export function createEmotionCache() {
   
   try {
     return createCache({
       key: 'mypack-css'
-      // No insertionPoint, let Emotion handle it automatically
     });
   } catch (error) {
     AppLogger.error("Error creating emotion cache:", error);
@@ -69,7 +63,6 @@ async function sendMessageWithRetry(message: any, maxRetries = 3): Promise<any> 
       
       // Check if response indicates success
       if (response && response.success !== false) {
-        isServiceWorkerConnected = true;
         return response;
       }
       
@@ -80,7 +73,6 @@ async function sendMessageWithRetry(message: any, maxRetries = 3): Promise<any> 
       
     } catch (error) {
       AppLogger.warn(`[Content] Message attempt ${i + 1} failed:`, error);
-      isServiceWorkerConnected = false;
       
       if (i === maxRetries - 1) {
         throw error;
@@ -89,68 +81,6 @@ async function sendMessageWithRetry(message: any, maxRetries = 3): Promise<any> 
       // Wait before retry with exponential backoff
       await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
     }
-  }
-}
-
-/**
- * Setup service worker connection monitoring
- */
-function setupServiceWorkerMonitoring() {
-  // Setup initial keep-alive connection
-  setupKeepAliveConnection();
-  
-  // Periodic health check
-  setInterval(async () => {
-    try {
-      await sendMessageWithRetry({ type: "ping" });
-      if (!isServiceWorkerConnected) {
-        AppLogger.info('[Content] Service worker connection restored');
-        isServiceWorkerConnected = true;
-      }
-    } catch (error) {
-      if (isServiceWorkerConnected) {
-        AppLogger.warn('[Content] Service worker connection lost');
-        isServiceWorkerConnected = false;
-      }
-    }
-  }, 30000); // Check every 30 seconds
-}
-
-/**
- * Setup keep-alive port connection
- */
-function setupKeepAliveConnection() {
-  try {
-    if (keepAlivePort) {
-      keepAlivePort.disconnect();
-    }
-    
-    keepAlivePort = chrome.runtime.connect({ name: "keepAlive" });
-    
-    keepAlivePort.onDisconnect.addListener(() => {
-      AppLogger.info('[Content] Keep-alive port disconnected');
-      keepAlivePort = null;
-      isServiceWorkerConnected = false;
-      
-      // Try to reconnect after a delay
-      setTimeout(setupKeepAliveConnection, 5000);
-    });
-    
-    // Send periodic heartbeats
-    const heartbeatInterval = setInterval(() => {
-      if (keepAlivePort) {
-        try {
-          keepAlivePort.postMessage({ type: "heartbeat" });
-        } catch (error) {
-          clearInterval(heartbeatInterval);
-        }
-      } else {
-        clearInterval(heartbeatInterval);
-      }
-    }, 25000); // Every 25 seconds
-    
-  } catch (error) {
-    AppLogger.error('[Content] Failed to setup keep-alive connection:', error);
   }
 }
 
@@ -255,19 +185,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         window.__mypackEnhancerInitialized = true;
         
-        // Setup service worker monitoring first
-        setupServiceWorkerMonitoring();
-        
-       
         AppLogger.info("Initializing MyPack Drawer");
-        // 1. Ensure the container element exists in the DOM
+        
+        // Wait for elements to appear. This is a bit hacky lol
         
         const scheduleElement = await waitForScheduleTable();
         const overlayElement = ensureOverlayContainer();
         const root = createRoot(overlayElement);
         scrapeScheduleTable(scheduleElement);
         
-        // 3. Render your root component containing both FirstStartDialog and SlideOutDrawer
+      // Render root component
         root.render(
             <CacheProvider value={myEmotionCache}>
                 <FirstStartDialog />

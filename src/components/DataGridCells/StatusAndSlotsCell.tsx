@@ -1,5 +1,5 @@
 import { Box, Chip } from "@mui/material";
-import type { GridRenderCellParams } from "@mui/x-data-grid";
+import type { ModifiedSection } from "../../utils/CourseSearch/MergeDataUtil";
 
 function getEnrollmentColor(enrollment: string | undefined): string {
     if (!enrollment) return '#bdbdbd'; // grey for unknown
@@ -9,7 +9,7 @@ function getEnrollmentColor(enrollment: string | undefined): string {
     const max = parseInt(match[2], 10);
     if (isNaN(current) || isNaN(max) || max === 0) return '#bdbdbd';
     const ratio = current / max;
-    
+    // This doesn't even work
     if (ratio < 0.5) {
         // Red to yellow
         const g = Math.round(255 * (ratio / 0.5));
@@ -28,8 +28,8 @@ function getEnrollmentColor(enrollment: string | undefined): string {
     }
 }
 
-export const StatusAndSlotsCell = (params: GridRenderCellParams) => {
-    const { availability, enrollment } = params.row;
+export const StatusAndSlotsCell = (params: ModifiedSection) => {
+    const { availability, enrollment,section } = params;
     
     let statusColor = "success";
     if(availability === "Open"){
@@ -57,6 +57,16 @@ export const StatusAndSlotsCell = (params: GridRenderCellParams) => {
                 size="small"
                 sx={{ 
                     backgroundColor: chipColor, 
+                    color: '#fff', 
+                    fontWeight: 600,
+                    fontSize: {xs: '0.7rem', sm: '0.75rem', md: '0.8rem'}
+                }} 
+            />
+            <Chip 
+                label={section} 
+                size="small"
+                sx={{ 
+                    backgroundColor: '#000', 
                     color: '#fff', 
                     fontWeight: 600,
                     fontSize: {xs: '0.7rem', sm: '0.75rem', md: '0.8rem'}
