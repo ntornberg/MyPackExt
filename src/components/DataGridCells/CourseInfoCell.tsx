@@ -1,11 +1,11 @@
 import { IconButton, Tooltip, Box, Typography, Chip } from "@mui/material";
-import type { GridRenderCellParams } from "@mui/x-data-grid";
 import InfoIcon from '@mui/icons-material/Info';
 import { CalendarView } from "./CalendarView";
+import type { ModifiedSection } from "../../utils/CourseSearch/MergeDataUtil";
 
-export const CourseInfoCell = (params: GridRenderCellParams) => {
+export const CourseInfoCell = (params: ModifiedSection) => {
     
-    const { section, component, dayTime, location } = params.row;
+    const { section, component, dayTime, location } = params;
     
     const tooltipContent = (
         <Box sx={{ p: 1, maxWidth: 800 }}>

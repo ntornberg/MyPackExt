@@ -8,15 +8,15 @@ import {
   Typography,
 } from '@mui/material';
 import { PieChart } from '@mui/x-charts/PieChart';
-import type { GridRenderCellParams } from '@mui/x-data-grid';
 import type { GradeData } from '../../types';
 import { AppLogger } from '../../utils/logger';
+import type { ModifiedSection } from '../../utils/CourseSearch/MergeDataUtil';
 
 
-export const GradeDistributionCell = (params: GridRenderCellParams) => {
+export const GradeDistributionCell = (params: ModifiedSection) => {
   const [open, setOpen] = useState(false);
-  const { grade_distribution } = params.row;
-  AppLogger.info(`[GEP DEBUG] Row:`, params.row);
+  const { grade_distribution } = params;
+  AppLogger.info(`[GEP DEBUG] Row:`, params);
   
   if (!grade_distribution) {
     return <Typography variant="body2">No grade data</Typography>;

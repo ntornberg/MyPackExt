@@ -1,5 +1,5 @@
 import { Chip } from "@mui/material";
-import type { GridRenderCellParams } from "@mui/x-data-grid";
+import type { ModifiedSection } from "../../utils/CourseSearch/MergeDataUtil";
 import { AppLogger } from "../../utils/logger";
 
 function getEnrollmentColor(enrollment: string | undefined): string {
@@ -31,8 +31,8 @@ function getEnrollmentColor(enrollment: string | undefined): string {
     }
 }
 
-export const EnrollmentChipCell = (params: GridRenderCellParams) => {
-    const { enrollment } = params.row;
+export const EnrollmentChipCell = (params: ModifiedSection) => {
+    const { enrollment } = params;
     const chipColor = getEnrollmentColor(enrollment);
     return <Chip label={enrollment} sx={{ backgroundColor: chipColor, color: '#fff', fontWeight: 600 }} />;
 }; 

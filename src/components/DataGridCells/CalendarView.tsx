@@ -3,11 +3,12 @@ import {Box} from '@mui/material';
 
 
 import {getCacheCategory} from '../../cache/CourseRetrieval';
-import type {GridRenderCellParams} from '@mui/x-data-grid';
+
 import {useState, useEffect} from 'react';
 
 import CreateCalender, { toMinutes } from './CalenderResizeListener';
 import { AppLogger } from '../../utils/logger';
+import type {  ModifiedSection } from '../../utils/CourseSearch/MergeDataUtil';
 
 
 type ScheduleTableEntry = {
@@ -56,7 +57,7 @@ export interface ScheduleEvent {
 }
 
 
-export const CalendarView = (params: GridRenderCellParams) => {
+export const CalendarView = (params: ModifiedSection) => {
     // @ts-ignore
     const {dayTime, courseData} = params.row;
 

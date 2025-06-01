@@ -148,12 +148,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
         
         for (const [courseKey, course] of Object.entries(data)) {
           // Ensure each section has a unique ID
-          if (course.sections) {
-            course.sections = course.sections.map((section, index) => ({
-              ...section,
-              id: section.classNumber || `${section.section}-${index}`
-            }));
-          }
+  
           newOpenCourses[courseKey] = course;
         }
         
@@ -239,7 +234,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
               }}>
                 {requirements[requirementKey].courses.filter((course: RequiredCourse) => {
                   if (planSearchData.hideNoSections) {
-                    return (planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections?.length > 0;
+                    return Object.keys((planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections).length > 0;
                   }
                   return true;
                 }).map((course: RequiredCourse, index: number, filteredCourses: RequiredCourse[]) => (
@@ -264,7 +259,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
                       width: '100%', 
                       mb: 2
                     }}>
-                      {(planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections?.length > 0 ? (
+                      {Object.keys((planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections).length > 0 ? (
                         <Box sx={{ 
                           height: '100%', // Fixed height for DataGrid
                           width: '100%',
@@ -272,7 +267,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
                         }}>
                           <DataGrid
                             getRowId={(row) => row.id || row.classNumber || `${row.section}-${Math.random()}`}
-                            rows={(planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`].sections.sort(sortSections)}
+                            rows={Object.values((planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`].sections).sort(sortSections)}
                             columns={OpenCourseSectionsColumn}
                             columnVisibilityModel={{ id: false }}
                             disableRowSelectionOnClick

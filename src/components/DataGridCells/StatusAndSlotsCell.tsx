@@ -1,5 +1,5 @@
 import { Box, Chip } from "@mui/material";
-import type { GridRenderCellParams } from "@mui/x-data-grid";
+import type { ModifiedSection } from "../../utils/CourseSearch/MergeDataUtil";
 
 function getEnrollmentColor(enrollment: string | undefined): string {
     if (!enrollment) return '#bdbdbd'; // grey for unknown
@@ -28,8 +28,8 @@ function getEnrollmentColor(enrollment: string | undefined): string {
     }
 }
 
-export const StatusAndSlotsCell = (params: GridRenderCellParams) => {
-    const { availability, enrollment } = params.row;
+export const StatusAndSlotsCell = (params: ModifiedSection) => {
+    const { availability, enrollment } = params;
     
     let statusColor = "success";
     if(availability === "Open"){

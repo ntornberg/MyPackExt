@@ -226,9 +226,9 @@ const GEPTree: React.FC<GEPTreeProps> = React.memo((
                     secondary={courseKey}
                     sx={{ mb: 1 }}
                   />
-                  {courseDataEntry?.sections?.length > 0 ? (
+                  {courseDataEntry?.sections && Object.keys(courseDataEntry.sections).length > 0 ? (
                     <Box sx={{ height: 'auto', minHeight: '250px', width: '100%', display: 'flex' }}>
-                      <MemoizedDataGrid sections={courseDataEntry.sections} sortFunc={sortSections} />
+                      <MemoizedDataGrid sections={Object.values(courseDataEntry.sections)} sortFunc={sortSections} />
                     </Box>
                   ) : (
                     <Typography variant="body1" sx={{ p: 2 }}>
@@ -321,7 +321,7 @@ export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepS
         return courses.filter((course: RequiredCourse) => {
           const key = `${course.course_abr} ${course.catalog_num}`;
           const courseDataEntry = (courseData as Record<string, MergedCourseData>)[key];
-          return courseDataEntry && courseDataEntry.sections && courseDataEntry.sections.length > 0;
+          return courseDataEntry && courseDataEntry.sections && Object.keys(courseDataEntry.sections).length > 0;
         });
     }, [courses, hideNoSections, courseData, isLoaded]);
 
