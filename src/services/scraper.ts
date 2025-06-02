@@ -1,9 +1,10 @@
 ﻿import {AppLogger} from '../utils/logger';
-import type {Course} from '../types';
+import type {Course} from '../types/SupaBaseResponseType';
 import {waitForCart, waitForRows} from '../utils/dom';
-import {getCourseAndProfessorDetails} from './api';
+
 import {ensureExtensionCell} from '../utils/dom';
 import {debounce} from '../utils/common';
+import { getCourseAndProfessorDetails } from './api/PackPlannerAPI/courseDetail/courseDetailService';
 
 // Arrays to store course data
 export const courses: Course[] = []; // Stores courses from the main schedule table
@@ -89,7 +90,6 @@ function appendExtensionData(extRow: HTMLElement, gradeElement: HTMLElement, pro
     }
 }
 
-// --- Main Exported Functions ---
 
 /**
  * Scrapes course data from the main schedule table.

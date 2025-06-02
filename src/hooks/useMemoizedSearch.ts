@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import type { MergedCourseData } from '../utils/CourseSearch/MergeDataUtil';
 
+
 type ProgressCallback = (progress: number, message?: string) => void;
 
 type SearchCache = {
@@ -74,7 +75,6 @@ export const useMemoizedSearch = (
           cacheRef.current[cacheKey] = result;
           setData(result);
         }
-        
         return result;
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Unknown error occurred');
