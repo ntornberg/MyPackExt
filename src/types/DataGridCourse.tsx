@@ -6,9 +6,9 @@ import { PrereqCell } from "../components/DataGridCells/PrereqCell";
 import { ToCartButtonCell } from "../components/DataGridCells/ToCartButtonCell";
 import { CourseInfoCell } from "../components/DataGridCells/CourseInfoCell";
 import { StatusAndSlotsCell } from "../components/DataGridCells/StatusAndSlotsCell";
-import type { ModifiedSection } from "../utils/CourseSearch/MergeDataUtil";
+import type { GroupedSections, ModifiedSection } from "../utils/CourseSearch/MergeDataUtil";
 
-export function sortSections(v1: ModifiedSection, v2: ModifiedSection) {
+export function sortSections(v1: GroupedSections, v2: GroupedSections) {
   // Order should be Open,Reserved,Waitlist,Closed
   const order: Record<string, number> = { 
     "Open": 3, 
@@ -16,17 +16,19 @@ export function sortSections(v1: ModifiedSection, v2: ModifiedSection) {
     "Waitlist": 1, 
     "Closed": 0 
   };
+  const lecture1 = v1.lecture;
+  const lecture2 = v2.lecture;
   
 
-  const v1Value = typeof v1.availability === 'string' ? order[v1.availability] ?? -1 : -1;
-  const v2Value = typeof v2.availability === 'string' ? order[v2.availability] ?? -1 : -1;
+  const v1Value = typeof lecture1?.availability === 'string' ? order[lecture1.availability] ?? -1 : -1;
+  const v2Value = typeof lecture2?.availability === 'string' ? order[lecture2.availability] ?? -1 : -1;
   
   const availabilityDiff = v2Value - v1Value;
   
   // If availability is equal, compare by professor rating
   if (availabilityDiff === 0) {
-    const rating1 = v1.professor_rating?.avgRating || 0;
-    const rating2 = v2.professor_rating?.avgRating || 0;
+    const rating1 = lecture1?.professor_rating?.avgRating || 0;
+    const rating2 = lecture2?.professor_rating?.avgRating || 0;
     return rating2 - rating1; // Higher rating first
   }
   
@@ -34,10 +36,10 @@ export function sortSections(v1: ModifiedSection, v2: ModifiedSection) {
 }
 
 // Combined cell for both notes and prerequisites
-const InfoCell = (params: any) => {
-  const hasRequisites = params.row.requisites && 
-                        params.row.requisites !== '';
-  const hasNotes = params.row.notes && params.row.notes.trim() !== '';
+const InfoCell = (params: ModifiedSection) => {
+  const hasRequisites = params.requisites && 
+                        params.requisites !== '';
+  const hasNotes = params.notes && params.notes.trim() !== '';
 
   // If no info to display, return null
   if (!hasRequisites && !hasNotes) {
@@ -68,7 +70,7 @@ export const OpenCourseSectionsColumn: GridColDef[] = [
       headerName: '', 
       flex: 1, 
       minWidth: 80, 
-      renderCell: ToCartButtonCell,
+      renderCell: (params) => ToCartButtonCell(params.row),
       sortable: false,
       filterable: false,
       disableColumnMenu: true
@@ -80,7 +82,7 @@ export const OpenCourseSectionsColumn: GridColDef[] = [
       minWidth: 120, 
       align: 'center',
       headerAlign: 'center',
-      renderCell: StatusAndSlotsCell,
+      renderCell: (params) => StatusAndSlotsCell(params.row),
       sortable: true,
       sortComparator: (v1, v2) => {
         const order: Record<string, number> = { 
@@ -103,7 +105,7 @@ export const OpenCourseSectionsColumn: GridColDef[] = [
       headerAlign: 'center',
       flex: 1, 
       minWidth: 50, 
-      renderCell: CourseInfoCell,
+      renderCell: (params) => CourseInfoCell(params.row),
       sortable: false,
       filterable: false,
       disableColumnMenu: true
@@ -124,7 +126,7 @@ export const OpenCourseSectionsColumn: GridColDef[] = [
       headerName: 'Rating', 
       flex: 1.5, 
       minWidth: 120,
-      renderCell: RateMyProfessorCell,
+      renderCell: (params) => RateMyProfessorCell(params.row),
       disableColumnMenu: true
     },
     { 
@@ -132,7 +134,7 @@ export const OpenCourseSectionsColumn: GridColDef[] = [
       headerName: 'Grades', 
       flex: 1.5, 
       minWidth: 120,
-      renderCell: GradeDistributionCell,
+      renderCell: (params) => GradeDistributionCell(params.row),
       disableColumnMenu: true
     },
     { 
@@ -142,7 +144,7 @@ export const OpenCourseSectionsColumn: GridColDef[] = [
       flex: 1, 
       minWidth: 70, 
       headerAlign: 'center',
-      renderCell: InfoCell,
+      renderCell: (params) => InfoCell(params.row),
       sortable: false,
       filterable: false,
       disableColumnMenu: true

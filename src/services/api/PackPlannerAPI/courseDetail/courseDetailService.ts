@@ -2,7 +2,7 @@ import { AppLogger } from '../../../../utils/logger';
 import { generateCacheKey, getGenericCache, setGenericCache } from "../../../../cache/CourseRetrieval";
 import { createGradeCard } from '../grade/gradeService';
 import { createProfessorCard } from '../professor/ratingService';
-import type { Course } from '../../../../types';
+import type { Course } from '../../../../types/SupaBaseResponseType';
 import type { SingleCourseDataResponse, CourseElements } from '../../types';
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../../../config';
 

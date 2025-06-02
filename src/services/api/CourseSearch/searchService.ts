@@ -106,7 +106,8 @@ export async function batchSearchOpenCourses(
     return null;
 }
 /**
- * Legacy function to maintain backward compatibility
+ * This fucntion needs to go
+ * @deprecated
  * @param term The academic term to search in
  * @param course The course requirement details
  * @returns CourseData or null if not found or error

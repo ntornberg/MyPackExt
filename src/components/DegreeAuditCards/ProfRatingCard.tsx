@@ -1,7 +1,7 @@
 ﻿import React from 'react';
 import { GaugeComponent } from 'react-gauge-component';
 import { useAutoSize } from '../../hooks/useAutoSize';
-import type {MatchedRateMyProf} from '../../types';
+import type {MatchedRateMyProf} from '../../types/SupaBaseResponseType';
 
 export const ProfRatingCard: React.FC<MatchedRateMyProf> = ({
     master_name,
@@ -17,14 +17,13 @@ export const ProfRatingCard: React.FC<MatchedRateMyProf> = ({
 
     // measure card width so we can scale the gauge
     const [wrapRef, {w}] = useAutoSize();
-    const gaugeW = w * 0.9;          // leave a little padding
+    const gaugeW = w * 0.9;  
 
     return (
         <div
             ref={wrapRef}
             style={{
-                /* let the flexbox size the card */
-                flex: '1 1 200px',   // may shrink down to 200 px
+                flex: '1 1 200px',  
                 width: 'auto',
                 maxWidth: 420,
 
@@ -60,7 +59,7 @@ export const ProfRatingCard: React.FC<MatchedRateMyProf> = ({
                             {limit: 2, color: '#FF8C00', showTick: true},
                             {limit: 3, color: '#FFD700', showTick: true},
                             {limit: 4, color: '#9ACD32', showTick: true},
-                            {color: '#228B22'},           // final arc (4 → 5)
+                            {color: '#228B22'},          
                         ],
                     }}
                     pointer={{

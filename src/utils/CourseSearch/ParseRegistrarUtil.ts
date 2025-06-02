@@ -30,7 +30,7 @@ export interface CourseData {
     sections: CourseSection[];
 }
 
-
+// Holy shit
 function ParseCourseElement($: CheerioAPI, courseSection: cheerio.Cheerio<DomHandlerElement>): CourseData {
   const code = courseSection.find('h1').contents().first().text().trim();
   const title = courseSection.find('h1 small').text().trim();
@@ -99,9 +99,12 @@ function ParseCourseElement($: CheerioAPI, courseSection: cheerio.Cheerio<DomHan
     sections
   };
 }
-export function parseHTMLContent(html: string): CourseData | CourseData[] | null {
-  const parsed = JSON.parse(html);
+export function parseHTMLContent(html: any): CourseData | CourseData[] | null {
+  AppLogger.info(`[PARSE HTML CONTENT] HTML:`, html);
+  const parsed = JSON.parse(html.data);
+  
   const html_parse = parsed.html
+  AppLogger.info(`[PARSE HTML CONTENT] HTML PARSE:`, html_parse);
   const $ = cheerio.load(html_parse);
   const $courseSection = $('.course');
   if ($courseSection.length === 0) {

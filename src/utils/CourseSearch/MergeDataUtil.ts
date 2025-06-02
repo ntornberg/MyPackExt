@@ -1,7 +1,9 @@
-import type { BatchDataRequestResponse } from "../../services/api";
-import type { MatchedRateMyProf, GradeData } from "../../types";
+
+import type { BatchDataRequestResponse } from "../../services/api/types";
+import type { MatchedRateMyProf, GradeData } from "../../types/SupaBaseResponseType";
 import type { RequiredCourse } from "../../types/Plans";
 import { AppLogger } from "../logger";
+import { groupSections } from "./GroupSections";
 import type { CourseData, CourseSection } from "./ParseRegistrarUtil";
 
 export type ModifiedSection = CourseSection & {
@@ -18,13 +20,19 @@ export type ModifiedSection = CourseSection & {
     courseData?: CourseData; // Reference to parent course for easy access
 }
 
+export type GroupedSections = {
+    lecture: ModifiedSection | null;
+    labs: ModifiedSection[] | null;
+}
+
+
 export type MergedCourseData = Omit<CourseData, "sections"> & {
-    sections: ModifiedSection[];
+    sections: Record<string, GroupedSections>;
     course_id?: string; // Store course_id at course level
 }
 
 export function mergeData(
-    courses: Record<string, CourseData>, 
+    courses: Record<string, CourseData>,
     batchData: BatchDataRequestResponse,
     courseInfoMap?: Record<string, RequiredCourse> // Map of course keys to RequiredCourse containing course_id
 ) {
@@ -36,38 +44,38 @@ export function mergeData(
     for (const [cacheKey, course] of Object.entries(courses)) {
         // Get the courseKey (e.g., "CSC-316")
         const reqCourse = courseInfoMap?.[cacheKey];
-        if(!reqCourse){
-            AppLogger.warn("Required course not found for course: ",course);
-            AppLogger.warn("Course key: ",cacheKey);
+        if (!reqCourse) {
+            AppLogger.warn("Required course not found for course: ", course);
+            AppLogger.warn("Course key: ", cacheKey);
         }
 
-        
+
         const mergedCourse: MergedCourseData = {
             ...course,
-            sections: [],
+            sections: {},
             course_id: reqCourse?.course_id // Store course_id from RequiredCourse
         }
-        
+
         // Extract catalog number from course code (e.g., "CSC 316" -> "316")
         const codeParts = course.code.split(' ');
         const catalog_nbr = codeParts.length > 1 ? codeParts[1] : '';
-        
+        const modifiedSections: Record<string, ModifiedSection> = {};
         for (const section of course.sections) {
 
-            const batchCourse = batchData.courses?.find((gradeData) =>{
+            const batchCourse = batchData.courses?.find((gradeData) => {
                 if (gradeData.instructor_name === section.instructor_name[0] &&
                     gradeData.course_name === course.code) {
-                  
+
                     return gradeData;
                 }
                 return null;
             });
-            
-            const profData = batchData.profs?.filter((prof) => 
+
+            const profData = batchData.profs?.filter((prof) =>
                 prof.master_name === section.instructor_name[0]
             )[0];
             let correctedCourse: GradeData | undefined = undefined;
-            if(batchCourse){
+            if (batchCourse) {
                 correctedCourse = {
                     ...batchCourse,
                     a_average: parseFloat(String(batchCourse.a_average ?? "0")),
@@ -94,14 +102,15 @@ export function mergeData(
                 wait_list_okay: 'N', // Default waitlist setting
                 courseData: course // Reference to parent course
             };
-            if (batchCourse || profData) {
-                mergedCourse.sections.push(modifiedSection);
-            } else {
-                mergedCourse.sections.push(modifiedSection);
-            }
+            modifiedSections[section.id] = modifiedSection;
+            
         }
-        mergedData[cacheKey] = mergedCourse;
+        const groupedSections = groupSections(course.sections,  modifiedSections);
+            mergedCourse.sections = groupedSections;
+            mergedData[cacheKey] = mergedCourse;
     }
-    AppLogger.info("Merged data: ", mergedData);
+
     return mergedData;
 }
+
+

@@ -1,7 +1,7 @@
 ﻿import React from 'react';
 import {PieChart, pieArcLabelClasses} from '@mui/x-charts/PieChart';
 import { useAutoSize } from '../../hooks/useAutoSize';
-import type {GradeData} from '../../types';
+import type {GradeData} from '../../types/SupaBaseResponseType';
 
 export const GradeCard: React.FC<GradeData> = (props) => {
     const {a_average, b_average, c_average, d_average, f_average,
@@ -10,7 +10,7 @@ export const GradeCard: React.FC<GradeData> = (props) => {
 
     const [wrapRef, {w, h}] = useAutoSize();
     const total = a_average + b_average + c_average + d_average + f_average;
-    if (!total) return null;                            // skip empty cards
+    if (!total) return null;
 
     const colors = ['#2ecc71', '#a3e635', '#facc15', '#f97316', '#ef4444'];
 
@@ -18,8 +18,7 @@ export const GradeCard: React.FC<GradeData> = (props) => {
         <div
             ref={wrapRef}
             style={{
-                /* let the flexbox size the card */
-                flex: '1 1 200px',   // may shrink down to 200 px
+                flex: '1 1 200px',  
                 width: 'auto',
                 maxWidth: 420,
 

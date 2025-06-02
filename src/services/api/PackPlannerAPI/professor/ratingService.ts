@@ -1,8 +1,8 @@
 import { createRoot } from 'react-dom/client';
 import React from "react";
 import { ProfRatingCard } from '../../../../components/DegreeAuditCards/ProfRatingCard';
-import type { Course } from '../../../../types';
-import type { MatchedRateMyProf } from '../../../../types';
+import type { Course } from '../../../../types/SupaBaseResponseType';
+import type { MatchedRateMyProf } from '../../../../types/SupaBaseResponseType';
 import type { SingleCourseDataResponse } from '../../types';
 
 /**
