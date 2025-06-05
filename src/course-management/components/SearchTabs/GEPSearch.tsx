@@ -1,27 +1,39 @@
-import { Box, FormControlLabel, ListItem, ListItemText, Typography, Checkbox} from "@mui/material";
-import { Button, TextField, Autocomplete, List } from "@mui/material";
-import { AppLogger } from "../../utils/logger";
-import { useMemo, useCallback, useState } from "react";
-import { fetchGEPCourseData } from "../../services/api/DialogMenuSearch/dataService";
-import { GEP_COURSES } from "../../Data/CourseSearch/gep_courses.typed";
-import type { MergedCourseData } from "../../utils/CourseSearch/MergeDataUtil";
-import { TermIdByName } from "../../Data/TermID";
-import type { RequiredCourse } from "../../types/Plans";
-import { sortSections } from '../../types/DataGridCourse';
-import { type GEPData } from "../TabDataStore/TabData";
-import React from "react";
-import { SubjectMenuValues } from "../../Data/SubjectSearchValues";
-import { DataTable } from 'primereact/datatable';
-import { Column } from 'primereact/column';
-import { ToCartButtonCell } from '../DataGridCells/ToCartButtonCell';
-import { StatusAndSlotsCell } from '../DataGridCells/StatusAndSlotsCell';
-import { CourseInfoCell } from '../DataGridCells/CourseInfoCell';
-import { RateMyProfessorCell } from '../DataGridCells/RateMyProfessorCell';
-import { GradeDistributionCell } from '../DataGridCells/GradeDistributionCell';
-import { InfoCell } from '../DataGridCells/InfoCell';
-import type { GroupedSections } from '../../utils/CourseSearch/MergeDataUtil';
-import { CircularProgressWithLabel } from '../shared/CircularProgressWithLabel';
-import { customDataTableStyles } from '../../styles/dataTableStyles';
+import {
+    Autocomplete,
+    Box,
+    Button,
+    Checkbox,
+    FormControlLabel,
+    List,
+    ListItem,
+    ListItemText,
+    TextField,
+    Typography
+} from "@mui/material";
+
+import React, {useCallback, useMemo, useState} from "react";
+import {fetchGEPCourseData} from "../../services/api/DialogMenuSearch/dataService";
+
+import {sortSections} from '../../types/DataGridCourse';
+import {type GEPData} from "../TabDataStore/TabData";
+
+import {DataTable} from 'primereact/datatable';
+import {Column} from 'primereact/column';
+import {ToCartButtonCell} from '../DataGridCells/ToCartButtonCell';
+import {StatusAndSlotsCell} from '../DataGridCells/StatusAndSlotsCell';
+import {CourseInfoCell} from '../DataGridCells/CourseInfoCell';
+import {RateMyProfessorCell} from '../DataGridCells/RateMyProfessorCell';
+import {GradeDistributionCell} from '../DataGridCells/GradeDistributionCell';
+import {InfoCell} from '../DataGridCells/InfoCell';
+import {TermIdByName} from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
+import { GEP_COURSES } from "../../../degree-planning/DialogAutoCompleteKeys/GEPSearch/gep_courses.typed.ts";
+import type {GroupedSections, MergedCourseData} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
+import {customDataTableStyles} from "../../../ui-system/styles/dataTableStyles.ts";
+import type {RequiredCourse} from "../../../degree-planning/types/Plans.ts";
+import {AppLogger} from "../../../core/utils/logger.ts";
+import {SubjectMenuValues} from "../../../degree-planning/DialogAutoCompleteKeys/SubjectSearchValues.ts";
+import {CircularProgressWithLabel} from "../../../ui-system/components/shared/CircularProgressWithLabel.tsx";
+
 
 interface AutocompletesProps {
   selectedTerm: string | null;

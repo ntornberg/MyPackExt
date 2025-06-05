@@ -1,32 +1,27 @@
-import { useEffect, useState } from 'react';
-import { 
-  Autocomplete, 
-  Box, 
-  Button, 
-  List, 
-  TextField,
-  DialogContent,
-  Typography,
-} from '@mui/material';
-import { TermIdByName } from '../../Data/TermID';
-import { DEPT_COURSES } from '../../Data/CourseSearch/department_courses.typed';
-import { AppLogger } from '../../utils/logger';
-import { fetchSingleCourseData } from '../../services/api/DialogMenuSearch/dataService';
-import {  sortSections } from '../../types/DataGridCourse';
-import { DataTable, type DataTableValueArray, type DataTableExpandedRows } from 'primereact/datatable';
-import { Column } from 'primereact/column';
-import { useMemoizedSearch } from '../../hooks/useMemoizedSearch';
-import type { CourseSearchData } from '../TabDataStore/TabData';
-import { ToCartButtonCell } from '../DataGridCells/ToCartButtonCell';
-import { StatusAndSlotsCell } from '../DataGridCells/StatusAndSlotsCell';
-import { CourseInfoCell } from '../DataGridCells/CourseInfoCell';
-import { RateMyProfessorCell } from '../DataGridCells/RateMyProfessorCell';
-import { GradeDistributionCell } from '../DataGridCells/GradeDistributionCell';
-import { CircularProgressWithLabel } from '../shared/CircularProgressWithLabel';
-import { customDataTableStyles } from '../../styles/dataTableStyles';
+import {useEffect, useState} from 'react';
+import {Autocomplete, Box, Button, DialogContent, List, TextField, Typography,} from '@mui/material';
 
-import type { GroupedSections, ModifiedSection } from '../../utils/CourseSearch/MergeDataUtil';
-import { InfoCell } from '../DataGridCells/InfoCell';
+import {fetchSingleCourseData} from '../../services/api/DialogMenuSearch/dataService';
+import {sortSections} from '../../types/DataGridCourse';
+import {DataTable, type DataTableExpandedRows, type DataTableValueArray} from 'primereact/datatable';
+import {Column} from 'primereact/column';
+
+import type {CourseSearchData} from '../TabDataStore/TabData';
+import {ToCartButtonCell} from '../DataGridCells/ToCartButtonCell';
+import {StatusAndSlotsCell} from '../DataGridCells/StatusAndSlotsCell';
+import {CourseInfoCell} from '../DataGridCells/CourseInfoCell';
+import {RateMyProfessorCell} from '../DataGridCells/RateMyProfessorCell';
+import {GradeDistributionCell} from '../DataGridCells/GradeDistributionCell';
+
+import {InfoCell} from '../DataGridCells/InfoCell';
+import {useMemoizedSearch} from '../../../core/hooks/useMemoizedSearch';
+import {AppLogger} from '../../../core/utils/logger';
+import {DEPT_COURSES} from '../../../degree-planning/DialogAutoCompleteKeys/CourseSearch/department_courses.typed';
+import type {GroupedSections, ModifiedSection} from '../../../core/utils/CourseSearch/MergeDataUtil';
+import {TermIdByName} from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
+
+import {customDataTableStyles} from "../../../ui-system/styles/dataTableStyles.ts";
+import {CircularProgressWithLabel} from "../../../ui-system/components/shared/CircularProgressWithLabel.tsx";
 
 // Define the department course type
 interface DeptCourse {

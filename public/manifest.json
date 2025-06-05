@@ -14,13 +14,13 @@
     "default_icon": "icon.png"
   },
   "background": {
-    "service_worker": "src/background.ts",
+    "service_worker": "src/extension/background.ts",
     "type": "module"
   },
   "content_scripts": [
     {
       "matches": ["https://portalsp.acs.ncsu.edu/*"],
-      "js": ["src/content.tsx"],
+      "js": ["src/extension/content.tsx"],
       "run_at": "document_start",
       "all_frames": true
     }

@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite';
+import {defineConfig} from 'vite';
 import react from '@vitejs/plugin-react';
-import { crx } from '@crxjs/vite-plugin';
-import type { ManifestV3Export } from '@crxjs/vite-plugin';
+import type {ManifestV3Export} from '@crxjs/vite-plugin';
+import {crx} from '@crxjs/vite-plugin';
 import manifestJson from './public/manifest.json';
 
 export default defineConfig(({ mode }) => {

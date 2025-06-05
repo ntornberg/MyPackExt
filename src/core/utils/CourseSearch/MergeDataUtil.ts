@@ -1,10 +1,13 @@
 
-import type { BatchDataRequestResponse } from "../../services/api/types";
-import type { MatchedRateMyProf, GradeData } from "../../types/SupaBaseResponseType";
-import type { RequiredCourse } from "../../types/Plans";
-import { AppLogger } from "../logger";
-import { groupSections } from "./GroupSections";
-import type { CourseData, CourseSection } from "./ParseRegistrarUtil";
+import {AppLogger} from "../logger";
+import {groupSections} from "./GroupSections";
+import type {CourseData, CourseSection} from "./ParseRegistrarUtil";
+import type {
+    GradeData,
+    MatchedRateMyProf
+} from "../../../degree-planning/types/DataBaseResponses/SupaBaseResponseType.ts";
+import type {BatchDataRequestResponse} from "../../../course-management/services/api/types.ts";
+import type {RequiredCourse} from "../../../degree-planning/types/Plans.ts";
 
 export type ModifiedSection = CourseSection & {
     grade_distribution?: GradeData;

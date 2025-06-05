@@ -1,8 +1,10 @@
-import { Alert, AlertTitle, Button, ButtonBase, Popper } from "@mui/material";
-import { AppLogger } from "../../utils/logger";
-import { generateScriptContentUrl } from "../../services/ToCartService";
-import { useState, useRef } from "react";
-import type {  ModifiedSection } from "../../utils/CourseSearch/MergeDataUtil";
+import {Alert, AlertTitle, Button, ButtonBase, Popper} from "@mui/material";
+
+import {generateScriptContentUrl} from "../../services/ToCartService";
+import {useRef, useState} from "react";
+import {AppLogger} from "../../../core/utils/logger";
+import type {ModifiedSection} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
+
 
 export const ToCartButtonCell = (params: ModifiedSection) => {
     const section = params;

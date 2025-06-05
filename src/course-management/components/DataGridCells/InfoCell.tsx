@@ -1,7 +1,7 @@
-import type { ModifiedSection } from "../../utils/CourseSearch/MergeDataUtil";
-import { ClassNotesCell } from "./ClassNotesCell";
+import {ClassNotesCell} from "./ClassNotesCell";
 
-import { PrereqCell } from "./PrereqCell";
+import {PrereqCell} from "./PrereqCell";
+import type {ModifiedSection} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
 
 export const InfoCell = (params: ModifiedSection) => {
     const hasRequisites = params.requisites && 

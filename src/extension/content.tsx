@@ -1,5 +1,15 @@
-import {waitForCart, waitForScheduleTable, ensureOverlayContainer} from "./utils/dom.ts";
-import { createRoot } from 'react-dom/client';
+import {debounce} from "../core/utils/common";
+import {ensureOverlayContainer, waitForCart, waitForScheduleTable} from "../core/utils/dom";
+import {AppLogger} from "../core/utils/logger";
+import {createRoot} from "react-dom/client";
+import {scrapePlanner, scrapeScheduleTable} from "../course-management/services/scraper";
+import SlideOutDrawer from "../ui-system/components/MainPopupCard.tsx";
+import FirstStartDialog from "../user-experience/components/UserGuide/FirstStart.tsx";
+import {CacheProvider} from "@emotion/react";
+import {setupListener} from "../degree-planning/services/siteResponseStorage.ts";
+import createCache from "@emotion/cache";
+
+
 
 declare global {
     interface Window {
@@ -11,18 +21,9 @@ declare global {
 const __psDefine = window.__savedDefine;      // pull from global
 delete window.__savedDefine;
 
-import {AppLogger} from "./utils/logger.ts";
-import {scrapePlanner, scrapeScheduleTable} from "./services/scraper.ts";
-import {debounce} from "./utils/common.ts";
-import {setupListener} from "./services/PreloadCache/siteResponseStorage.ts";
-import SlideOutDrawer from "./components/MainPopupCard.tsx";
-
 AppLogger.info("MyPack Enhancer script started.");
 
-import createCache from '@emotion/cache';
-import { CacheProvider } from "@emotion/react";
-import FirstStartDialog from "./components/UserGuide/FirstStart.tsx";
-// Is this even needed? 
+// Is this even needed?
 export function createEmotionCache() {
   
   try {

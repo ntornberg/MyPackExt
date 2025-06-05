@@ -1,13 +1,12 @@
-import type { GridColDef } from "@mui/x-data-grid";
-import { RateMyProfessorCell } from "../components/DataGridCells/RateMyProfessorCell";
-import { GradeDistributionCell } from "../components/DataGridCells/GradeDistributionCell";
-import { ClassNotesCell } from "../components/DataGridCells/ClassNotesCell";
-import { PrereqCell } from "../components/DataGridCells/PrereqCell";
-import { ToCartButtonCell } from "../components/DataGridCells/ToCartButtonCell";
-import { CourseInfoCell } from "../components/DataGridCells/CourseInfoCell";
-import { StatusAndSlotsCell } from "../components/DataGridCells/StatusAndSlotsCell";
-import type { ModifiedSection } from "../../core/utils/CourseSearch/MergeDataUtil";
-import type { GroupedSections } from "../../core/utils/CourseSearch/MergeDataUtil";
+import type {GridColDef} from "@mui/x-data-grid";
+import {RateMyProfessorCell} from "../components/DataGridCells/RateMyProfessorCell";
+import {GradeDistributionCell} from "../components/DataGridCells/GradeDistributionCell";
+import {ClassNotesCell} from "../components/DataGridCells/ClassNotesCell";
+import {PrereqCell} from "../components/DataGridCells/PrereqCell";
+import {ToCartButtonCell} from "../components/DataGridCells/ToCartButtonCell";
+import {CourseInfoCell} from "../components/DataGridCells/CourseInfoCell";
+import {StatusAndSlotsCell} from "../components/DataGridCells/StatusAndSlotsCell";
+import type {GroupedSections, ModifiedSection} from "../../core/utils/CourseSearch/MergeDataUtil";
 
 
 export function sortSections(v1: GroupedSections, v2: GroupedSections) {

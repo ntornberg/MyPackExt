@@ -1,36 +1,38 @@
-import { type PlanSearchData } from '../TabDataStore/TabData';
+import {type PlanSearchData} from '../TabDataStore/TabData';
 import {
   Autocomplete,
   Box,
   Button,
+  Checkbox,
   DialogContent,
-  
+  FormControlLabel,
   List,
   TextField,
-  Typography,
-  Checkbox,
-  FormControlLabel
+  Typography
 } from '@mui/material';
-import { majorPlans } from '../../Data/PlanSearch/MajorPlans';
-import { minorPlans } from '../../Data/PlanSearch/MinorPlans';
-import { TermIdByName } from '../../Data/TermID';
-import { AppLogger } from '../../utils/logger';
-import { sortSections } from '../../types/DataGridCourse';
-import type { RequiredCourse, MajorPlan, Subplan, MinorPlan } from '../../types/Plans';
-import type { MergedCourseData, GroupedSections } from '../../utils/CourseSearch/MergeDataUtil';
-import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
-import { TreeItem } from '@mui/x-tree-view/TreeItem';
-import { DataTable } from 'primereact/datatable';
-import { Column } from 'primereact/column';
-import { ToCartButtonCell } from '../DataGridCells/ToCartButtonCell';
-import { StatusAndSlotsCell } from '../DataGridCells/StatusAndSlotsCell';
-import { CourseInfoCell } from '../DataGridCells/CourseInfoCell';
-import { RateMyProfessorCell } from '../DataGridCells/RateMyProfessorCell';
-import { GradeDistributionCell } from '../DataGridCells/GradeDistributionCell';
-import { InfoCell } from '../DataGridCells/InfoCell';
-import { CircularProgressWithLabel } from '../shared/CircularProgressWithLabel';
-import { customDataTableStyles } from '../../styles/dataTableStyles';
-import { fetchCourseSearchData } from '../../services/api/DialogMenuSearch/dataService';
+
+import {sortSections} from '../../types/DataGridCourse';
+
+import {SimpleTreeView} from '@mui/x-tree-view/SimpleTreeView';
+import {TreeItem} from '@mui/x-tree-view/TreeItem';
+import {DataTable} from 'primereact/datatable';
+import {Column} from 'primereact/column';
+import {ToCartButtonCell} from '../DataGridCells/ToCartButtonCell';
+import {StatusAndSlotsCell} from '../DataGridCells/StatusAndSlotsCell';
+import {CourseInfoCell} from '../DataGridCells/CourseInfoCell';
+import {RateMyProfessorCell} from '../DataGridCells/RateMyProfessorCell';
+import {GradeDistributionCell} from '../DataGridCells/GradeDistributionCell';
+import {InfoCell} from '../DataGridCells/InfoCell';
+
+import {fetchCourseSearchData} from '../../services/api/DialogMenuSearch/dataService';
+import { majorPlans } from '../../../degree-planning/DialogAutoCompleteKeys/PlanSearch/MajorPlans';
+import {AppLogger} from "../../../core/utils/logger.ts";
+import {minorPlans} from "../../../degree-planning/DialogAutoCompleteKeys/PlanSearch/MinorPlans.ts";
+import type {MajorPlan, MinorPlan, RequiredCourse, Subplan} from "../../../degree-planning/types/Plans.ts";
+import type {GroupedSections, MergedCourseData} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
+import {customDataTableStyles} from "../../../ui-system/styles/dataTableStyles.ts";
+import {TermIdByName} from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
+import {CircularProgressWithLabel} from "../../../ui-system/components/shared/CircularProgressWithLabel.tsx";
 
 export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setPlanSearchTabData: (key: keyof PlanSearchData, value: any) => void, planSearchData: PlanSearchData}) {
  

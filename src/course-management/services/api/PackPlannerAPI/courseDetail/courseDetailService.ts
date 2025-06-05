@@ -1,10 +1,13 @@
-import { AppLogger } from '../../../../utils/logger';
-import { generateCacheKey, getGenericCache, setGenericCache } from "../../../../cache/CourseRetrieval";
-import { createGradeCard } from '../grade/gradeService';
-import { createProfessorCard } from '../professor/ratingService';
-import type { Course } from '../../../../types/SupaBaseResponseType';
-import type { SingleCourseDataResponse, CourseElements } from '../../types';
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../../../config';
+
+import {generateCacheKey, getGenericCache, setGenericCache} from "../../../../cache/CourseRetrieval";
+import {createGradeCard} from '../grade/gradeService';
+import {createProfessorCard} from '../professor/ratingService';
+
+import type {CourseElements, SingleCourseDataResponse} from '../../types';
+import { AppLogger } from "../../../../../core/utils/logger";
+import {SUPABASE_ANON_KEY, SUPABASE_URL} from "../../../../../core/config.ts";
+import type {Course} from "../../../../../degree-planning/types/DataBaseResponses/SupaBaseResponseType.ts";
+
 
 // Cache map to store course data in memory
 const courseDataCache = new Map<string, SingleCourseDataResponse>();

@@ -1,4 +1,4 @@
-﻿import { AppLogger } from "../../core/utils/logger";
+﻿import {AppLogger} from "../../core/utils/logger";
 
 // Define the structure of the cache entry
 export interface CacheEntry {

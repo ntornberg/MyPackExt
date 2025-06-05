@@ -1,8 +1,6 @@
-import { useRef, useState, useEffect } from 'react';
-import { Box, Paper, Typography } from '@mui/material';
-import type { ScheduleEvent } from './CalendarView';
-
-
+import {useEffect, useRef, useState} from 'react';
+import {Box, Paper, Typography} from '@mui/material';
+import type {ScheduleEvent} from './CalendarView';
 
 
 export function toMinutes(time: string) {

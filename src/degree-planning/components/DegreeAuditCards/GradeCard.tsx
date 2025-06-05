@@ -1,8 +1,8 @@
 ﻿import React from 'react';
-import {PieChart, pieArcLabelClasses} from '@mui/x-charts/PieChart';
+import {pieArcLabelClasses, PieChart} from '@mui/x-charts/PieChart';
 
 import type {GradeData} from '../../types/DataBaseResponses/SupaBaseResponseType';
-import { useAutoSize } from '../../../core/hooks/useAutoSize';
+import {useAutoSize} from '../../../core/hooks/useAutoSize';
 
 export const GradeCard: React.FC<GradeData> = (props) => {
     const {a_average, b_average, c_average, d_average, f_average,

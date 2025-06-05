@@ -1,7 +1,9 @@
-import type { RequiredCourse } from "../../types/Plans";
-import type { MergedCourseData } from '../../utils/CourseSearch/MergeDataUtil';
-import { TermIdByName } from '../../Data/TermID';
+
 // Keeps track of search info when switching dialog tabs.
+import type {MergedCourseData} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
+import {TermIdByName} from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
+import type {RequiredCourse} from "../../../degree-planning/types/Plans.ts";
+
 export type CourseSearchData = {
     selectedTerm: string | null;
     searchSubject: string | null;

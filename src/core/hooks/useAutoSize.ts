@@ -1,4 +1,4 @@
-﻿import { useRef, useState, useLayoutEffect } from 'react';
+﻿import {useLayoutEffect, useRef, useState} from 'react';
 
 export function useAutoSize(min = 180, aspect = 0.75) {
     const ref = useRef<HTMLDivElement>(null);

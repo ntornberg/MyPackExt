@@ -1,4 +1,8 @@
-import type { GradeData, MatchedRateMyProf } from '../../types/SupaBaseResponseType';
+import type {
+  GradeData,
+  MatchedRateMyProf
+} from "../../../degree-planning/types/DataBaseResponses/SupaBaseResponseType.ts";
+
 
 /**
  * Interface for a single course data response from the API

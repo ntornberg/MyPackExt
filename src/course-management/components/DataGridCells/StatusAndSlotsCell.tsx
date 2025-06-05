@@ -1,5 +1,5 @@
-import { Box, Chip } from "@mui/material";
-import type { ModifiedSection } from "../../utils/CourseSearch/MergeDataUtil";
+import {Box, Chip} from "@mui/material";
+import type {ModifiedSection} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
 
 function getEnrollmentColor(enrollment: string | undefined): string {
     if (!enrollment) return '#bdbdbd'; // grey for unknown
