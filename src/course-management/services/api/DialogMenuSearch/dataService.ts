@@ -1,14 +1,17 @@
-import { AppLogger } from '../../../../core/utils/logger';
-import { generateCacheKey, getGenericCache, setGenericCache } from "../../../cache/CourseRetrieval";
-import { batchSearchOpenCourses, searchOpenCoursesByParams } from './searchService';
-import type { MergedCourseData } from '../../../../core/utils/CourseSearch/MergeDataUtil';
-import type { RequiredCourse, Requirement } from '../../../../degree-planning/types/Plans';
-import type { CourseData } from '../../../../core/utils/CourseSearch/ParseRegistrarUtil';
-import { groupSections } from '../../../../core/utils/CourseSearch/GroupSections';
-import type { BatchDataRequestResponse } from '../types';
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../../../../core/config';
-import { mergeData } from '../../../../core/utils/CourseSearch/MergeDataUtil';
-import type { GradeData, MatchedRateMyProf } from '../../../../degree-planning/types/DataBaseResponses/SupaBaseResponseType';
+import {AppLogger} from '../../../../core/utils/logger';
+import {generateCacheKey, getGenericCache, setGenericCache} from "../../../cache/CourseRetrieval";
+import {batchSearchOpenCourses, searchOpenCoursesByParams} from './searchService';
+import type {MergedCourseData} from '../../../../core/utils/CourseSearch/MergeDataUtil';
+import {mergeData} from '../../../../core/utils/CourseSearch/MergeDataUtil';
+import type {RequiredCourse, Requirement} from '../../../../degree-planning/types/Plans';
+import type {CourseData} from '../../../../core/utils/CourseSearch/ParseRegistrarUtil';
+import {groupSections} from '../../../../core/utils/CourseSearch/GroupSections';
+import type {BatchDataRequestResponse} from '../types';
+import {SUPABASE_ANON_KEY, SUPABASE_URL} from '../../../../core/config';
+import type {
+  GradeData,
+  MatchedRateMyProf
+} from '../../../../degree-planning/types/DataBaseResponses/SupaBaseResponseType';
 
 /**
  * Constants for cache namespaces

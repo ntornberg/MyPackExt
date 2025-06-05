@@ -1,10 +1,11 @@
 // Utility functions and types for course parsing and URL formation
+import type {CheerioAPI} from 'cheerio';
 import * as cheerio from 'cheerio';
 
-import { AppLogger } from '../logger';
-import type { CheerioAPI } from 'cheerio';
-import type { Element as DomHandlerElement, Text } from 'domhandler';
-import { TermIdByName } from '../../../degree-planning/DialogAutoCompleteKeys/Data/TermID';
+import {AppLogger} from '../logger';
+import type {Element as DomHandlerElement, Text} from 'domhandler';
+import {TermIdByName} from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
+
 
 export interface CourseSection {
     id: string;

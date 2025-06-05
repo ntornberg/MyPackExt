@@ -1,13 +1,12 @@
 import {Box} from '@mui/material';
 
 
-
 import {getCacheCategory} from '../../cache/CourseRetrieval';
 
-import {useState, useEffect} from 'react';
+import {useEffect, useState} from 'react';
 
-import CreateCalender, { toMinutes } from './CalenderResizeListener';
-import type {  ModifiedSection } from '../../utils/CourseSearch/MergeDataUtil';
+import CreateCalender, {toMinutes} from './CalenderResizeListener';
+import type {ModifiedSection} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
 
 
 type ScheduleTableEntry = {

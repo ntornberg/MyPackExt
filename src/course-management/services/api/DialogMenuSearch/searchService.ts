@@ -1,7 +1,7 @@
-import { AppLogger } from "../../../../core/utils/logger";
-import type { CourseData } from "../../../../core/utils/CourseSearch/ParseRegistrarUtil";
-import { formCourseURL, parseHTMLContent } from "../../../../core/utils/CourseSearch/ParseRegistrarUtil";
-import type { RequiredCourse } from "../../../../degree-planning/types/Plans";
+import {AppLogger} from "../../../../core/utils/logger";
+import type {CourseData} from "../../../../core/utils/CourseSearch/ParseRegistrarUtil";
+import {formCourseURL, parseHTMLContent} from "../../../../core/utils/CourseSearch/ParseRegistrarUtil";
+import type {RequiredCourse} from "../../../../degree-planning/types/Plans";
 
 /**
  * Searches for open course sections based on term and course abbreviation/catalog number

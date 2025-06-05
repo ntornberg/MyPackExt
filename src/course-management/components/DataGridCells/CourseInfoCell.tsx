@@ -1,7 +1,8 @@
-import { IconButton, Tooltip, Box, Typography, Chip } from "@mui/material";
+import {Box, Chip, IconButton, Tooltip, Typography} from "@mui/material";
 import InfoIcon from '@mui/icons-material/Info';
-import { CalendarView } from "./CalendarView";
-import type { ModifiedSection } from "../../utils/CourseSearch/MergeDataUtil";
+import {CalendarView} from "./CalendarView";
+import type {ModifiedSection} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
+
 
 export const CourseInfoCell = (params: ModifiedSection) => {
     

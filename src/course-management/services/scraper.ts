@@ -1,9 +1,8 @@
-﻿
-import { ensureExtensionCell } from '../../core/utils/dom';
-import { waitForRows } from '../../core/utils/dom';
-import { AppLogger } from '../../core/utils/logger';
-import type { Course } from '../../degree-planning/types/DataBaseResponses/SupaBaseResponseType';
-import { getCourseAndProfessorDetails } from './api/PackPlannerAPI/courseDetail/courseDetailService';
+﻿import { debounce } from '../../core/utils/common';
+import {ensureExtensionCell, waitForCart, waitForRows} from '../../core/utils/dom';
+import {AppLogger} from '../../core/utils/logger';
+import type {Course} from '../../degree-planning/types/DataBaseResponses/SupaBaseResponseType';
+import {getCourseAndProfessorDetails} from './api/PackPlannerAPI/courseDetail/courseDetailService';
 
 // Arrays to store course data
 export const courses: Course[] = []; // Stores courses from the main schedule table

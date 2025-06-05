@@ -1,4 +1,4 @@
-﻿import { AppLogger } from './logger';
+﻿import {AppLogger} from './logger';
 
 /**
  * Creates a shadow DOM host element with a container div inside.

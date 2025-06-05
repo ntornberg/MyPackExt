@@ -1,15 +1,8 @@
-import { useState } from 'react';
-import { 
-  Box, 
-  Button, 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  Typography,
-} from '@mui/material';
-import { PieChart } from '@mui/x-charts/PieChart';
-import type { GradeData } from '../../types/SupaBaseResponseType';
-import type { ModifiedSection } from '../../utils/CourseSearch/MergeDataUtil';
+import {useState} from 'react';
+import {Box, Button, Dialog, DialogContent, DialogTitle, Typography,} from '@mui/material';
+import {PieChart} from '@mui/x-charts/PieChart';
+import type {GradeData} from "../../../degree-planning/types/DataBaseResponses/SupaBaseResponseType.ts";
+import type {ModifiedSection} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
 
 
 export const GradeDistributionCell = (params: ModifiedSection) => {

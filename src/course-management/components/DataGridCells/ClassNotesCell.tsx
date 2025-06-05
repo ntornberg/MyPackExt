@@ -1,7 +1,7 @@
-import { IconButton } from "@mui/material";
-import { Tooltip } from "@mui/material";
+import {IconButton, Tooltip} from "@mui/material";
 import InfoIcon from '@mui/icons-material/Info';
-import type { ModifiedSection } from "../../utils/CourseSearch/MergeDataUtil";
+import type {ModifiedSection} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
+
 
 export const ClassNotesCell = (params: ModifiedSection) => {
     const { notes } = params;

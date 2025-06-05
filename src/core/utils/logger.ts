@@ -1,5 +1,5 @@
 ﻿// --- Logger Utility ---
-import { DEBUG } from './settings'; // Import the global DEBUG variable
+import {DEBUG} from './settings'; // Import the global DEBUG variable
 
 export class AppLogger {
     private static prefix = "[MyPackEnhancer]";

@@ -1,5 +1,5 @@
-﻿import { generateCacheKey, setGenericCache } from "../../course-management/cache/CourseRetrieval.tsx";
-import { AppLogger } from "../../core/utils/logger.ts";
+﻿import {generateCacheKey, setGenericCache} from "../../course-management/cache/CourseRetrieval.tsx";
+import {AppLogger} from "../../core/utils/logger.ts";
 
 export async function setupListener() {
     const target = window.top ?? window;

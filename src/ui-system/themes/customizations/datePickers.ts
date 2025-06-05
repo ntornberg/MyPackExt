@@ -1,9 +1,9 @@
-import { alpha } from '@mui/material/styles';
-import type { Theme } from '@mui/material/styles';
-import type { PickerComponents } from '@mui/x-date-pickers/themeAugmentation';
-import { pickersDayClasses } from '@mui/x-date-pickers';
-import { menuItemClasses } from '@mui/material/MenuItem';
-import { gray, brand } from '../themePrimitives';
+import type {Theme} from '@mui/material/styles';
+import {alpha} from '@mui/material/styles';
+import type {PickerComponents} from '@mui/x-date-pickers/themeAugmentation';
+import {pickersDayClasses} from '@mui/x-date-pickers';
+import {menuItemClasses} from '@mui/material/MenuItem';
+import {brand, gray} from '../themePrimitives';
 
 /* eslint-disable import/prefer-default-export */
 export const datePickersCustomizations:  PickerComponents<Theme> = {

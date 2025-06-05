@@ -1,5 +1,5 @@
-import { Box, Typography, Rating } from '@mui/material';
-import type { ModifiedSection } from '../../utils/CourseSearch/MergeDataUtil';
+import {Box, Rating, Typography} from '@mui/material';
+import type {ModifiedSection} from '../../../core/utils/CourseSearch/MergeDataUtil.ts';
 
 export const RateMyProfessorCell = (params: ModifiedSection) => {
   const { professor_rating} = params;

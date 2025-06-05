@@ -1,25 +1,22 @@
-﻿import { useState, useCallback, useMemo } from 'react';
+﻿import React, {useCallback, useMemo, useState} from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 
-import {
-    Box,
-    Button,
-    CircularProgress,
-    Dialog,
-    Typography,
-    Tab,
-} from '@mui/material';
-import { TabContext, TabList, TabPanel } from '@mui/lab';
+import {Box, Button, CircularProgress, Dialog, Tab, Typography,} from '@mui/material';
+import {TabContext, TabList, TabPanel} from '@mui/lab';
 import AppTheme from '../themes/AppTheme';
-import { CacheProvider } from '@emotion/react';
-import { myEmotionCache } from '../content';
-import CourseSearch from './SearchTabs/CourseSearch';
-import PlanSearch from './SearchTabs/PlanSearch';
-import GEPSearch from './SearchTabs/GEPSearch';
-import { GEPDataInitialState, type CourseSearchData, type PlanSearchData, type GEPData } from './TabDataStore/TabData';
-import { PlanSearchDataInitialState } from './TabDataStore/TabData';
-import { CourseSearchDataInitialState } from './TabDataStore/TabData';
-import React from 'react';
+import {CacheProvider} from '@emotion/react';
+import {
+    type CourseSearchData,
+    CourseSearchDataInitialState,
+    type GEPData,
+    GEPDataInitialState,
+    type PlanSearchData,
+    PlanSearchDataInitialState
+} from '../../course-management/components/TabDataStore/TabData';
+import CourseSearch from '../../course-management/components/SearchTabs/CourseSearch';
+import PlanSearch from '../../course-management/components/SearchTabs/PlanSearch';
+import GEPSearch from '../../course-management/components/SearchTabs/GEPSearch';
+import {myEmotionCache} from "../../extension/content.tsx";
 
 // Memoize tabs to prevent re-renders
 const MemoizedCourseSearchTab = React.memo(({ setCourseSearchTabData, courseSearchData }: 

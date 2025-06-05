@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef } from 'react';
-import type { MergedCourseData } from '../utils/CourseSearch/MergeDataUtil';
+import {useCallback, useRef, useState} from 'react';
+import type {MergedCourseData} from '../utils/CourseSearch/MergeDataUtil';
 
 
 type ProgressCallback = (progress: number, message?: string) => void;

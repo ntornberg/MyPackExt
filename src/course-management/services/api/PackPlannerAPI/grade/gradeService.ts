@@ -1,10 +1,10 @@
-import { createRoot } from 'react-dom/client';
+import {createRoot} from 'react-dom/client';
 import React from "react";
 
-import type { SingleCourseDataResponse } from '../../types';
-import type { Course, GradeData } from '../../../../../degree-planning/types/DataBaseResponses/SupaBaseResponseType';
-import { createShadowHost } from '../../../../../core/utils/dom';
-import { GradeCard } from '../../../../../degree-planning/components/DegreeAuditCards/GradeCard';
+import type {SingleCourseDataResponse} from '../../types';
+import type {Course, GradeData} from '../../../../../degree-planning/types/DataBaseResponses/SupaBaseResponseType';
+import {createShadowHost} from '../../../../../core/utils/dom';
+import {GradeCard} from '../../../../../degree-planning/components/DegreeAuditCards/GradeCard';
 
 /**
  * Creates a grade card component from course data.

@@ -1,8 +1,7 @@
-import type { ModifiedSection } from "./MergeDataUtil";
+import type {GroupedSections, ModifiedSection} from "./MergeDataUtil";
 
-import { AppLogger } from "../logger";
-import type { GroupedSections } from "./MergeDataUtil";
-import type { CourseSection } from "./ParseRegistrarUtil";
+import {AppLogger} from "../logger";
+import type {CourseSection} from "./ParseRegistrarUtil";
 
 // Used to group labs
 export function groupSections(sections: CourseSection[],  courseSections?: Record<string, ModifiedSection>) {

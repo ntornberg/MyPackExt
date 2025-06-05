@@ -1,4 +1,4 @@
-import { AppLogger } from "./utils/logger";
+import {AppLogger} from "../core/utils/logger";
 
 // Service worker state tracking
 let isListenerRegistered = false;

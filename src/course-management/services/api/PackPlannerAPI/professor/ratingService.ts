@@ -1,8 +1,11 @@
-import { createRoot } from 'react-dom/client';
+import {createRoot} from 'react-dom/client';
 import React from "react";
-import type { Course, MatchedRateMyProf } from '../../../../../degree-planning/types/DataBaseResponses/SupaBaseResponseType';
-import type { SingleCourseDataResponse } from '../../types';
-import { ProfRatingCard } from '../../../../../degree-planning/components/DegreeAuditCards/ProfRatingCard';
+import type {
+  Course,
+  MatchedRateMyProf
+} from '../../../../../degree-planning/types/DataBaseResponses/SupaBaseResponseType';
+import type {SingleCourseDataResponse} from '../../types';
+import {ProfRatingCard} from '../../../../../degree-planning/components/DegreeAuditCards/ProfRatingCard';
 
 
 /**

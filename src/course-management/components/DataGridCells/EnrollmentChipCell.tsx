@@ -1,6 +1,5 @@
-import { Chip } from "@mui/material";
-import type { ModifiedSection } from "../../utils/CourseSearch/MergeDataUtil";
-
+import {Chip} from "@mui/material";
+import type {ModifiedSection} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
 
 
 export const EnrollmentChipCell = (params: ModifiedSection) => {

@@ -1,4 +1,4 @@
-import { Box, CircularProgress, Typography } from '@mui/material';
+import {Box, CircularProgress, Typography} from '@mui/material';
 
 export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
   return (
