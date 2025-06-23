@@ -119,7 +119,7 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
       <Box sx={{ width: '50%', display: 'flex', flexDirection: 'column' }}>
       <DataTable value={data.labs} paginator rows={10} rowsPerPageOptions={[10, 25, 50]}>
         <Column field="id" header="ID" body={(row : ModifiedSection) => row.section}/>
-        <Column field="to_cart_button" header="" body={ToCartButtonCell} />
+        <Column field="to_cart_button" header="" body={(row : ModifiedSection) => ToCartButtonCell(row, data.lecture || undefined)} />
         <Column field="section" header="Section" body={CourseInfoCell} />
         <Column field="availability" header="Status" body={StatusAndSlotsCell} />
       </DataTable>

@@ -4,14 +4,14 @@ import { AppLogger } from "../../utils/logger";
 import { useMemo, useCallback, useState } from "react";
 import { fetchGEPCourseData } from "../../services/api/CourseSearch/dataService";
 import { GEP_COURSES } from "../../Data/CourseSearch/gep_courses.typed";
-import type { MergedCourseData } from "../../utils/CourseSearch/MergeDataUtil";
+import type { MergedCourseData, GroupedSections, ModifiedSection } from "../../utils/CourseSearch/MergeDataUtil";
 import { TermIdByName } from "../../Data/TermID";
 import type { RequiredCourse } from "../../types/Plans";
 import { sortSections } from '../../types/DataGridCourse';
 import { type GEPData } from "../TabDataStore/TabData";
 import React from "react";
 import { SubjectMenuValues } from "../../Data/SubjectSearchValues";
-import { DataTable } from 'primereact/datatable';
+import { DataTable, type DataTableExpandedRows, type DataTableValueArray, type DataTableRowToggleEvent } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { ToCartButtonCell } from '../DataGridCells/ToCartButtonCell';
 import { StatusAndSlotsCell } from '../DataGridCells/StatusAndSlotsCell';
@@ -19,7 +19,6 @@ import { CourseInfoCell } from '../DataGridCells/CourseInfoCell';
 import { RateMyProfessorCell } from '../DataGridCells/RateMyProfessorCell';
 import { GradeDistributionCell } from '../DataGridCells/GradeDistributionCell';
 import { InfoCell } from '../DataGridCells/InfoCell';
-import type { GroupedSections } from '../../utils/CourseSearch/MergeDataUtil';
 import { CircularProgressWithLabel } from '../shared/CircularProgressWithLabel';
 import { customDataTableStyles } from '../../styles/dataTableStyles';
 
@@ -75,24 +74,64 @@ const MemoizedAutocompletes: React.FC<AutocompletesProps> = React.memo(({
   );
 });
 
-// Memoized DataTable component to prevent unnecessary re-renders
 const MemoizedDataTable = React.memo(({ 
   sections,
   sortFunc 
 }: { 
   sections: GroupedSections[]; 
   sortFunc: (a: GroupedSections, b: GroupedSections) => number 
-}) => (
+}) => {
+  const [expandedRows, setExpandedRows] = useState<DataTableExpandedRows | DataTableValueArray | undefined>(undefined);
+
+  const rowExpansionTemplate = (data: GroupedSections) => {
+    AppLogger.info("Row expansion template in GEP Search", { data });
+    if (!data.labs || data.labs.length === 0) return null;
+    return (
+      <Box sx={{ width: '50%', display: 'flex', flexDirection: 'column' }}>
+        <DataTable value={data.labs} paginator rows={10} rowsPerPageOptions={[10, 25, 50]}>
+          <Column field="id" header="ID" body={(row: ModifiedSection) => row.section} />
+          <Column field="to_cart_button" header="" body={(row: ModifiedSection) => ToCartButtonCell(row, data.lecture || undefined)} />
+          <Column field="section" header="Section" body={CourseInfoCell} />
+          <Column field="availability" header="Status" body={StatusAndSlotsCell} />
+        </DataTable>
+      </Box>
+    );
+  };
+
+  const processedSections = useMemo(() => {
+    return sections.sort(sortFunc).flatMap((section, index) => {
+        if (section.lecture) {
+            return [{
+                ...section,
+                id: section.lecture.classNumber || `grouped-${index}`
+            }];
+        }
+        if (!section.lecture && section.labs && section.labs.length > 0) {
+            return section.labs.map((lab, labIndex) => ({
+                lecture: lab,
+                labs: [],
+                id: lab.classNumber || `lab-only-${index}-${labIndex}`
+            }));
+        }
+        return [];
+    });
+}, [sections, sortFunc]);
+
+  return (
   <>
     <style>{customDataTableStyles}</style>
     <DataTable 
       dataKey="id"
-      value={sections.sort(sortFunc)}
+      value={processedSections}
       paginator
       rows={5}
       rowsPerPageOptions={[5, 10, 25]}
       className="custom-datatable"
+      expandedRows={expandedRows}
+      onRowToggle={(e: DataTableRowToggleEvent) => setExpandedRows(e.data)}
+      rowExpansionTemplate={rowExpansionTemplate}
     >
+      <Column expander={(row: GroupedSections) => !!row.labs && row.labs.length > 0} style={{ width: '3em' }} />
       <Column field="to_cart_button" header="" body={(params: GroupedSections) => params.lecture && ToCartButtonCell(params.lecture)} />
       <Column field="availability" header="Status" body={(params: GroupedSections) => params.lecture && StatusAndSlotsCell(params.lecture)} />
       <Column field="section" header="Course Info" body={(params: GroupedSections) => params.lecture && CourseInfoCell(params.lecture)} />
@@ -102,9 +141,9 @@ const MemoizedDataTable = React.memo(({
       <Column field="info" header="Info" body={(params: GroupedSections) => params.lecture && InfoCell(params.lecture)} />
     </DataTable>
   </>
-));
+  );
+});
 
-// Define the structure for grouped courses
 export interface GroupedCourse { 
   displayTitle: string;
   courses: RequiredCourse[];
