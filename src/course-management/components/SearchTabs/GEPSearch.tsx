@@ -107,7 +107,7 @@ const MemoizedDataTable = React.memo(({
                 id: section.lecture.classNumber || `grouped-${index}`
             }];
         }
-        if (!section.lecture && section.labs && section.labs.length > 0) {
+        if (section.labs && section.labs.length > 0) {
             return section.labs.map((lab, labIndex) => ({
                 lecture: lab,
                 labs: [],
@@ -158,6 +158,29 @@ interface GEPTreeProps {
   courseData: Record<string, MergedCourseData> | {}; // For section details
 }
 
+const CourseSections = React.memo(({ courseDataEntry }: { courseDataEntry: MergedCourseData | undefined }) => {
+    const sections = useMemo(() => {
+        if (courseDataEntry?.sections) {
+            return Object.values(courseDataEntry.sections);
+        }
+        return [];
+    }, [courseDataEntry?.sections]);
+
+    if (sections.length > 0) {
+        return (
+            <Box sx={{ height: 'auto', minHeight: '250px', width: '100%', display: 'flex' }}>
+                <MemoizedDataTable sections={sections} sortFunc={sortSections} />
+            </Box>
+        );
+    }
+
+    return (
+        <Typography variant="body1" sx={{ p: 2 }}>
+            No sections available for this course.
+        </Typography>
+    );
+});
+
 const GEPTree: React.FC<GEPTreeProps> = React.memo((
   { groupedData, expandedGroups, onToggleGroup, courseData }
 ) => {
@@ -202,15 +225,7 @@ const GEPTree: React.FC<GEPTreeProps> = React.memo((
                     secondary={courseKey}
                     sx={{ mb: 1 }}
                   />
-                  {courseDataEntry?.sections && Object.keys(courseDataEntry.sections).length > 0 ? (
-                    <Box sx={{ height: 'auto', minHeight: '250px', width: '100%', display: 'flex' }}>
-                      <MemoizedDataTable sections={Object.values(courseDataEntry.sections)} sortFunc={sortSections} />
-                    </Box>
-                  ) : (
-                    <Typography variant="body1" sx={{ p: 2 }}>
-                      No sections available for this course.
-                    </Typography>
-                  )}
+                  <CourseSections courseDataEntry={courseDataEntry} />
                 </Box>
               </ListItem>
             );

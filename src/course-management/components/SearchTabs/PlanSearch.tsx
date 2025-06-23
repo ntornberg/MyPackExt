@@ -1,5 +1,5 @@
 import { type PlanSearchData } from '../TabDataStore/TabData';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, memo } from 'react';
 import {
   Autocomplete,
   Box,
@@ -62,7 +62,7 @@ const CourseSectionsDataTable = ({ sections }: { sections: GroupedSections[] }) 
                 id: section.lecture.classNumber || `grouped-${index}`
             }];
         }
-        if (!section.lecture && section.labs && section.labs.length > 0) {
+                if (section.labs && section.labs.length > 0) {
             return section.labs.map((lab, labIndex) => ({
                 lecture: lab,
                 labs: [],
@@ -99,6 +99,34 @@ const CourseSectionsDataTable = ({ sections }: { sections: GroupedSections[] }) 
     </>
   );
 };
+
+const MemoizedCourseSectionsDataTable = memo(CourseSectionsDataTable);
+
+const CourseDisplay = memo(({ course, openCourses }: { course: RequiredCourse, openCourses: Record<string, MergedCourseData> | null }) => {
+    const courseData = openCourses?.[`${course.course_abr} ${course.catalog_num}`];
+    const sections = courseData?.sections;
+
+    const sectionsArray = useMemo(() => {
+        if (sections && Object.keys(sections).length > 0) {
+            return Object.values(sections);
+        }
+        return null;
+    }, [sections]);
+
+    if (sectionsArray) {
+        return (
+            <Box sx={{ height: '100%', width: '100%', display: 'flex' }}>
+                <MemoizedCourseSectionsDataTable sections={sectionsArray} />
+            </Box>
+        );
+    }
+
+    return (
+        <Typography variant="body1" sx={{ p: 3, color: 'rgba(255, 255, 255, 0.6)', fontSize: '1rem', textAlign: 'center', fontStyle: 'italic' }}>
+            No sections available
+        </Typography>
+    );
+});
 
 export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setPlanSearchTabData: (key: keyof PlanSearchData, value: any) => void, planSearchData: PlanSearchData}) {
  
@@ -279,10 +307,11 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
                 backgroundColor: 'transparent',
               }}>
                 {requirements[requirementKey].courses.filter((course: RequiredCourse) => {
-                  if (planSearchData.hideNoSections) {
-                    return (planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections && Object.keys((planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections).length > 0;
-                  }
-                  return true;
+                    if (planSearchData.hideNoSections) {
+                        const courseData = (planSearchData.openCourses as Record<string, MergedCourseData>)?.[`${course.course_abr} ${course.catalog_num}`];
+                        return !!courseData?.sections && Object.keys(courseData.sections).length > 0;
+                    }
+                    return true;
                 }).map((course: RequiredCourse, index: number, filteredCourses: RequiredCourse[]) => (
                   <Box key={`${course.course_abr} ${course.catalog_num}`} sx={{ mb: 3 }}>
                     {/* Course Header */}
@@ -305,25 +334,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
                       width: '100%', 
                       mb: 2
                     }}>
-                      { (planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections && Object.keys((planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`]?.sections).length > 0 ? (
-                        <Box sx={{ 
-                          height: '100%', // Fixed height for DataGrid
-                          width: '100%',
-                          display: 'flex'
-                        }}>
-                          <CourseSectionsDataTable sections={Object.values((planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`].sections)} />
-                        </Box>
-                      ) : (
-                        <Typography variant="body1" sx={{ 
-                          p: 3, 
-                          color: 'rgba(255, 255, 255, 0.6)',
-                          fontSize: '1rem',
-                          textAlign: 'center',
-                          fontStyle: 'italic'
-                        }}>
-                          No sections available
-                        </Typography>
-                      )}
+                      <CourseDisplay course={course} openCourses={planSearchData.openCourses} />
                     </Box>
                     
                     {/* Divider between courses (except for the last one) */}
