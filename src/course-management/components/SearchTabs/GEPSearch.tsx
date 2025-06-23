@@ -1,39 +1,27 @@
-import {
-    Autocomplete,
-    Box,
-    Button,
-    Checkbox,
-    FormControlLabel,
-    List,
-    ListItem,
-    ListItemText,
-    TextField,
-    Typography
-} from "@mui/material";
+import { Box, FormControlLabel, ListItem, ListItemText, Typography, Checkbox} from "@mui/material";
+import { Button, TextField, Autocomplete, List } from "@mui/material";
+import { useMemo, useCallback, useState } from "react";
+import { sortSections } from '../../types/DataGridCourse';
+import { type GEPData } from "../TabDataStore/TabData";
+import React from "react";
 
-import React, {useCallback, useMemo, useState} from "react";
-import {fetchGEPCourseData} from "../../services/api/DialogMenuSearch/dataService";
-
-import {sortSections} from '../../types/DataGridCourse';
-import {type GEPData} from "../TabDataStore/TabData";
-
-import {DataTable} from 'primereact/datatable';
-import {Column} from 'primereact/column';
-import {ToCartButtonCell} from '../DataGridCells/ToCartButtonCell';
-import {StatusAndSlotsCell} from '../DataGridCells/StatusAndSlotsCell';
-import {CourseInfoCell} from '../DataGridCells/CourseInfoCell';
-import {RateMyProfessorCell} from '../DataGridCells/RateMyProfessorCell';
-import {GradeDistributionCell} from '../DataGridCells/GradeDistributionCell';
-import {InfoCell} from '../DataGridCells/InfoCell';
-import {TermIdByName} from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
+import { DataTable, type DataTableExpandedRows, type DataTableValueArray, type DataTableRowToggleEvent } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { ToCartButtonCell } from '../DataGridCells/ToCartButtonCell';
+import { StatusAndSlotsCell } from '../DataGridCells/StatusAndSlotsCell';
+import { CourseInfoCell } from '../DataGridCells/CourseInfoCell';
+import { RateMyProfessorCell } from '../DataGridCells/RateMyProfessorCell';
+import { GradeDistributionCell } from '../DataGridCells/GradeDistributionCell';
+import { InfoCell } from '../DataGridCells/InfoCell';
+import type { GroupedSections, MergedCourseData, ModifiedSection } from "../../../core/utils/CourseSearch/MergeDataUtil";
+import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
 import { GEP_COURSES } from "../../../degree-planning/DialogAutoCompleteKeys/GEPSearch/gep_courses.typed.ts";
-import type {GroupedSections, MergedCourseData} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
-import {customDataTableStyles} from "../../../ui-system/styles/dataTableStyles.ts";
-import type {RequiredCourse} from "../../../degree-planning/types/Plans.ts";
-import {AppLogger} from "../../../core/utils/logger.ts";
-import {SubjectMenuValues} from "../../../degree-planning/DialogAutoCompleteKeys/SubjectSearchValues.ts";
-import {CircularProgressWithLabel} from "../../../ui-system/components/shared/CircularProgressWithLabel.tsx";
-
+import { customDataTableStyles } from "../../../ui-system/styles/dataTableStyles.ts";
+import { AppLogger } from "../../../core/utils/logger.ts";
+import type { RequiredCourse } from "../../../degree-planning/types/Plans";
+import { fetchGEPCourseData } from "../../services/api/DialogMenuSearch/dataService";
+import { SubjectMenuValues } from "../../../degree-planning/DialogAutoCompleteKeys/SubjectSearchValues";
+import { CircularProgressWithLabel } from '../../../ui-system/components/shared/CircularProgressWithLabel';
 
 interface AutocompletesProps {
   selectedTerm: string | null;
@@ -69,7 +57,7 @@ const MemoizedAutocompletes: React.FC<AutocompletesProps> = React.memo(({
         value={selectedTerm}
         defaultValue={TERM_OPTIONS[0]}
         onChange={handleTermChange}
-        renderInput={(params) => 
+        renderInput={(params: any) => 
           <TextField {...params} label="Term" />
         }
       />
@@ -79,7 +67,7 @@ const MemoizedAutocompletes: React.FC<AutocompletesProps> = React.memo(({
         options={SUBJECT_OPTIONS}
         value={searchSubject}
         onChange={handleSubjectChange}
-        renderInput={(params) => 
+        renderInput={(params: any) => 
           <TextField {...params} label="Subject" />
         }
       />
@@ -87,24 +75,64 @@ const MemoizedAutocompletes: React.FC<AutocompletesProps> = React.memo(({
   );
 });
 
-// Memoized DataTable component to prevent unnecessary re-renders
 const MemoizedDataTable = React.memo(({ 
   sections,
   sortFunc 
 }: { 
   sections: GroupedSections[]; 
   sortFunc: (a: GroupedSections, b: GroupedSections) => number 
-}) => (
+}) => {
+  const [expandedRows, setExpandedRows] = useState<DataTableExpandedRows | DataTableValueArray | undefined>(undefined);
+
+  const rowExpansionTemplate = (data: GroupedSections) => {
+    AppLogger.info("Row expansion template in GEP Search", { data });
+    if (!data.labs || data.labs.length === 0) return null;
+    return (
+      <Box sx={{ width: '50%', display: 'flex', flexDirection: 'column' }}>
+        <DataTable value={data.labs} paginator rows={10} rowsPerPageOptions={[10, 25, 50]}>
+          <Column field="id" header="ID" body={(row: ModifiedSection) => row.section} />
+          <Column field="to_cart_button" header="" body={(row: ModifiedSection) => ToCartButtonCell(row, data.lecture || undefined)} />
+          <Column field="section" header="Section" body={CourseInfoCell} />
+          <Column field="availability" header="Status" body={StatusAndSlotsCell} />
+        </DataTable>
+      </Box>
+    );
+  };
+
+  const processedSections = useMemo(() => {
+    return sections.sort(sortFunc).flatMap((section, index) => {
+        if (section.lecture) {
+            return [{
+                ...section,
+                id: section.lecture.classNumber || `grouped-${index}`
+            }];
+        }
+        if (!section.lecture && section.labs && section.labs.length > 0) {
+            return section.labs.map((lab, labIndex) => ({
+                lecture: lab,
+                labs: [],
+                id: lab.classNumber || `lab-only-${index}-${labIndex}`
+            }));
+        }
+        return [];
+    });
+}, [sections, sortFunc]);
+
+  return (
   <>
     <style>{customDataTableStyles}</style>
     <DataTable 
       dataKey="id"
-      value={sections.sort(sortFunc)}
+      value={processedSections}
       paginator
       rows={5}
       rowsPerPageOptions={[5, 10, 25]}
       className="custom-datatable"
+      expandedRows={expandedRows}
+      onRowToggle={(e: DataTableRowToggleEvent) => setExpandedRows(e.data)}
+      rowExpansionTemplate={rowExpansionTemplate}
     >
+      <Column expander={(row: GroupedSections) => !!row.labs && row.labs.length > 0} style={{ width: '3em' }} />
       <Column field="to_cart_button" header="" body={(params: GroupedSections) => params.lecture && ToCartButtonCell(params.lecture)} />
       <Column field="availability" header="Status" body={(params: GroupedSections) => params.lecture && StatusAndSlotsCell(params.lecture)} />
       <Column field="section" header="Course Info" body={(params: GroupedSections) => params.lecture && CourseInfoCell(params.lecture)} />
@@ -114,9 +142,9 @@ const MemoizedDataTable = React.memo(({
       <Column field="info" header="Info" body={(params: GroupedSections) => params.lecture && InfoCell(params.lecture)} />
     </DataTable>
   </>
-));
+  );
+});
 
-// Define the structure for grouped courses
 export interface GroupedCourse { 
   displayTitle: string;
   courses: RequiredCourse[];
@@ -231,7 +259,7 @@ export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepS
                 catalog_num: title.split('-')[1].trim(),
                 course_descrip: course_entry.course_title,
                 term: selectedTerm
-              } as RequiredCourse; 
+              } as RequiredCourse; // Ensure correct type
             });
             
             setGepSearchTabData('courses', coursesResult);

@@ -1,38 +1,104 @@
-import {type PlanSearchData} from '../TabDataStore/TabData';
+import { type PlanSearchData } from '../TabDataStore/TabData';
+import { useState, useMemo } from 'react';
 import {
   Autocomplete,
   Box,
   Button,
-  Checkbox,
   DialogContent,
-  FormControlLabel,
+  
   List,
   TextField,
-  Typography
+  Typography,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 
-import {sortSections} from '../../types/DataGridCourse';
+import { sortSections } from '../../types/DataGridCourse';
 
-import {SimpleTreeView} from '@mui/x-tree-view/SimpleTreeView';
-import {TreeItem} from '@mui/x-tree-view/TreeItem';
-import {DataTable} from 'primereact/datatable';
-import {Column} from 'primereact/column';
-import {ToCartButtonCell} from '../DataGridCells/ToCartButtonCell';
-import {StatusAndSlotsCell} from '../DataGridCells/StatusAndSlotsCell';
-import {CourseInfoCell} from '../DataGridCells/CourseInfoCell';
-import {RateMyProfessorCell} from '../DataGridCells/RateMyProfessorCell';
-import {GradeDistributionCell} from '../DataGridCells/GradeDistributionCell';
-import {InfoCell} from '../DataGridCells/InfoCell';
-
-import {fetchCourseSearchData} from '../../services/api/DialogMenuSearch/dataService';
+import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
+import { DataTable, type DataTableValueArray, type DataTableExpandedRows, type DataTableRowToggleEvent } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+import { ToCartButtonCell } from '../DataGridCells/ToCartButtonCell';
+import { StatusAndSlotsCell } from '../DataGridCells/StatusAndSlotsCell';
+import { CourseInfoCell } from '../DataGridCells/CourseInfoCell';
+import { RateMyProfessorCell } from '../DataGridCells/RateMyProfessorCell';
+import { GradeDistributionCell } from '../DataGridCells/GradeDistributionCell';
+import { InfoCell } from '../DataGridCells/InfoCell';
+import type { GroupedSections, MergedCourseData } from '../../../core/utils/CourseSearch/MergeDataUtil';
+import type { ModifiedSection } from '../../../core/utils/CourseSearch/MergeDataUtil';
+import { AppLogger } from '../../../core/utils/logger';
 import { majorPlans } from '../../../degree-planning/DialogAutoCompleteKeys/PlanSearch/MajorPlans';
-import {AppLogger} from "../../../core/utils/logger.ts";
-import {minorPlans} from "../../../degree-planning/DialogAutoCompleteKeys/PlanSearch/MinorPlans.ts";
-import type {MajorPlan, MinorPlan, RequiredCourse, Subplan} from "../../../degree-planning/types/Plans.ts";
-import type {GroupedSections, MergedCourseData} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
-import {customDataTableStyles} from "../../../ui-system/styles/dataTableStyles.ts";
-import {TermIdByName} from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
-import {CircularProgressWithLabel} from "../../../ui-system/components/shared/CircularProgressWithLabel.tsx";
+import type { MajorPlan, MinorPlan, RequiredCourse, Subplan } from '../../../degree-planning/types/Plans';
+import { minorPlans } from '../../../degree-planning/DialogAutoCompleteKeys/PlanSearch/MinorPlans';
+import { fetchCourseSearchData } from '../../services/api/DialogMenuSearch/dataService';
+import { TermIdByName } from '../../../degree-planning/DialogAutoCompleteKeys/TermID';
+import { CircularProgressWithLabel } from '../../../ui-system/components/shared/CircularProgressWithLabel';
+import { customDataTableStyles } from '../../../ui-system/styles/dataTableStyles';
+
+const CourseSectionsDataTable = ({ sections }: { sections: GroupedSections[] }) => {
+  const [expandedRows, setExpandedRows] = useState<DataTableExpandedRows | DataTableValueArray | undefined>(undefined);
+
+  const rowExpansionTemplate = (data: GroupedSections) => {
+    AppLogger.info("Row expansion template in Plan Search", { data });
+    if (!data.labs || data.labs.length === 0) return null;
+    return (
+      <Box sx={{ width: '50%', display: 'flex', flexDirection: 'column' }}>
+        <DataTable value={data.labs} paginator rows={10} rowsPerPageOptions={[10, 25, 50]}>
+          <Column field="id" header="ID" body={(row: ModifiedSection) => row.section} />
+          <Column field="to_cart_button" header="" body={(row: ModifiedSection) => ToCartButtonCell(row, data.lecture || undefined)} />
+          <Column field="section" header="Section" body={CourseInfoCell} />
+          <Column field="availability" header="Status" body={StatusAndSlotsCell} />
+        </DataTable>
+      </Box>
+    );
+  };
+
+  const processedSections = useMemo(() => {
+    return sections.sort(sortSections).flatMap((section, index) => {
+        if (section.lecture) {
+            return [{
+                ...section,
+                id: section.lecture.classNumber || `grouped-${index}`
+            }];
+        }
+        if (!section.lecture && section.labs && section.labs.length > 0) {
+            return section.labs.map((lab, labIndex) => ({
+                lecture: lab,
+                labs: [],
+                id: lab.classNumber || `lab-only-${index}-${labIndex}`
+            }));
+        }
+        return [];
+    });
+}, [sections]);
+
+  return (
+    <>
+      <style>{customDataTableStyles}</style>
+      <DataTable
+        dataKey="id"
+        value={processedSections}
+        paginator
+        rows={5}
+        rowsPerPageOptions={[5, 10, 25]}
+        className="custom-datatable"
+        expandedRows={expandedRows}
+        onRowToggle={(e: DataTableRowToggleEvent) => setExpandedRows(e.data)}
+        rowExpansionTemplate={rowExpansionTemplate}
+      >
+        <Column expander={(row: GroupedSections) => !!row.labs && row.labs.length > 0} style={{ width: '3em' }} />
+        <Column field="to_cart_button" header="" body={(params: GroupedSections) => params.lecture && ToCartButtonCell(params.lecture)} />
+        <Column field="availability" header="Status" body={(params: GroupedSections) => params.lecture && StatusAndSlotsCell(params.lecture)} />
+        <Column field="section" header="Course Info" body={(params: GroupedSections) => params.lecture && CourseInfoCell(params.lecture)} />
+        <Column field="instructor_name" header="Instructor" body={(row: GroupedSections) => Array.isArray(row.lecture?.instructor_name) ? row.lecture?.instructor_name.join(', ') : row.lecture?.instructor_name} />
+        <Column field="professor_rating" header="Rating" body={(params: GroupedSections) => params.lecture && RateMyProfessorCell(params.lecture)} />
+        <Column field="grade_distribution" header="Grades" body={(params: GroupedSections) => params.lecture && GradeDistributionCell(params.lecture)} />
+        <Column field="info" header="Info" body={(params: GroupedSections) => params.lecture && InfoCell(params.lecture)} />
+      </DataTable>
+    </>
+  );
+};
 
 export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setPlanSearchTabData: (key: keyof PlanSearchData, value: any) => void, planSearchData: PlanSearchData}) {
  
@@ -245,23 +311,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
                           width: '100%',
                           display: 'flex'
                         }}>
-                          <style>{customDataTableStyles}</style>
-                          <DataTable
-                            dataKey="id"
-                            value={Object.values((planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`].sections).sort(sortSections)}
-                            paginator
-                            rows={5}
-                            rowsPerPageOptions={[5, 10, 25]}
-                            className="custom-datatable"
-                          >
-                            <Column field="to_cart_button" header="" body={(params: GroupedSections) => params.lecture && ToCartButtonCell(params.lecture)} />
-                            <Column field="availability" header="Status" body={(params: GroupedSections) => params.lecture && StatusAndSlotsCell(params.lecture)} />
-                            <Column field="section" header="Course Info" body={(params: GroupedSections) => params.lecture && CourseInfoCell(params.lecture)} />
-                            <Column field="instructor_name" header="Instructor" body={(row: GroupedSections) => Array.isArray(row.lecture?.instructor_name) ? row.lecture?.instructor_name.join(', ') : row.lecture?.instructor_name} />
-                            <Column field="professor_rating" header="Rating" body={(params: GroupedSections) => params.lecture && RateMyProfessorCell(params.lecture)} />
-                            <Column field="grade_distribution" header="Grades" body={(params: GroupedSections) => params.lecture && GradeDistributionCell(params.lecture)} />
-                            <Column field="info" header="Info" body={(params: GroupedSections) => params.lecture && InfoCell(params.lecture)} />
-                          </DataTable>
+                          <CourseSectionsDataTable sections={Object.values((planSearchData.openCourses as Record<string, MergedCourseData>)[`${course.course_abr} ${course.catalog_num}`].sections)} />
                         </Box>
                       ) : (
                         <Typography variant="body1" sx={{ 
@@ -331,7 +381,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
             options={minor_options}
             value={planSearchData.selectedMinor}
             onChange={(_, value) => setPlanSearchTabData('selectedMinor', value)}
-            renderInput={(params) => 
+            renderInput={(params: any) => 
               <TextField {...params} label="Minor" sx={{ padding: '10px' }} />
             }
           />
@@ -342,7 +392,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
             options={subplanOptions}
             value={planSearchData.selectedSubplan}
             onChange={(_, value) => setPlanSearchTabData('selectedSubplan', value)}
-            renderInput={(params) => 
+            renderInput={(params: any) => 
               <TextField {...params} label="Subplan" sx={{ padding: '10px' }} />
             }
           />
@@ -355,7 +405,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
             Search
           </Button>
           <FormControlLabel
-            control={<Checkbox checked={planSearchData.hideNoSections}  onChange={(_, checked) => setPlanSearchTabData('hideNoSections', checked)} />}
+            control={<Checkbox checked={planSearchData.hideNoSections}  onChange={(_, checked: boolean) => setPlanSearchTabData('hideNoSections', checked)} />}
             label="Hide courses with no open sections"
           />
           {!planSearchData.isLoaded && <CircularProgressWithLabel value={planSearchData.progress} label={planSearchData.progressLabel || ''} />}

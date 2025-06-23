@@ -1,13 +1,23 @@
-import {Alert, AlertTitle, Button, ButtonBase, Popper} from "@mui/material";
+import { Alert, AlertTitle, Button, ButtonBase, Popper } from "@mui/material";
+import { generateScriptContentUrl } from "../../services/ToCartService";
+import { useState, useRef } from "react";
+import type { ModifiedSection } from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
+import { AppLogger } from "../../../core/utils/logger";
 
-import {generateScriptContentUrl} from "../../services/ToCartService";
-import {useRef, useState} from "react";
-import {AppLogger} from "../../../core/utils/logger";
-import type {ModifiedSection} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
+interface ToCartPayload {
+    [key: string]: string;
+    course_career: string;
+    session_code: string;
+    crse_id: string;
+    class_nbr: string;
+    catalog_nbr: string;
+    unt_taken: string;
+    grading_basis: string;
+    rqmnt_designtn: string;
+    wait_list_okay: string;
+}
 
-
-export const ToCartButtonCell = (params: ModifiedSection) => {
-    const section = params;
+export const ToCartButtonCell = (selectedSection: ModifiedSection, parent?: ModifiedSection) => {
     // Extract the necessary parameters from the row
     const {
         course_id,
@@ -19,36 +29,37 @@ export const ToCartButtonCell = (params: ModifiedSection) => {
         rqmnt_designtn = '',
         wait_list_okay = 'N',
         courseData,
-    } = section;
-    
+    } = selectedSection;
     // Get units from the parent course data
     const unt_taken = courseData?.units || '3';
+
+    
     
     // Skip if missing required data
     if (!course_id || !classNumber || !catalog_nbr || !courseData || !unt_taken) {
-        AppLogger.warn("Missing required data for section: ", section);
+        AppLogger.warn("Missing required data for section: ", selectedSection);
         if (!course_id) {
-            AppLogger.warn("Course ID is missing for section: ", section);
+            AppLogger.warn("Course ID is missing for section: ", selectedSection);
         }
         if (!classNumber) {
-            AppLogger.warn("Class number is missing for section: ", section);
+            AppLogger.warn("Class number is missing for section: ", selectedSection);
         } 
         if (!catalog_nbr) {
-            AppLogger.warn("Catalog number is missing for section: ", section);
+            AppLogger.warn("Catalog number is missing for section: ", selectedSection);
         } 
         if (!courseData) {
-            AppLogger.warn("Course data is missing for section: ", section);
+            AppLogger.warn("Course data is missing for section: ", selectedSection);
         } 
         if (!unt_taken) {
-            AppLogger.warn("Units taken is missing for section: ", section);
+            AppLogger.warn("Units taken is missing for section: ", selectedSection);
         }
-        AppLogger.warn("Section: ", section);
+        AppLogger.warn("Section: ", selectedSection);
         return (
             <Button variant="contained" disabled title="Missing required data" sx={{
                 color: 'white',
                 backgroundColor: 'rgb(11, 14, 20)',
                 borderColor: 'rgb(65, 70, 81)',
-                padding: '4px 4px',
+                padding: '6px 8px',
                 borderRadius: '2px',
                 backgroundImage: 'none',
                 fontSize: {
@@ -79,7 +90,7 @@ export const ToCartButtonCell = (params: ModifiedSection) => {
             script: "IScript_addClassToShopCart"
         });
         AppLogger.info("URL: " + url);
-        const payload = {
+        let payload: ToCartPayload = {
             course_career: course_career,
             session_code: session_code,
             crse_id: course_id,
@@ -88,8 +99,14 @@ export const ToCartButtonCell = (params: ModifiedSection) => {
             unt_taken: unt_taken,
             grading_basis: grading_basis,
             rqmnt_designtn: rqmnt_designtn,
-            wait_list_okay: wait_list_okay
+            wait_list_okay: wait_list_okay,
         };
+        if (parent) {
+            type FullToCartPayload = ToCartPayload & { relate_class_nbr_1: string };
+
+            (payload as FullToCartPayload).class_nbr = parent.classNumber;
+            (payload as FullToCartPayload).relate_class_nbr_1 = selectedSection.classNumber;
+        }
         
         // fire it without worrying about p_row
         const fullURL = `${url}?${new URLSearchParams(payload)}`;

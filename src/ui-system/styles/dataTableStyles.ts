@@ -4,6 +4,7 @@ export const customDataTableStyles = `
     background-color: rgb(5, 7, 10) !important;
     color: white !important;
     border-color: rgb(30, 35, 45) !important;
+    padding: 1rem 0.5rem;
   }
   
   .custom-datatable .p-datatable-tbody > tr:nth-child(even) {
@@ -23,6 +24,7 @@ export const customDataTableStyles = `
   
   .custom-datatable .p-datatable-tbody > tr > td {
     border-color: rgb(30, 35, 45) !important;
+    padding: 0.75rem 0.5rem;
   }
   
   .custom-datatable .p-row-toggler {
