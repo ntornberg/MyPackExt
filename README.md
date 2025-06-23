@@ -30,7 +30,7 @@ Particularly in the GEP search and the Plan search a large amount of data needs 
 ### File names and organiziation
 As you probably will come to see the file names and organization are just all over the place. There is really no proper structure for a lot of this. like index.ts for example just holds data types for the supabase api response I think.
 
-I have tried to clean up some of this.
+I will work on reorganizing the files so it is easier to use. A lot of work needs to be done
 
 One major todo is to make it so that the add to cart works for labs. since I recently made it so that labs are grouped with their section, the to cart button needs to be refactored ( if it ever worked for lab sections to begin with)
 I need to investigate how the tocart button functions when adding labs. I am not sure if the course id should be tied to the lab or what. later problem.
