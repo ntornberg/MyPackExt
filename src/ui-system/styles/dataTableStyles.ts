@@ -7,6 +7,8 @@ export const customDataTableStyles = `
             box-shadow: 0 0 8px 2px rgba(33, 150, 243, 0.15);
             border: 1px solid rgba(255, 255, 255, 0.05);
             position: relative;
+            display: flex;
+            flex-direction: column;
         }
 
         .custom-datatable > * {
@@ -229,6 +231,11 @@ export const customDataTableStyles = `
             color: white !important;
             box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
             transform: translateY(-1px);
+        }
+
+        .custom-datatable .p-datatable-wrapper {
+            flex: 1 1 auto;
+            overflow-y: auto;
         }
 
         /* Pagination info text */

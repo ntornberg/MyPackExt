@@ -168,7 +168,7 @@ const CourseSections = React.memo(({ courseDataEntry }: { courseDataEntry: Merge
 
     if (sections.length > 0) {
         return (
-            <Box sx={{ height: 'auto', minHeight: '250px', width: '100%', display: 'flex' }}>
+                            <Box sx={{ height: 'auto', width: '100%', display: 'flex' }}>
                 <MemoizedDataTable sections={sections} sortFunc={sortSections} />
             </Box>
         );
