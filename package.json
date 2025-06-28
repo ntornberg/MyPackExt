@@ -20,6 +20,7 @@
     "package": "node -e \"const fs = require('fs'); const path = require('path'); const archiver = require('archiver'); const output = fs.createWriteStream('dist.zip'); const archive = archiver('zip'); output.on('close', () => console.log('Package created: dist.zip')); archive.on('error', (err) => { throw err; }); archive.pipe(output); archive.directory('dist/', false); archive.finalize();\""
   },
   "dependencies": {
+    "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.1.0",
