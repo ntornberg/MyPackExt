@@ -1,12 +1,12 @@
 import type { GridColDef } from "@mui/x-data-grid";
 import { RateMyProfessorCell } from "../components/DataGridCells/RateMyProfessorCell";
 import { GradeDistributionCell } from "../components/DataGridCells/GradeDistributionCell";
-import { ClassNotesCell } from "../components/DataGridCells/ClassNotesCell";
-import { PrereqCell } from "../components/DataGridCells/PrereqCell";
+
 import { ToCartButtonCell } from "../components/DataGridCells/ToCartButtonCell";
 import { CourseInfoCell } from "../components/DataGridCells/CourseInfoCell";
 import { StatusAndSlotsCell } from "../components/DataGridCells/StatusAndSlotsCell";
-import type { GroupedSections, ModifiedSection } from "../utils/CourseSearch/MergeDataUtil";
+import type { GroupedSections } from "../utils/CourseSearch/MergeDataUtil";
+import { InfoCell } from "../components/DataGridCells/InfoCell";
 
 export function sortSections(v1: GroupedSections, v2: GroupedSections) {
   // Order should be Open,Reserved,Waitlist,Closed
@@ -34,26 +34,6 @@ export function sortSections(v1: GroupedSections, v2: GroupedSections) {
   
   return availabilityDiff;
 }
-
-// Combined cell for both notes and prerequisites
-const InfoCell = (params: ModifiedSection) => {
-  const hasRequisites = params.requisites && 
-                        params.requisites !== '';
-  const hasNotes = params.notes && params.notes.trim() !== '';
-
-  // If no info to display, return null
-  if (!hasRequisites && !hasNotes) {
-    return null;
-  }
-  
-  // Return both cells side by side if both have content
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      {hasNotes && <ClassNotesCell {...params} />}
-      {hasRequisites && <PrereqCell {...params} />}
-    </div>
-  );
-};
 
 export const OpenCourseSectionsColumn: GridColDef[] = [
     { 

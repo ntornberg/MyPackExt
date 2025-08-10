@@ -1,6 +1,5 @@
 import { AppLogger } from '../../../utils/logger';
 import { parseHTMLContent, formCourseURL } from '../../../utils/CourseSearch/ParseRegistrarUtil';
-import type { RequiredCourse } from '../../../types/Plans';
 import type { CourseData } from '../../../utils/CourseSearch/ParseRegistrarUtil';
 
 /**
@@ -105,13 +104,3 @@ export async function batchSearchOpenCourses(
     
     return null;
 }
-/**
- * This fucntion needs to go
- * @deprecated
- * @param term The academic term to search in
- * @param course The course requirement details
- * @returns CourseData or null if not found or error
- */
-export async function searchOpenCourses(term: string, course: RequiredCourse): Promise<CourseData | null> {
-    return searchOpenCoursesByParams(term, course.course_abr, course.catalog_num);
-} 

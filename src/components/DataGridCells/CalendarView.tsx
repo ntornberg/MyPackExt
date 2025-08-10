@@ -6,7 +6,7 @@ import {getCacheCategory} from '../../cache/CourseRetrieval';
 
 import {useState, useEffect} from 'react';
 
-import CreateCalender, { toMinutes } from './CalenderResizeListener';
+import CreateCalendar, { toMinutes } from './CalendarResizeListener';
 import type {  ModifiedSection } from '../../utils/CourseSearch/MergeDataUtil';
 
 
@@ -56,9 +56,10 @@ export interface ScheduleEvent {
 }
 
 
-export const CalendarView = (params: ModifiedSection) => {
-    // @ts-ignore
-    const {dayTime, courseData} = params;
+type CalendarViewProps = ModifiedSection & { dayTime?: string; courseData?: { code?: string } };
+
+export const CalendarView = (params: CalendarViewProps) => {
+    const { dayTime, courseData } = params;
 
     const [eventData, setEventData] = useState<ScheduleEvent[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -214,7 +215,7 @@ export const CalendarView = (params: ModifiedSection) => {
 
     return (
         <Box sx={{width: '100%', height: '100%'}}>
-            <CreateCalender eventData={eventData} />
+            <CreateCalendar eventData={eventData} />
         </Box>
     );
 };

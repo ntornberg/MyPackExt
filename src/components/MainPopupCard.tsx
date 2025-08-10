@@ -4,15 +4,11 @@ import CssBaseline from '@mui/material/CssBaseline';
 import {
     Box,
     Button,
-    CircularProgress,
     Dialog,
-    Typography,
     Tab,
 } from '@mui/material';
 import { TabContext, TabList, TabPanel } from '@mui/lab';
 import AppTheme from '../themes/AppTheme';
-import { CacheProvider } from '@emotion/react';
-import { myEmotionCache } from '../content';
 import CourseSearch from './SearchTabs/CourseSearch';
 import PlanSearch from './SearchTabs/PlanSearch';
 import GEPSearch from './SearchTabs/GEPSearch';
@@ -21,7 +17,6 @@ import { PlanSearchDataInitialState } from './TabDataStore/TabData';
 import { CourseSearchDataInitialState } from './TabDataStore/TabData';
 import React from 'react';
 
-// Memoize tabs to prevent re-renders
 const MemoizedCourseSearchTab = React.memo(({ setCourseSearchTabData, courseSearchData }: 
   { setCourseSearchTabData: (key: keyof CourseSearchData, value: any) => void; courseSearchData: CourseSearchData }) => (
   <CourseSearch setCourseSearchTabData={setCourseSearchTabData} courseSearchData={courseSearchData} />
@@ -36,30 +31,6 @@ const MemoizedPlanSearchTab = React.memo(({ setPlanSearchTabData, planSearchData
   { setPlanSearchTabData: (key: keyof PlanSearchData, value: any) => void; planSearchData: PlanSearchData }) => (
   <PlanSearch setPlanSearchTabData={setPlanSearchTabData} planSearchData={planSearchData} />
 ));
-
-export function CircularProgressWithLabel({ value }: { value: number }) {
-  return (
-    <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-      <CircularProgress variant="determinate" value={value} />
-      <Box
-        sx={{
-          top: 0,
-          left: 0,
-          bottom: 0,
-          right: 0,
-          position: 'absolute',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Typography variant="caption" component="div" color="text.secondary">
-          {`${Math.round(value)}%`}
-        </Typography>
-      </Box>
-    </Box>
-  );
-}
 
 export default function SlideOutDrawer() {
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -131,7 +102,6 @@ export default function SlideOutDrawer() {
     ]);
 
     return (
-        <CacheProvider value={myEmotionCache}>
             <AppTheme>
                 <CssBaseline enableColorScheme />
                 <Box sx={{ p: 2, pointerEvents: 'auto' }}>
@@ -214,6 +184,5 @@ export default function SlideOutDrawer() {
                     </Dialog>
                 </Box>
             </AppTheme>
-        </CacheProvider>
     );
 }

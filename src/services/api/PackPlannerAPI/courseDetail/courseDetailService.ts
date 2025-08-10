@@ -79,7 +79,7 @@ async function fetchSingleCourseData(course: Course): Promise<SingleCourseDataRe
     
     // Generate hash and store in persistent cache
     const courseHash = await generateCacheKey(course.abr + " " + course.instructor);
-    await setGenericCache("courseList", {hashKey : courseHash,cacheData : JSON.stringify(combinedData)});
+    await setGenericCache("courseList", {[courseHash]:JSON.stringify(combinedData)});
     
     return combinedData;
   } catch (error) {

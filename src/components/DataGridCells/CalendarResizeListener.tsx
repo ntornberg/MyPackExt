@@ -2,9 +2,6 @@ import { useRef, useState, useEffect } from 'react';
 import { Box, Paper, Typography } from '@mui/material';
 import type { ScheduleEvent } from './CalendarView';
 
-
-
-
 export function toMinutes(time: string) {
   const [hms, mod] = time.split(' ');
   let [h, m] = hms.split(':').map(Number);
@@ -40,9 +37,7 @@ function useSize<T extends HTMLElement>() {
   return [ref, s] as const;
 }
 
-/* ───────── component ───────── */
-
-export default function CreateCalender({ eventData }: { eventData: ScheduleEvent[] }) {
+export default function CreateCalendar({ eventData }: { eventData: ScheduleEvent[] }) {
   const windowStart = 6,
     windowEnd = 22;
   const hours = Array.from(
@@ -63,18 +58,17 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
         margin: '0 auto',
         display: 'grid',
         gridTemplateColumns: {
-          xs: '40px repeat(5, 1fr)', // Mobile: very narrow time axis
-          sm: 'clamp(50px, 8vw, 80px) repeat(5, 1fr)', // Responsive time axis
+          xs: '40px repeat(5, 1fr)',
+          sm: 'clamp(50px, 8vw, 80px) repeat(5, 1fr)',
         },
         gridTemplateRows: {
-          xs: '35px 1fr', // Mobile: shorter header
-          sm: 'clamp(40px, 8vh, 60px) 1fr', // Responsive header height
+          xs: '35px 1fr',
+          sm: 'clamp(40px, 8vh, 60px) 1fr',
         },
         overflow: 'hidden',
-        p: { xs: 0.5, sm: 1, md: 2 }, // Responsive padding
+        p: { xs: 0.5, sm: 1, md: 2 },
       }}
     >
-      {/* Empty corner cell */}
       <Box
         sx={{
           gridColumn: 1,
@@ -85,7 +79,6 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
         }}
       />
 
-      {/* ───── weekday headers (cols 2-6, row 1) ───── */}
       {weekdays.map((d, i) => (
         <Typography
           key={d}
@@ -105,13 +98,11 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
             borderRight: i < 4 ? '1px solid #ddd' : 'none',
           }}
         >
-          {/* Show single letter on very small screens */}
           <Box sx={{ display: { xs: 'block', sm: 'none' } }}>{d.charAt(0)}</Box>
           <Box sx={{ display: { xs: 'none', sm: 'block' } }}>{d}</Box>
         </Typography>
       ))}
 
-      {/*time axis ( needs to be refactored way too big*/}
       <Box
         sx={{
           gridColumn: 1,
@@ -136,7 +127,6 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
                 userSelect: 'none',
               }}
             >
-              {/* ts doesn't even work on mobile this is useless */}
               {window.innerWidth < 600
                 ? `${((h + 11) % 12) + 1}${h < 12 ? 'a' : 'p'}`
                 : `${((h + 11) % 12) + 1}${h < 12 ? 'AM' : 'PM'}`}
@@ -145,7 +135,6 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
         })}
       </Box>
 
-      {/* Main body of the*/}
       <Box
         ref={bodyRef}
         sx={{
@@ -157,7 +146,6 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
           bgcolor: 'white',
         }}
       >
-        {/* Hour grid lines */}
         {hours.map((h) => {
           if (h === windowStart) return null;
           const top =
@@ -177,7 +165,6 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
           );
         })}
 
-        {/* Day columns */}
         {weekdays.map((day, colIdx) => (
           <Box
             key={day}
@@ -187,7 +174,6 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
               borderRight: colIdx < 4 ? '1px solid #e0e0e0' : 'none',
             }}
           >
-            {/* Events for this day */}
             {body.h > 0 &&
               events
                 .filter((e) => e.days.some((d) => d.day === day))
@@ -198,7 +184,6 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
                     body.h
                   );
                   return (
-                    
                     <Paper
                       key={`${ev.id}-${day}`}
                       elevation={2}
@@ -224,7 +209,6 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
                         lineHeight: 1.2,
                       }}
                     >
-                      {/* Truncate text on small screens */}
                       {ev.subj.length > 15 && window.innerWidth < 600
                         ? `${ev.subj.split(' ')[0]} ${ev.subj.split(' ')[1]}...`
                         : ev.subj}

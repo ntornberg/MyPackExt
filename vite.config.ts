@@ -47,11 +47,7 @@ export default defineConfig(({ mode }) => {
       reportCompressedSize: isProduction,
       chunkSizeWarningLimit: 1000
     },
-    resolve: {
-      alias: {
-        '@mui/styled-engine': '@mui/styled-engine',
-      },
-    },
+    resolve: {},
     define: {
       __DEV__: isDevelopment,
       __PROD__: isProduction,
