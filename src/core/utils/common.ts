@@ -1,8 +1,10 @@
 ﻿/**
- * Creates a debounced version of a function.
- * @param {() => void} fn - The function to debounce.
- * @param {number} [ms=100] - The debounce delay in milliseconds. (Increased from original 20/25 for stability)
- * @returns {() => void} The debounced function.
+ * Creates a debounced version of a no-arg function.
+ * Subsequent calls within the window reset the timer.
+ *
+ * @param {() => void} fn The function to debounce
+ * @param {number} [ms=100] Delay in milliseconds
+ * @returns {() => void} Debounced function
  */
 export const debounce = (fn: () => void, ms = 100): () => void => {
     let timeoutId: number;

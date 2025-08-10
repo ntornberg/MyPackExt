@@ -23,11 +23,15 @@ const CACHE_KEYS = {
 };
 
 /**
- * Fetches course data for a single course
- * @param courseAbr Course abbreviation (e.g., "CSC")
- * @param catalogNum Catalog number (e.g., "316")
- * @param term Academic term
- * @returns Promise with course data or null if not found
+ * Fetches course data for a single course by combining open-sections data and instructor grade/professor info.
+ * Utilizes multiple layered caches to minimize network calls and returns fully merged data ready for display.
+ *
+ * @param {string} courseAbr Course abbreviation (e.g., "CSC")
+ * @param {string} catalogNum Catalog number (e.g., "316")
+ * @param {string} course_id Registrar course id for cart actions
+ * @param {string} term Academic term (e.g., "Fall 2024")
+ * @param {(progress: number, statusMessage?: string) => void} [onProgress] Optional progress callback receiving [0..100] and a status label
+ * @returns {Promise<MergedCourseData | null>} Merged course data or null when not found
  */
 export async function fetchSingleCourseData(
   courseAbr: string,
@@ -209,11 +213,13 @@ export async function fetchSingleCourseData(
 }
 
 /**
- * Batch processes multiple courses with separate caching for open courses and grade/professor data
- * @param courses Array of required courses to fetch data for
- * @param term Academic term
- * @param onProgress Optional callback for tracking progress
- * @returns Promise with course data mapped by course key
+ * Batch processes multiple courses with separate caching phases for open courses and grade/professor data.
+ * Caches partial results at granular keys to improve reuse across different searches.
+ *
+ * @param {RequiredCourse[]} courses Array of required courses to fetch data for
+ * @param {string} term Academic term identifier
+ * @param {(progress: number, statusMessage?: string) => void} [onProgress] Optional callback for tracking progress messages and percentages
+ * @returns {Promise<Record<string, MergedCourseData>>} Map of course key (e.g., "CSC 316") to merged course data
  */
 export async function batchFetchCoursesData(
   courses: RequiredCourse[],
@@ -484,11 +490,12 @@ export async function batchFetchCoursesData(
 }
 
 /**
- * Fetches course search data from the backend API.
- * @param {Requirement[]} requirements - The requirements to fetch data for.
- * @param {string} term - The term to fetch data for.
- * @param {Function} onProgress - Optional callback for tracking progress.
- * @returns {Promise<Record<string, MergedCourseData> | null>} - A promise with course data mapped by course key.
+ * Expands a set of plan requirements to individual courses and uses batch processing to fetch/merge data.
+ *
+ * @param {Requirement[]} requirements The plan requirements map to process
+ * @param {string} term The academic term to query
+ * @param {(progress: number, statusMessage?: string) => void} [onProgress] Optional callback for progress updates
+ * @returns {Promise<Record<string, MergedCourseData> | null>} Merged course data by course key or null if none
  */
 export async function fetchCourseSearchData(
   requirements: Requirement[],

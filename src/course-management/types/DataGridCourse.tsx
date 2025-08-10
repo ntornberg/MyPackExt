@@ -1,14 +1,20 @@
-import type {GridColDef} from "@mui/x-data-grid";
-import {RateMyProfessorCell} from "../components/DataGridCells/RateMyProfessorCell";
-import {GradeDistributionCell} from "../components/DataGridCells/GradeDistributionCell";
-import {ClassNotesCell} from "../components/DataGridCells/ClassNotesCell";
-import {PrereqCell} from "../components/DataGridCells/PrereqCell";
-import {ToCartButtonCell} from "../components/DataGridCells/ToCartButtonCell";
-import {CourseInfoCell} from "../components/DataGridCells/CourseInfoCell";
-import {StatusAndSlotsCell} from "../components/DataGridCells/StatusAndSlotsCell";
-import type {GroupedSections, ModifiedSection} from "../../core/utils/CourseSearch/MergeDataUtil";
+import type { GridColDef } from "@mui/x-data-grid";
+import { RateMyProfessorCell } from "../components/DataGridCells/RateMyProfessorCell";
+import { GradeDistributionCell } from "../components/DataGridCells/GradeDistributionCell";
 
+import { ToCartButtonCell } from "../components/DataGridCells/ToCartButtonCell";
+import { CourseInfoCell } from "../components/DataGridCells/CourseInfoCell";
+import { StatusAndSlotsCell } from "../components/DataGridCells/StatusAndSlotsCell";
+import { InfoCell } from "../components/DataGridCells/InfoCell";
+import type { GroupedSections } from "../../core/utils/CourseSearch/MergeDataUtil";
 
+/**
+ * Sort comparator for grouped sections by availability and then professor rating.
+ *
+ * @param {GroupedSections} v1 First grouped section
+ * @param {GroupedSections} v2 Second grouped section
+ * @returns {number} Comparator result
+ */
 export function sortSections(v1: GroupedSections, v2: GroupedSections) {
   // Order should be Open,Reserved,Waitlist,Closed
   const order: Record<string, number> = { 
@@ -36,41 +42,24 @@ export function sortSections(v1: GroupedSections, v2: GroupedSections) {
   return availabilityDiff;
 }
 
-// Combined cell for both notes and prerequisites
-const InfoCell = (params: ModifiedSection) => {
-  const hasRequisites = params.requisites && 
-                        params.requisites !== '';
-  const hasNotes = params.notes && params.notes.trim() !== '';
-
-  // If no info to display, return null
-  if (!hasRequisites && !hasNotes) {
-    return null;
-  }
-  
-  // Return both cells side by side if both have content
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      {hasNotes && <ClassNotesCell {...params} />}
-      {hasRequisites && <PrereqCell {...params} />}
-    </div>
-  );
-};
-
+/**
+ * Column definitions for the open course sections data grid.
+ *
+ * @type {GridColDef[]} Column definitions
+ */
 export const OpenCourseSectionsColumn: GridColDef[] = [
-    { 
-      field: 'id', 
-      headerName: 'ID', 
-      hideable: true, 
+    {
+      field: 'id',
+      headerName: 'ID',
+      hideable: true,
       minWidth: 60,
-      disableColumnMenu: true 
+      disableColumnMenu: true
     },
-   
-    
     { 
       field: 'to_cart_button', 
-      headerName: '', 
-      flex: 1, 
-      minWidth: 80, 
+      headerName: '',
+      flex: 1,
+      minWidth: 80,
       renderCell: (params) => ToCartButtonCell(params.row),
       sortable: false,
       filterable: false,

@@ -9,7 +9,12 @@ export const courses: Course[] = []; // Stores courses from the main schedule ta
 export const planner_courses: Course[] = []; // Stores courses from the planner/cart
 
 // --- DOM Extraction Helpers ---
-/** Extracts course info from a schedule table row. */
+/**
+ * Extracts course information from a schedule table row in the planner UI.
+ *
+ * @param rowElement HTMLElement representing a course section child row
+ * @returns Parsed course basic info or null if row structure is unexpected
+ */
 function extractCourseInfoFromRow(rowElement: HTMLElement): Course | null {
     const innerTable = rowElement.querySelector('[id^="scheduleInner_"]');
     if (!innerTable) return null;
@@ -39,7 +44,12 @@ function extractCourseInfoFromRow(rowElement: HTMLElement): Course | null {
     };
 }
 
-/** Extracts planner course info from a planner table row. */
+/**
+ * Extracts planner course header and instructor from a planner table detail row.
+ *
+ * @param classDetailRow Element for a planner class details row
+ * @returns Minimal course object containing abbreviation and instructor
+ */
 function extractPlannerCourseInfo(classDetailRow: Element): Course {
     let courseAbbreviation = 'N/A';
     let courseInstructor = 'N/A';
@@ -65,7 +75,12 @@ function extractPlannerCourseInfo(classDetailRow: Element): Course {
     };
 }
 
-/** Adds a course info cell to the planner header row. */
+/**
+ * Adds a descriptive cell to the planner header row with course and instructor info.
+ *
+ * @param courseHeaderRow The header row preceding the class details row
+ * @param course Parsed course info
+ */
 function addCourseInfoCell(courseHeaderRow: Element | null, course: Course) {
     if (!courseHeaderRow) return;
     const headerCell = document.createElement('td');
@@ -78,7 +93,13 @@ function addCourseInfoCell(courseHeaderRow: Element | null, course: Course) {
     courseHeaderRow.appendChild(headerCell);
 }
 
-/** Appends extension data elements to the extension cell. */
+/**
+ * Appends grade and professor elements into the extension cell only when present.
+ *
+ * @param extRow Extension cell element
+ * @param gradeElement Rendered grade distribution element
+ * @param profElement Rendered professor rating element
+ */
 function appendExtensionData(extRow: HTMLElement, gradeElement: HTMLElement, profElement: HTMLElement) {
     if (gradeElement.textContent !== 'No grade data available.') {
         extRow.appendChild(gradeElement);
@@ -91,7 +112,9 @@ function appendExtensionData(extRow: HTMLElement, gradeElement: HTMLElement, pro
 
 /**
  * Scrapes course data from the main schedule table.
- * @param {Element} scheduleTableElement - The HTML element of the schedule table.
+ *
+ * @param {Element} scheduleTableElement The HTML element of the schedule table
+ * @returns {void}
  */
 export function scrapeScheduleTable(scheduleTableElement: Element): void {
     AppLogger.info('Scraping schedule table...');
@@ -112,7 +135,9 @@ export function scrapeScheduleTable(scheduleTableElement: Element): void {
 
 /**
  * Scrapes course data from the planner/cart table.
- * @param {Element} plannerTableElement - The HTML element of the planner/cart table.
+ *
+ * @param {Element} plannerTableElement The HTML element of the planner/cart table
+ * @returns {Promise<void>} Resolves after scraping and UI updates
  */
 export async function scrapePlanner(plannerTableElement: Element): Promise<void> {
     AppLogger.info('Scraping planner/cart table...');
@@ -140,7 +165,10 @@ export async function scrapePlanner(plannerTableElement: Element): Promise<void>
 
 // --- Style Helpers ---
 
-/** Applies necessary styles to the iframe content for better display of extension data. */
+/**
+ * Applies CSS to target iframes so extension content displays with proper layout and visibility.
+ * Ensures dialog containers are flexed and button panes stick to bottom.
+ */
 export async function applyIframeStyles(plannerTableElement: HTMLTableElement): Promise<void> {
     AppLogger.info('Applying iframe styles...');
     const iframe = document.querySelector('[id$="divPSPAGECONTAINER"] iframe') as HTMLIFrameElement | null;
@@ -220,7 +248,12 @@ td.mypack-extension-cell {
     }
 }
 
-/** Makes the dialog a vertical flex container and sticks the button pane to the bottom. */
+/**
+ * Makes the jQuery UI dialog a vertical flex container and pins the button pane to the bottom.
+ *
+ * @param parent_dialog Outer dialog element
+ * @param inner_dialog Inner scrollable content container
+ */
 async function applyFlexDialogLayout(parent_dialog: HTMLElement, inner_dialog: HTMLElement): Promise<void> {
     const dlg = document.querySelector('.ui-dialog.cust-ui-dialog');
     if (dlg) {
@@ -253,8 +286,9 @@ async function applyFlexDialogLayout(parent_dialog: HTMLElement, inner_dialog: H
 
 /**
  * Creates a debounced function for scraping the planner.
- * @param {Function} scrapePlanner - The function to debounce.
- * @returns {Function} - The debounced function.
+ *
+ * @param {(plannerTableElement: Element) => Promise<void>} scrapePlanner The function to debounce
+ * @returns {() => void} The debounced trigger function
  */
 export function debounceScraper(scrapePlanner: (plannerTableElement: Element) => Promise<void>) {
     return debounce(async () => {

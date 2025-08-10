@@ -3,7 +3,14 @@ import type {GroupedSections, ModifiedSection} from "./MergeDataUtil";
 import {AppLogger} from "../logger";
 import type {CourseSection} from "./ParseRegistrarUtil";
 
-// Used to group labs
+/**
+ * Groups registrar sections by numeric section id into a lecture with associated labs.
+ * Optionally maps through a provided section override map (e.g., enriched sections).
+ *
+ * @param {CourseSection[]} sections Flat list of sections for a course
+ * @param {Record<string, ModifiedSection>} [courseSections] Optional override map by section id
+ * @returns {Record<string, GroupedSections>} Grouped lecture and labs keyed by numeric id
+ */
 export function groupSections(sections: CourseSection[],  courseSections?: Record<string, ModifiedSection>) {
     const groupedSections : Record<string, GroupedSections> = {};
     for (const section of sections) {

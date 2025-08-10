@@ -34,6 +34,15 @@ export type MergedCourseData = Omit<CourseData, "sections"> & {
     course_id?: string; // Store course_id at course level
 }
 
+/**
+ * Merges open course sections with grade distributions and professor ratings.
+ * Also enriches sections with fields required for cart actions and groups lec/lab sections.
+ *
+ * @param {Record<string, CourseData>} courses Map of course key to parsed registrar data
+ * @param {BatchDataRequestResponse} batchData Grade and professor batch results
+ * @param {Record<string, RequiredCourse>} [courseInfoMap] Optional map of course key to RequiredCourse to propagate course_id
+ * @returns {Record<string, MergedCourseData>} Map of course key to merged and grouped course data
+ */
 export function mergeData(
     courses: Record<string, CourseData>,
     batchData: BatchDataRequestResponse,

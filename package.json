@@ -31,25 +31,16 @@
     "@mui/x-data-grid": "^8.3.1",
     "@mui/x-date-pickers": "^8.3.1",
     "@mui/x-tree-view": "^8.3.1",
-    "@syncfusion/ej2-base": "^29.2.4",
-    "@syncfusion/ej2-data": "^29.2.4",
-    "@syncfusion/ej2-react-buttons": "^29.2.5",
-    "@syncfusion/ej2-react-calendars": "^29.2.5",
-    "@syncfusion/ej2-react-dropdowns": "^29.2.5",
-    "@syncfusion/ej2-react-inputs": "^29.2.5",
-    "@syncfusion/ej2-react-popups": "^29.2.4",
-    "@syncfusion/ej2-react-schedule": "^29.2.5",
-    "@syncfusion/ej2-schedule": "^29.2.5",
-    "@tanstack/react-virtual": "^3.13.9",
+    
+    
     "cheerio": "^1.0.0",
-    "devextreme-react": "^24.2.7",
-    "jsonpath-plus": "^10.3.0",
+    
+    
     "primereact": "^10.9.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-gauge-component": "^1.2.64",
-    "react-window": "^1.8.11",
-    "recharts": "^2.15.3"
+    "react-gauge-component": "^1.2.64"
+    
   },
   "devDependencies": {
     "@babel/plugin-transform-react-constant-elements": "^7.25.9",
@@ -70,12 +61,12 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.0.0",
-    "javascript-obfuscator": "^4.1.1",
+    
     "rollup-plugin-visualizer": "^5.12.0",
     "terser": "^5.36.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.32.0",
-    "vite": "^6.3.5",
-    "vite-plugin-javascript-obfuscator": "^3.1.0"
+    "vite": "^6.3.5"
+    
   }
 }

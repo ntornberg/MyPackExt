@@ -3,6 +3,12 @@ import {AppLogger} from "../../core/utils/logger";
 import type {ToCartResponse} from "../../course-management/types/ToCartResponse.ts";
 
 
+/**
+ * Renders a MUI Alert based on the result of an add-to-cart operation.
+ *
+ * @param {ToCartResponse} response Server response from add-to-cart request
+ * @returns {JSX.Element} Success or error alert
+ */
 export function ToCartAlert(response: ToCartResponse) {
     if (response.status === "success") {
         AppLogger.info("Course added to cart: ", response);

@@ -5,7 +5,7 @@ import type {
 
 
 /**
- * Interface for a single course data response from the API
+ * Combined course grade data and RateMyProfessor info returned by backend for a single query.
  */
 export interface SingleCourseDataResponse {
   CourseData: {
@@ -33,7 +33,7 @@ export interface SingleCourseDataResponse {
 }
 
 /**
- * Interface for batch data request response
+ * Data shape returned by batch API that may include lists of grade data and professors.
  */
 export interface BatchDataRequestResponse {
   courses?: GradeData[];
@@ -41,7 +41,7 @@ export interface BatchDataRequestResponse {
 }
 
 /**
- * Interface for course elements (grade and professor cards)
+ * Rendered DOM elements for course grade and professor cards.
  */
 export interface CourseElements {
   gradeElement: HTMLDivElement;

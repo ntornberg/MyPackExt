@@ -10,7 +10,6 @@ import {setupListener} from "../degree-planning/services/siteResponseStorage.ts"
 import createCache from "@emotion/cache";
 
 
-
 declare global {
     interface Window {
         __savedDefine?: any;
@@ -18,12 +17,14 @@ declare global {
     }
 }
 
-const __psDefine = window.__savedDefine;      // pull from global
-delete window.__savedDefine;
-
 AppLogger.info("MyPack Enhancer script started.");
 
 // Is this even needed?
+/**
+ * Creates an Emotion cache instance guarded to avoid crashing in hostile environments.
+ *
+ * @returns {import('@emotion/cache').EmotionCache} Emotion cache instance
+ */
 export function createEmotionCache() {
   
   try {
@@ -39,6 +40,13 @@ export function createEmotionCache() {
 }
 
 export const myEmotionCache = createEmotionCache();
+
+/**
+ * Returns a debounced planner scraper function that re-scrapes after planner UI changes.
+ *
+ * @param {(plannerTableElement: Element) => Promise<void>} scrapePlanner Planner scraping function
+ * @returns {() => void} Debounced trigger
+ */
 function debounceScraper(scrapePlanner: (plannerTableElement: Element) => Promise<void>) {
     // Debounce time of 100ms
     return debounce(async () => {
@@ -55,36 +63,10 @@ function debounceScraper(scrapePlanner: (plannerTableElement: Element) => Promis
 const debouncedScrapePlanner = debounceScraper(scrapePlanner);
 
 /**
- * Enhanced message sending with retry logic for service worker restarts
+ * Injects the fetch/XHR hook script into the main document to surface data to the content script.
+ *
+ * @returns {void}
  */
-async function sendMessageWithRetry(message: any, maxRetries = 3): Promise<any> {
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      const response = await chrome.runtime.sendMessage(message);
-      
-      // Check if response indicates success
-      if (response && response.success !== false) {
-        return response;
-      }
-      
-      // If we get a failed response, don't retry
-      if (response && response.success === false) {
-        throw new Error(response.error || 'Request failed');
-      }
-      
-    } catch (error) {
-      AppLogger.warn(`[Content] Message attempt ${i + 1} failed:`, error);
-      
-      if (i === maxRetries - 1) {
-        throw error;
-      }
-      
-      // Wait before retry with exponential backoff
-      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
-    }
-  }
-}
-
 function injectXHRHookScript() {
     const script = document.createElement("script");
     script.src = chrome.runtime.getURL("realFetchHook.js");
@@ -95,6 +77,12 @@ function injectXHRHookScript() {
 // Track processed iframes to prevent duplicates
 const processedIframes = new WeakSet<HTMLIFrameElement>();
 
+/**
+ * Conditionally injects the hook script into qualifying MyPack iframes, once per iframe.
+ *
+ * @param {HTMLIFrameElement} iframe Target iframe element
+ * @returns {void}
+ */
 function injectIntoIframe(iframe: HTMLIFrameElement) {
     if (processedIframes.has(iframe)) {
         return;
@@ -144,7 +132,6 @@ function injectIntoIframe(iframe: HTMLIFrameElement) {
 // Inject into main document
 injectXHRHookScript();
 
-// Optimized iframe observer
 const iframeObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {
@@ -170,7 +157,6 @@ iframeObserver.observe(document.documentElement, {
     subtree: true
 });
 
-// Process existing iframes on load
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('iframe').forEach((iframe) => {
         injectIntoIframe(iframe as HTMLIFrameElement);
@@ -181,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
 (async () => {
     try {
         if (window.__mypackEnhancerInitialized) {
-            console.warn("MyPack Enhancer already initialized. Skipping...");
+            AppLogger.warn("MyPack Enhancer already initialized. Skipping...");
             return;
         }
         window.__mypackEnhancerInitialized = true;
@@ -195,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const root = createRoot(overlayElement);
         scrapeScheduleTable(scheduleElement);
         
-      // Render root component
+        // Render root component
         root.render(
             <CacheProvider value={myEmotionCache}>
                 <FirstStartDialog />
@@ -238,13 +224,3 @@ document.addEventListener('DOMContentLoaded', () => {
         AppLogger.error("An error occurred during the main execution block:", error);
     }
 })();
-
-if (__psDefine) {
-    Object.defineProperty(window, 'define', {   // hand the loader back
-        value: __psDefine,
-        configurable: true
-    });
-}
-
-// Export enhanced message sending for other modules
-(window as any).sendMessageWithRetry = sendMessageWithRetry;

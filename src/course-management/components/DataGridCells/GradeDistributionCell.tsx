@@ -5,6 +5,13 @@ import type {GradeData} from "../../../degree-planning/types/DataBaseResponses/S
 import type {ModifiedSection} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
 
 
+/**
+ * Renders a button that opens a dialog with grade distribution pie chart for a section.
+ * Returns null when no grade data available.
+ *
+ * @param {ModifiedSection} params Section containing `grade_distribution`
+ * @returns {JSX.Element | null} Trigger button and dialog, or null
+ */
 export const GradeDistributionCell = (params: ModifiedSection) => {
   const [open, setOpen] = useState(false);
   const gradeData = params.grade_distribution;

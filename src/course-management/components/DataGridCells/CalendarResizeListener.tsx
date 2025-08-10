@@ -1,8 +1,13 @@
-import {useEffect, useRef, useState} from 'react';
-import {Box, Paper, Typography} from '@mui/material';
-import type {ScheduleEvent} from './CalendarView';
+import { useRef, useState, useEffect } from 'react';
+import { Box, Paper, Typography } from '@mui/material';
+import type { ScheduleEvent } from './CalendarView';
 
-
+/**
+ * Converts a 12-hour time string (e.g., "3:30 PM") to minutes since midnight.
+ *
+ * @param {string} time Time string formatted like "3:30 PM" or "11:05 AM"
+ * @returns {number} Minutes since midnight
+ */
 export function toMinutes(time: string) {
   const [hms, mod] = time.split(' ');
   let [h, m] = hms.split(':').map(Number);
@@ -11,6 +16,14 @@ export function toMinutes(time: string) {
   return h * 60 + m;
 }
 
+/**
+ * Calculates pixel positions for an event block within the calendar body.
+ *
+ * @param {string} start Start time (e.g., "9:00 AM")
+ * @param {string} end End time (e.g., "10:15 AM")
+ * @param {number} bodyPx Pixel height of the calendar body (6 AM – 10 PM)
+ * @returns {{ topPx: number, heightPx: number }} Pixel metrics for positioning
+ */
 function getMetrics(start: string, end: string, bodyPx: number) {
   const windowStartMin = 6 * 60; // 6 AM
   const windowLenMin = 16 * 60; // 6 AM->10 PM = 960 min
@@ -24,6 +37,11 @@ function getMetrics(start: string, end: string, bodyPx: number) {
 }
 
 /* measure an element's size */
+/**
+ * Hook that returns a ref and its element size, updating on ResizeObserver events.
+ *
+ * @returns {[React.RefObject<T>, { w: number; h: number }]} Ref to attach and current size
+ */
 function useSize<T extends HTMLElement>() {
   const ref = useRef<T>(null);
   const [s, set] = useState({ w: 0, h: 0 });
@@ -38,9 +56,13 @@ function useSize<T extends HTMLElement>() {
   return [ref, s] as const;
 }
 
-/* ───────── component ───────── */
-
-export default function CreateCalender({ eventData }: { eventData: ScheduleEvent[] }) {
+/**
+ * Renders an inline week-view grid and paints events across weekdays with overlap awareness.
+ *
+ * @param {{ eventData: ScheduleEvent[] }} props Events to render
+ * @returns {JSX.Element} Calendar element
+ */
+export default function CreateCalendar({ eventData }: { eventData: ScheduleEvent[] }) {
   const windowStart = 6,
     windowEnd = 22;
   const hours = Array.from(
@@ -61,18 +83,17 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
         margin: '0 auto',
         display: 'grid',
         gridTemplateColumns: {
-          xs: '40px repeat(5, 1fr)', // Mobile: very narrow time axis
-          sm: 'clamp(50px, 8vw, 80px) repeat(5, 1fr)', // Responsive time axis
+          xs: '40px repeat(5, 1fr)',
+          sm: 'clamp(50px, 8vw, 80px) repeat(5, 1fr)',
         },
         gridTemplateRows: {
-          xs: '35px 1fr', // Mobile: shorter header
-          sm: 'clamp(40px, 8vh, 60px) 1fr', // Responsive header height
+          xs: '35px 1fr',
+          sm: 'clamp(40px, 8vh, 60px) 1fr',
         },
         overflow: 'hidden',
-        p: { xs: 0.5, sm: 1, md: 2 }, // Responsive padding
+        p: { xs: 0.5, sm: 1, md: 2 },
       }}
     >
-      {/* Empty corner cell */}
       <Box
         sx={{
           gridColumn: 1,
@@ -83,7 +104,6 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
         }}
       />
 
-      {/* ───── weekday headers (cols 2-6, row 1) ───── */}
       {weekdays.map((d, i) => (
         <Typography
           key={d}
@@ -103,13 +123,11 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
             borderRight: i < 4 ? '1px solid #ddd' : 'none',
           }}
         >
-          {/* Show single letter on very small screens */}
           <Box sx={{ display: { xs: 'block', sm: 'none' } }}>{d.charAt(0)}</Box>
           <Box sx={{ display: { xs: 'none', sm: 'block' } }}>{d}</Box>
         </Typography>
       ))}
 
-      {/*time axis ( needs to be refactored way too big*/}
       <Box
         sx={{
           gridColumn: 1,
@@ -134,7 +152,6 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
                 userSelect: 'none',
               }}
             >
-              {/* ts doesn't even work on mobile this is useless */}
               {window.innerWidth < 600
                 ? `${((h + 11) % 12) + 1}${h < 12 ? 'a' : 'p'}`
                 : `${((h + 11) % 12) + 1}${h < 12 ? 'AM' : 'PM'}`}
@@ -143,7 +160,6 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
         })}
       </Box>
 
-      {/* Main body of the*/}
       <Box
         ref={bodyRef}
         sx={{
@@ -155,7 +171,6 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
           bgcolor: 'white',
         }}
       >
-        {/* Hour grid lines */}
         {hours.map((h) => {
           if (h === windowStart) return null;
           const top =
@@ -175,7 +190,6 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
           );
         })}
 
-        {/* Day columns */}
         {weekdays.map((day, colIdx) => (
           <Box
             key={day}
@@ -185,7 +199,6 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
               borderRight: colIdx < 4 ? '1px solid #e0e0e0' : 'none',
             }}
           >
-            {/* Events for this day */}
             {body.h > 0 &&
               events
                 .filter((e) => e.days.some((d) => d.day === day))
@@ -196,7 +209,6 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
                     body.h
                   );
                   return (
-                    
                     <Paper
                       key={`${ev.id}-${day}`}
                       elevation={2}
@@ -222,7 +234,6 @@ export default function CreateCalender({ eventData }: { eventData: ScheduleEvent
                         lineHeight: 1.2,
                       }}
                     >
-                      {/* Truncate text on small screens */}
                       {ev.subj.length > 15 && window.innerWidth < 600
                         ? `${ev.subj.split(' ')[0]} ${ev.subj.split(' ')[1]}...`
                         : ev.subj}

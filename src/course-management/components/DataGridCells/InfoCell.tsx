@@ -3,6 +3,13 @@ import {ClassNotesCell} from "./ClassNotesCell";
 import {PrereqCell} from "./PrereqCell";
 import type {ModifiedSection} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
 
+/**
+ * Displays class notes and prerequisites icons if present for the section.
+ * Returns null if neither is present.
+ *
+ * @param {ModifiedSection} params Section data
+ * @returns {JSX.Element | null} Combined info cell or null
+ */
 export const InfoCell = (params: ModifiedSection) => {
     const hasRequisites = params.requisites && 
                           params.requisites !== '';

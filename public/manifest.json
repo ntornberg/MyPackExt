@@ -2,7 +2,7 @@
   "manifest_version": 3,
 
   "name": "MyPack Plus",
-  "version": "3.5.3",
+  "version": "3.7.0",
 
   "description": "If the menu isn't working please refresh mypack and if that doesn't work please toggle the extension off and on again.",
   "permissions": ["storage"],
@@ -10,7 +10,6 @@
     "https://*.acs.ncsu.edu/*","https://webappprd.acs.ncsu.edu/*"
   ],
   "action": {
-    "default_popup": "index.html",
     "default_icon": "icon.png"
   },
   "background": {

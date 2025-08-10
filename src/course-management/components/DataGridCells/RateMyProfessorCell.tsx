@@ -1,6 +1,12 @@
 import {Box, Rating, Typography} from '@mui/material';
 import type {ModifiedSection} from '../../../core/utils/CourseSearch/MergeDataUtil.ts';
 
+/**
+ * Displays a read-only star rating for the section's primary instructor.
+ *
+ * @param {ModifiedSection} params Section containing `professor_rating`
+ * @returns {JSX.Element} Rating cell
+ */
 export const RateMyProfessorCell = (params: ModifiedSection) => {
   const { professor_rating} = params;
   

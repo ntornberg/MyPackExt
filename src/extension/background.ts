@@ -4,7 +4,10 @@ import {AppLogger} from "../core/utils/logger";
 let isListenerRegistered = false;
 
 /**
- * Setup message listener with duplicate prevention
+ * Setup message listener with duplicate prevention.
+ * Handles fetch proxy requests and ping messages from content script.
+ *
+ * @returns {void}
  */
 function setupMessageListener() {
   // Prevent duplicate listeners
@@ -57,7 +60,9 @@ function setupMessageListener() {
 }
 
 /**
- * Initialize service worker on startup/restart
+ * Initialize service worker on startup/restart, ensuring listeners are registered.
+ *
+ * @returns {void}
  */
 function initializeServiceWorker() {
   AppLogger.info('[Background] Initializing service worker...');
@@ -69,7 +74,7 @@ function initializeServiceWorker() {
 }
 
 /**
- * Handle service worker install event
+ * Handle service worker install event by initializing listeners.
  */
 chrome.runtime.onInstalled.addListener((details) => {
   AppLogger.info('[Background] Extension installed/updated:', details.reason);
@@ -77,7 +82,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 });
 
 /**
- * Handle service worker startup
+ * Handle service worker startup by initializing listeners.
  */
 chrome.runtime.onStartup.addListener(() => {
   AppLogger.info('[Background] Service worker startup event');

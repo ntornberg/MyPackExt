@@ -236,6 +236,13 @@ const GEPTree: React.FC<GEPTreeProps> = React.memo((
   );
 });
 
+/**
+ * GEP Search tab for querying General Education Program courses by subject and term
+ * and displaying available sections grouped by subject code.
+ *
+ * @param {{ setGepSearchTabData: (key: keyof GEPData, value: any) => void; gepSearchData: GEPData }} props Tab state setter and current state
+ * @returns {JSX.Element} GEP Search tab UI
+ */
 export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepSearchTabData: (key: keyof GEPData, value: any) => void, gepSearchData: GEPData}) {
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
@@ -270,11 +277,11 @@ export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepS
               const course_entry = course_info_val as {course_title: string, course_id: string};
               return {
                 course_id: course_entry.course_id,
-                course_abr: title.split('-')[0].trim(), // Ensure course_abr is clean
+                course_abr: title.split('-')[0].trim(),
                 catalog_num: title.split('-')[1].trim(),
                 course_descrip: course_entry.course_title,
                 term: selectedTerm
-              } as RequiredCourse; // Ensure correct type
+              } as RequiredCourse;
             });
             
             setGepSearchTabData('courses', coursesResult);
