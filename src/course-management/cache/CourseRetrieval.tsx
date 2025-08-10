@@ -11,7 +11,7 @@ export interface CacheEntry {
 const CACHE_EXPIRATION = 24 * 60 * 60 * 1000;
 
 // Size threshold in bytes above which to use IndexedDB instead of chrome.storage
-const SIZE_THRESHOLD = 100 * 1024; // 100KB
+const SIZE_THRESHOLD = 100 * 1024;
 
 // DB name and store name for IndexedDB
 const DB_NAME = 'mypack-extension-cache';
@@ -118,7 +118,6 @@ async function storeInIndexedDB(cacheCategory: string, cacheEntries: Record<stri
                 });
                 
                 request.onsuccess = () => {
-                    //AppLogger.info(`[CACHE DB SUCCESS] Successfully stored in IndexedDB: ${cacheCategory}:${hash}...`);
                     return;
                 };
                 
@@ -127,13 +126,13 @@ async function storeInIndexedDB(cacheCategory: string, cacheEntries: Record<stri
                     return request.error;
                 };
                 
-                // Handle transaction errors
+
                 transaction.onerror = (_) => {
                     AppLogger.error(`[CACHE DB ERROR] Transaction error: ${transaction.error?.message || 'Unknown error'}`);
                     return transaction.error;
                 };
                 
-                // Close the database when the transaction is complete
+
                 transaction.oncomplete = () => {
                     if (db) db.close();
                 };
@@ -222,7 +221,7 @@ export async function getCacheCategory(cacheCategory: string): Promise<Record<st
                     reject(getAllKeysRequest.error);
                 };
                 
-                // Close the database when the transaction is complete
+
                 transaction.oncomplete = () => {
                     db.close();
                 };
@@ -308,7 +307,7 @@ async function getFromIndexedDB(cacheCategory: string, hash: string): Promise<Ca
                     reject(request.error);
                 };
                 
-                // Close the database when the transaction is complete
+
                 transaction.oncomplete = () => {
                     if (db) db.close();
                 };
@@ -373,7 +372,7 @@ async function clearFromIndexedDB(cacheCategory: string): Promise<void> {
                 reject(getAllKeysRequest.error);
             };
             
-            // Close the database when the transaction is complete
+
             transaction.oncomplete = () => {
                 db.close();
             };
@@ -391,7 +390,7 @@ async function clearFromIndexedDB(cacheCategory: string): Promise<void> {
  * @returns {number} - The estimated size in bytes
  */
 function estimateSize(str: string): number {
-    // A rough estimate is 2 bytes per character for UTF-16
+
     return str.length * 2;
 }
 
@@ -405,11 +404,6 @@ function estimateSize(str: string): number {
 
 
 export async function generateCacheKey(item: string): Promise<string> {
-    // Log only the first time for each unique input pattern
-    
-    
-   
-    
     return hashString(item);
 }
 
@@ -435,12 +429,9 @@ function isChromeStorageAvailable(): boolean {
  * @returns {Promise<CacheEntry | null>} - The cache entry or null if not found/expired.
  */
 export async function getGenericCache(cacheCategory: string, hash: string): Promise<CacheEntry | null> {
-    try {
-       // AppLogger.info(`[CACHE GET] Attempting to get ${cacheCategory} cache for hash: ${hash}...`);
-        
-        // Check if Chrome storage is available
+    try { 
         if (isChromeStorageAvailable()) {
-            // First try chrome.storage
+           
             try {
                 const cached = await chrome.storage.local.get(cacheCategory);
                 if (cached && cached[cacheCategory]) {
@@ -456,11 +447,11 @@ export async function getGenericCache(cacheCategory: string, hash: string): Prom
                             return null;
                         }
                         
-                        //AppLogger.info(`[CACHE HIT] Found ${cacheCategory} in Chrome storage for hash: ${hash}...`);
+
                         return entry;
                     }
                 }
-                //AppLogger.info(`[CACHE MISS] ${cacheCategory} not found in Chrome storage for hash: ${hash}...`);
+
             } catch (chromeError) {
                 AppLogger.error(`[CACHE ERROR] Chrome storage get failed: ${chromeError}`, chromeError);
             }
@@ -468,15 +459,9 @@ export async function getGenericCache(cacheCategory: string, hash: string): Prom
             AppLogger.info(`[CACHE INFO] Chrome storage not available, trying IndexedDB`);
         }
         
-        // Try IndexedDB
+       
         try {
             const indexedResult = await getFromIndexedDB(cacheCategory, hash);
-            
-            if (indexedResult) {
-                //AppLogger.info(`[CACHE HIT] Found ${cacheCategory} in IndexedDB for hash: ${hash}...`);
-            } else {
-                //AppLogger.info(`[CACHE MISS] ${cacheCategory} not found in IndexedDB for hash: ${hash}...`);
-            }
             
             return indexedResult;
         } catch (indexedDBError) {
@@ -499,10 +484,6 @@ export async function getGenericCache(cacheCategory: string, hash: string): Prom
  */
 export async function setGenericCache(cacheCategory: string, cacheEntries: Record<string,any>, cacheExpirationOverride?: number): Promise<void> {
     try {
-        // Ensure jsonData is a string
-        if(cacheCategory === "gradeProfData"){
-            //AppLogger.info(`[CACHE SET] Setting ${cacheCategory} cache for hash: ${Object.keys(cacheEntries)}...`);
-        }
         
         const dataAsString = typeof cacheEntries === 'string' 
             ? cacheEntries 
@@ -520,13 +501,10 @@ export async function setGenericCache(cacheCategory: string, cacheEntries: Recor
         }
         
       
-        //AppLogger.info(`[CACHE SIZE] Data size for ${cacheCategory}: ${dataSize} bytes, threshold: ${SIZE_THRESHOLD}`);
-        // Use IndexedDB for large items or if Chrome storage is not available
+       
         if (dataSize > SIZE_THRESHOLD || !isChromeStorageAvailable()) {
-            //AppLogger.info(`[CACHE STORAGE] Using IndexedDB for ${cacheCategory} due to size or Chrome unavailability`);
             try {
                 await storeInIndexedDB(cacheCategory, cacheEntryList);
-                //AppLogger.info(`[CACHE SUCCESS] Successfully stored in IndexedDB: ${cacheCategory}:${Object.keys(cacheEntryList)}...`);
             } catch (indexedDBError) {
                 AppLogger.error(`[CACHE ERROR] IndexedDB storage failed: ${indexedDBError}`, indexedDBError);
                 throw indexedDBError;
@@ -536,7 +514,6 @@ export async function setGenericCache(cacheCategory: string, cacheEntries: Recor
         
         // Use chrome.storage for smaller items
         try {
-            //AppLogger.info(`[CACHE STORAGE] Using Chrome storage for ${cacheCategory}`);
             const currentCache : Record<string,CacheEntry> = (await chrome.storage.local.get(cacheCategory))[cacheCategory] || {};
             for(const [hash,cacheEntry] of Object.entries(cacheEntryList)){
                 currentCache[hash] = cacheEntry;
@@ -550,7 +527,6 @@ export async function setGenericCache(cacheCategory: string, cacheEntries: Recor
             // Fall back to IndexedDB if Chrome storage fails
             try {
                 await storeInIndexedDB(cacheCategory, cacheEntryList);
-                //AppLogger.info(`[CACHE SUCCESS] Successfully stored in IndexedDB after Chrome storage failed`);
             } catch (fallbackError) {
                 AppLogger.error(`[CACHE ERROR] Fallback to IndexedDB also failed: ${fallbackError}`, fallbackError);
                 throw fallbackError;

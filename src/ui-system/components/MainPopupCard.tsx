@@ -1,24 +1,22 @@
-﻿import React, {useCallback, useMemo, useState} from 'react';
+﻿import {useCallback, useMemo, useState} from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
+import React from 'react';
 
-import {Box, Button, CircularProgress, Dialog, Tab, Typography,} from '@mui/material';
-import {TabContext, TabList, TabPanel} from '@mui/lab';
-import AppTheme from '../themes/AppTheme';
-import {CacheProvider} from '@emotion/react';
 import {
-    type CourseSearchData,
-    CourseSearchDataInitialState,
-    type GEPData,
-    GEPDataInitialState,
-    type PlanSearchData,
-    PlanSearchDataInitialState
-} from '../../course-management/components/TabDataStore/TabData';
+    Box,
+    Button,
+    Dialog,
+    Tab,
+} from '@mui/material';
+import { TabContext, TabList, TabPanel } from '@mui/lab';
+import AppTheme from '../themes/AppTheme';
+import { GEPDataInitialState, type CourseSearchData, type PlanSearchData, type GEPData } from '../../course-management/components/TabDataStore/TabData';
+import { PlanSearchDataInitialState } from '../../course-management/components/TabDataStore/TabData';
+import { CourseSearchDataInitialState } from '../../course-management/components/TabDataStore/TabData';
 import CourseSearch from '../../course-management/components/SearchTabs/CourseSearch';
-import PlanSearch from '../../course-management/components/SearchTabs/PlanSearch';
 import GEPSearch from '../../course-management/components/SearchTabs/GEPSearch';
-import {myEmotionCache} from "../../extension/content.tsx";
+import PlanSearch from '../../course-management/components/SearchTabs/PlanSearch';
 
-// Memoize tabs to prevent re-renders
 const MemoizedCourseSearchTab = React.memo(({ setCourseSearchTabData, courseSearchData }: 
   { setCourseSearchTabData: (key: keyof CourseSearchData, value: any) => void; courseSearchData: CourseSearchData }) => (
   <CourseSearch setCourseSearchTabData={setCourseSearchTabData} courseSearchData={courseSearchData} />
@@ -33,30 +31,6 @@ const MemoizedPlanSearchTab = React.memo(({ setPlanSearchTabData, planSearchData
   { setPlanSearchTabData: (key: keyof PlanSearchData, value: any) => void; planSearchData: PlanSearchData }) => (
   <PlanSearch setPlanSearchTabData={setPlanSearchTabData} planSearchData={planSearchData} />
 ));
-
-export function CircularProgressWithLabel({ value }: { value: number }) {
-  return (
-    <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-      <CircularProgress variant="determinate" value={value} />
-      <Box
-        sx={{
-          top: 0,
-          left: 0,
-          bottom: 0,
-          right: 0,
-          position: 'absolute',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Typography variant="caption" component="div" color="text.secondary">
-          {`${Math.round(value)}%`}
-        </Typography>
-      </Box>
-    </Box>
-  );
-}
 
 export default function SlideOutDrawer() {
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -128,7 +102,6 @@ export default function SlideOutDrawer() {
     ]);
 
     return (
-        <CacheProvider value={myEmotionCache}>
             <AppTheme>
                 <CssBaseline enableColorScheme />
                 <Box sx={{ p: 2, pointerEvents: 'auto' }}>
@@ -211,6 +184,5 @@ export default function SlideOutDrawer() {
                     </Dialog>
                 </Box>
             </AppTheme>
-        </CacheProvider>
     );
 }

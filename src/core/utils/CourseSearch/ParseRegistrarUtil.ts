@@ -102,11 +102,9 @@ function ParseCourseElement($: CheerioAPI, courseSection: cheerio.Cheerio<DomHan
   };
 }
 export function parseHTMLContent(html: any): CourseData | CourseData[] | null {
-  AppLogger.info(`[PARSE HTML CONTENT] HTML:`, html);
   const parsed = JSON.parse(html.data);
   
   const html_parse = parsed.html
-  AppLogger.info(`[PARSE HTML CONTENT] HTML PARSE:`, html_parse);
   const $ = cheerio.load(html_parse);
   const $courseSection = $('.course');
   if ($courseSection.length === 0) {
@@ -133,7 +131,7 @@ else {
 export function formCourseURL(term: string, course_abr: string, catalog_num?: string | null) {
     const term_id = TermIdByName[term];
     
-    AppLogger.info('Looking up subject', { course_abr },catalog_num);
+    AppLogger.info('Looking up subject', { course_abr }, catalog_num);
     if (!course_abr) {
         AppLogger.error('No subject found for course_abr', { course_abr });
         return null;

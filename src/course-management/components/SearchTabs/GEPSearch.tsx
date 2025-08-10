@@ -270,11 +270,11 @@ export default function GEPSearch({setGepSearchTabData, gepSearchData}: {setGepS
               const course_entry = course_info_val as {course_title: string, course_id: string};
               return {
                 course_id: course_entry.course_id,
-                course_abr: title.split('-')[0].trim(), // Ensure course_abr is clean
+                course_abr: title.split('-')[0].trim(),
                 catalog_num: title.split('-')[1].trim(),
                 course_descrip: course_entry.course_title,
                 term: selectedTerm
-              } as RequiredCourse; // Ensure correct type
+              } as RequiredCourse;
             });
             
             setGepSearchTabData('courses', coursesResult);
