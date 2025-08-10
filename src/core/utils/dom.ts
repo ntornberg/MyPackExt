@@ -2,8 +2,9 @@
 
 /**
  * Creates a shadow DOM host element with a container div inside.
- * @param {string} id - The ID to assign to the host element.
- * @returns {Object} - An object containing the host element and container element.
+ *
+ * @param {string} id The ID to assign to the host element
+ * @returns {{ host: HTMLDivElement, container: HTMLDivElement }} Host and container elements
  */
 export function createShadowHost(id: string): { host: HTMLDivElement, container: HTMLDivElement } {
     const host = document.createElement("div");
@@ -18,8 +19,9 @@ export function createShadowHost(id: string): { host: HTMLDivElement, container:
 
 /**
  * Ensures that an extension cell exists in the given row, creating one if necessary.
- * @param {HTMLTableRowElement} row - The table row where the cell should be added.
- * @returns {HTMLTableCellElement} - The extension cell.
+ *
+ * @param {HTMLTableRowElement} row The table row where the cell should be added
+ * @returns {HTMLTableCellElement} The extension cell
  */
 export function ensureExtensionCell(row: HTMLTableRowElement): HTMLTableCellElement {
     let cell = row.querySelector<HTMLTableCellElement>('td.mypack-extension-cell');
@@ -45,7 +47,8 @@ export function ensureExtensionCell(row: HTMLTableRowElement): HTMLTableCellElem
 
 /**
  * Waits for the schedule table ('#scheduleTable') within the MyPack iframe.
- * @returns {Promise<Element>} A promise that resolves with the '#scheduleTable' element.
+ *
+ * @returns {Promise<Element>} Resolves with the '#scheduleTable' element
  */
 export function waitForScheduleTable(): Promise<Element> {
     AppLogger.info("Waiting for schedule table (#scheduleTable)...");
@@ -72,6 +75,12 @@ export function waitForScheduleTable(): Promise<Element> {
         observer.observe(document.documentElement, {childList: true, subtree: true});
     });
 }
+/**
+ * Ensures an overlay root and a slide-out drawer container exist in the top document.
+ * Creates and styles them if missing and returns the drawer container element.
+ *
+ * @returns {HTMLDivElement} The drawer container element used as React root for the UI overlay
+ */
 export function ensureOverlayContainer(): HTMLDivElement {
     let overlayRootElement = document.getElementById('extension-overlay-root');
     
@@ -109,7 +118,8 @@ export function ensureOverlayContainer(): HTMLDivElement {
 }
 /**
  * Waits for the planner/cart table ('#classSearchTable') within the enroll wizard container in an iframe.
- * @returns {Promise<Element>} A promise that resolves with the '#classSearchTable' element.
+ *
+ * @returns {Promise<Element>} Resolves with the '#classSearchTable' element
  */
 export function waitForCart(): Promise<Element> {
     AppLogger.info("Waiting for planner/cart table (#classSearchTable)...");
@@ -155,9 +165,10 @@ export function waitForCart(): Promise<Element> {
 
 /**
  * Waits for a minimum number of rows to appear in a given table's tbody.
- * @param {HTMLTableElement} table - The table element to observe.
- * @param {number} [minRows=2] - The minimum number of rows to wait for.
- * @returns {Promise<NodeListOf<HTMLTableRowElement>>} A promise that resolves with the NodeList of rows.
+ *
+ * @param {HTMLTableElement} table The table element to observe
+ * @param {number} [minRows=2] The minimum number of rows to wait for
+ * @returns {Promise<NodeListOf<HTMLTableRowElement>>} Resolves with the NodeList of rows
  */
 export function waitForRows(table: HTMLTableElement, minRows = 2): Promise<NodeListOf<HTMLTableRowElement>> {
     return new Promise((resolve, reject) => {

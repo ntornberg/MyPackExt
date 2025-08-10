@@ -1,6 +1,10 @@
 ﻿import {generateCacheKey, setGenericCache} from "../../course-management/cache/CourseRetrieval.tsx";
 import {AppLogger} from "../../core/utils/logger.ts";
 
+/**
+ * Listens for messages posted from the hook script injected into page/iframes and
+ * persists relevant class data in cache categories for later display.
+ */
 export async function setupListener() {
     const target = window.top ?? window;
     target.postMessage({ type: "RECEIVER_READY", source: "content-script" }, "*");

@@ -128,6 +128,12 @@ const CourseDisplay = memo(({ course, openCourses }: { course: RequiredCourse, o
     );
 });
 
+/**
+ * Major/Minor Plan Search tab for fetching and displaying open sections for degree plan requirements.
+ *
+ * @param {{ setPlanSearchTabData: (key: keyof PlanSearchData, value: any) => void; planSearchData: PlanSearchData }} props Tab state setter and current state
+ * @returns {JSX.Element} Plan Search tab UI
+ */
 export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setPlanSearchTabData: (key: keyof PlanSearchData, value: any) => void, planSearchData: PlanSearchData}) {
  
   const major_options = Object.keys(majorPlans);

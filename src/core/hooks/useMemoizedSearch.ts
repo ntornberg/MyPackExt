@@ -8,6 +8,14 @@ type SearchCache = {
   [key: string]: MergedCourseData;
 };
 
+/**
+ * React hook that memoizes asynchronous course search results with progress reporting and error handling.
+ * Caches successful results by a composite key of subject, catalog number, and term to avoid
+ * redundant network calls during the session.
+ *
+ * @param searchFunction Function that performs the underlying search and returns merged course data
+ * @returns Object exposing { search, clearCache, isLoading, progress, progressLabel, data, error }
+ */
 export const useMemoizedSearch = (
   searchFunction: (
     courseAbr: string,

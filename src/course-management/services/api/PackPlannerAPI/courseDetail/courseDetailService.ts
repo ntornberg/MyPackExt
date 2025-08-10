@@ -13,9 +13,11 @@ import type {Course} from "../../../../../degree-planning/types/DataBaseResponse
 const courseDataCache = new Map<string, SingleCourseDataResponse>();
 
 /**
- * Fetches combined course and professor data from the backend API.
- * @param {Course} course - The course to fetch details for.
- * @returns {Promise<SingleCourseDataResponse | null>} - A promise that resolves with the combined data.
+ * Fetches combined course and professor data from the backend API with layered caching.
+ * Attempts in-memory, then persistent storage before making network request.
+ *
+ * @param {Course} course The course to fetch details for
+ * @returns {Promise<SingleCourseDataResponse | null>} Combined response or null
  */
 async function fetchSingleCourseData(course: Course): Promise<SingleCourseDataResponse | null> {
   // Generate a cache key for this course
@@ -92,9 +94,11 @@ async function fetchSingleCourseData(course: Course): Promise<SingleCourseDataRe
 }
 
 /**
- * Fetches both course grade and professor details with a single API call.
- * @param {Course} course - The course to fetch details for.
- * @returns {Promise<CourseElements>} - A promise that resolves with both HTML elements.
+ * Retrieves and renders both grade and professor UI elements for a course from a single combined backend response.
+ * Falls back to friendly placeholders if data is not available.
+ *
+ * @param {Course} course The course to generate UI elements for
+ * @returns {Promise<CourseElements>} Rendered grade and professor elements
  */
 export async function getCourseAndProfessorDetails(course: Course): Promise<CourseElements> {
   AppLogger.info("Getting combined data for:", course.abr, course.instructor);

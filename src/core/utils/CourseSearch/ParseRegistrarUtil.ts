@@ -32,7 +32,13 @@ export interface CourseData {
     sections: CourseSection[];
 }
 
-// Holy shit
+/**
+ * Parses a single course HTMLElement from the registrar HTML into structured CourseData.
+ *
+ * @param {CheerioAPI} $ Cheerio instance bound to the HTML
+ * @param {cheerio.Cheerio<DomHandlerElement>} courseSection The root element for a course block
+ * @returns {CourseData} Parsed course data
+ */
 function ParseCourseElement($: CheerioAPI, courseSection: cheerio.Cheerio<DomHandlerElement>): CourseData {
   const code = courseSection.find('h1').contents().first().text().trim();
   const title = courseSection.find('h1 small').text().trim();
@@ -101,6 +107,13 @@ function ParseCourseElement($: CheerioAPI, courseSection: cheerio.Cheerio<DomHan
     sections
   };
 }
+/**
+ * Parses registrar HTML response payload into CourseData or array of CourseData.
+ * Returns null when no course blocks were found.
+ *
+ * @param {any} html JSON response with an `html` string field
+ * @returns {CourseData | CourseData[] | null} Parsed result or null
+ */
 export function parseHTMLContent(html: any): CourseData | CourseData[] | null {
   const parsed = JSON.parse(html.data);
   
@@ -128,6 +141,14 @@ else {
 }
 }
 
+/**
+ * Forms URL-encoded body for the registrar search based on term, subject, and optional course number.
+ *
+ * @param {string} term Academic term (display string)
+ * @param {string} course_abr Subject code (e.g., "CSC")
+ * @param {string | null} [catalog_num] Optional course number
+ * @returns {string | null} URL-encoded form body or null when subject missing
+ */
 export function formCourseURL(term: string, course_abr: string, catalog_num?: string | null) {
     const term_id = TermIdByName[term];
     

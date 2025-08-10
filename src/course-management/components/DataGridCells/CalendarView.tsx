@@ -57,6 +57,13 @@ export interface ScheduleEvent {
 
 type CalendarViewProps = ModifiedSection & { dayTime?: string; courseData?: { code?: string } };
 
+/**
+ * Displays a miniature weekly calendar for a section using cached schedule data.
+ * If `dayTime` is provided, renders that event; otherwise derives from cached entries.
+ *
+ * @param {CalendarViewProps} params Section props and optional overrides
+ * @returns {JSX.Element} Calendar wrapper
+ */
 export const CalendarView = (params: CalendarViewProps) => {
     const { dayTime, courseData } = params;
 

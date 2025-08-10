@@ -32,6 +32,9 @@ const MemoizedPlanSearchTab = React.memo(({ setPlanSearchTabData, planSearchData
   <PlanSearch setPlanSearchTabData={setPlanSearchTabData} planSearchData={planSearchData} />
 ));
 
+/**
+ * Root UI component hosting the three search tabs inside a dialog mounted in the overlay container.
+ */
 export default function SlideOutDrawer() {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [selectedTab, setSelectedTab] = useState("0");

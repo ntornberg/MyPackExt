@@ -2,6 +2,12 @@ import { useRef, useState, useEffect } from 'react';
 import { Box, Paper, Typography } from '@mui/material';
 import type { ScheduleEvent } from './CalendarView';
 
+/**
+ * Converts a 12-hour time string (e.g., "3:30 PM") to minutes since midnight.
+ *
+ * @param {string} time Time string formatted like "3:30 PM" or "11:05 AM"
+ * @returns {number} Minutes since midnight
+ */
 export function toMinutes(time: string) {
   const [hms, mod] = time.split(' ');
   let [h, m] = hms.split(':').map(Number);
@@ -10,6 +16,14 @@ export function toMinutes(time: string) {
   return h * 60 + m;
 }
 
+/**
+ * Calculates pixel positions for an event block within the calendar body.
+ *
+ * @param {string} start Start time (e.g., "9:00 AM")
+ * @param {string} end End time (e.g., "10:15 AM")
+ * @param {number} bodyPx Pixel height of the calendar body (6 AM – 10 PM)
+ * @returns {{ topPx: number, heightPx: number }} Pixel metrics for positioning
+ */
 function getMetrics(start: string, end: string, bodyPx: number) {
   const windowStartMin = 6 * 60; // 6 AM
   const windowLenMin = 16 * 60; // 6 AM->10 PM = 960 min
@@ -23,6 +37,11 @@ function getMetrics(start: string, end: string, bodyPx: number) {
 }
 
 /* measure an element's size */
+/**
+ * Hook that returns a ref and its element size, updating on ResizeObserver events.
+ *
+ * @returns {[React.RefObject<T>, { w: number; h: number }]} Ref to attach and current size
+ */
 function useSize<T extends HTMLElement>() {
   const ref = useRef<T>(null);
   const [s, set] = useState({ w: 0, h: 0 });
@@ -37,6 +56,12 @@ function useSize<T extends HTMLElement>() {
   return [ref, s] as const;
 }
 
+/**
+ * Renders an inline week-view grid and paints events across weekdays with overlap awareness.
+ *
+ * @param {{ eventData: ScheduleEvent[] }} props Events to render
+ * @returns {JSX.Element} Calendar element
+ */
 export default function CreateCalendar({ eventData }: { eventData: ScheduleEvent[] }) {
   const windowStart = 6,
     windowEnd = 22;

@@ -4,10 +4,11 @@ import type { CourseData } from '../../../../core/utils/CourseSearch/ParseRegist
 
 /**
  * Searches for open course sections based on term and course abbreviation/catalog number
- * @param term The academic term to search in
- * @param courseAbr Course abbreviation (e.g., "CSC")
- * @param catalogNum Catalog number (e.g., "316")
- * @returns CourseData or null if not found or error
+ *
+ * @param {string} term The academic term to search in
+ * @param {string} courseAbr Course abbreviation (e.g., "CSC")
+ * @param {string} catalogNum Catalog number (e.g., "316")
+ * @returns {Promise<CourseData | null>} CourseData or null if not found or error
  */
 export async function searchOpenCoursesByParams(
     term: string, 

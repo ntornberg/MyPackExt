@@ -20,6 +20,11 @@ declare global {
 AppLogger.info("MyPack Enhancer script started.");
 
 // Is this even needed?
+/**
+ * Creates an Emotion cache instance guarded to avoid crashing in hostile environments.
+ *
+ * @returns {import('@emotion/cache').EmotionCache} Emotion cache instance
+ */
 export function createEmotionCache() {
   
   try {
@@ -36,6 +41,12 @@ export function createEmotionCache() {
 
 export const myEmotionCache = createEmotionCache();
 
+/**
+ * Returns a debounced planner scraper function that re-scrapes after planner UI changes.
+ *
+ * @param {(plannerTableElement: Element) => Promise<void>} scrapePlanner Planner scraping function
+ * @returns {() => void} Debounced trigger
+ */
 function debounceScraper(scrapePlanner: (plannerTableElement: Element) => Promise<void>) {
     // Debounce time of 100ms
     return debounce(async () => {
@@ -51,6 +62,11 @@ function debounceScraper(scrapePlanner: (plannerTableElement: Element) => Promis
 
 const debouncedScrapePlanner = debounceScraper(scrapePlanner);
 
+/**
+ * Injects the fetch/XHR hook script into the main document to surface data to the content script.
+ *
+ * @returns {void}
+ */
 function injectXHRHookScript() {
     const script = document.createElement("script");
     script.src = chrome.runtime.getURL("realFetchHook.js");
@@ -61,6 +77,12 @@ function injectXHRHookScript() {
 // Track processed iframes to prevent duplicates
 const processedIframes = new WeakSet<HTMLIFrameElement>();
 
+/**
+ * Conditionally injects the hook script into qualifying MyPack iframes, once per iframe.
+ *
+ * @param {HTMLIFrameElement} iframe Target iframe element
+ * @returns {void}
+ */
 function injectIntoIframe(iframe: HTMLIFrameElement) {
     if (processedIframes.has(iframe)) {
         return;
@@ -110,7 +132,6 @@ function injectIntoIframe(iframe: HTMLIFrameElement) {
 // Inject into main document
 injectXHRHookScript();
 
-// Optimized iframe observer
 const iframeObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {
@@ -136,7 +157,6 @@ iframeObserver.observe(document.documentElement, {
     subtree: true
 });
 
-// Process existing iframes on load
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('iframe').forEach((iframe) => {
         injectIntoIframe(iframe as HTMLIFrameElement);
@@ -161,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const root = createRoot(overlayElement);
         scrapeScheduleTable(scheduleElement);
         
-      // Render root component
+        // Render root component
         root.render(
             <CacheProvider value={myEmotionCache}>
                 <FirstStartDialog />
@@ -204,4 +224,3 @@ document.addEventListener('DOMContentLoaded', () => {
         AppLogger.error("An error occurred during the main execution block:", error);
     }
 })();
-

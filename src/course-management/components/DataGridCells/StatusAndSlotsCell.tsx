@@ -28,6 +28,12 @@ function getEnrollmentColor(enrollment: string | undefined): string {
     }
 }
 
+/**
+ * Shows availability status, enrollment tally, and section id as chips.
+ *
+ * @param {ModifiedSection} params Section data
+ * @returns {JSX.Element} Status chip row
+ */
 export const StatusAndSlotsCell = (params: ModifiedSection) => {
     const { availability, enrollment,section } = params;
     

@@ -4,6 +4,12 @@ import {CalendarView} from "./CalendarView";
 import type {ModifiedSection} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
 
 
+/**
+ * Renders compact course information with a rich tooltip showing details and the calendar view.
+ *
+ * @param {ModifiedSection} params Section data used to render info and the calendar peek
+ * @returns {JSX.Element} Info cell element
+ */
 export const CourseInfoCell = (params: ModifiedSection) => {
     
     const { section, component, dayTime, location } = params;

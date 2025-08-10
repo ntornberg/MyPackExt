@@ -8,6 +8,13 @@ import { StatusAndSlotsCell } from "../components/DataGridCells/StatusAndSlotsCe
 import { InfoCell } from "../components/DataGridCells/InfoCell";
 import type { GroupedSections } from "../../core/utils/CourseSearch/MergeDataUtil";
 
+/**
+ * Sort comparator for grouped sections by availability and then professor rating.
+ *
+ * @param {GroupedSections} v1 First grouped section
+ * @param {GroupedSections} v2 Second grouped section
+ * @returns {number} Comparator result
+ */
 export function sortSections(v1: GroupedSections, v2: GroupedSections) {
   // Order should be Open,Reserved,Waitlist,Closed
   const order: Record<string, number> = { 
@@ -35,21 +42,24 @@ export function sortSections(v1: GroupedSections, v2: GroupedSections) {
   return availabilityDiff;
 }
 
+/**
+ * Column definitions for the open course sections data grid.
+ *
+ * @type {GridColDef[]} Column definitions
+ */
 export const OpenCourseSectionsColumn: GridColDef[] = [
-    { 
-      field: 'id', 
-      headerName: 'ID', 
-      hideable: true, 
+    {
+      field: 'id',
+      headerName: 'ID',
+      hideable: true,
       minWidth: 60,
-      disableColumnMenu: true 
+      disableColumnMenu: true
     },
-   
-    
     { 
       field: 'to_cart_button', 
-      headerName: '', 
-      flex: 1, 
-      minWidth: 80, 
+      headerName: '',
+      flex: 1,
+      minWidth: 80,
       renderCell: (params) => ToCartButtonCell(params.row),
       sortable: false,
       filterable: false,

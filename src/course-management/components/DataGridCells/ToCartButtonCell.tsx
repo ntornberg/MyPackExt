@@ -17,6 +17,14 @@ interface ToCartPayload {
     wait_list_okay: string;
 }
 
+/**
+ * Renders an Add to Cart button for a section and invokes the MyPack add-to-cart endpoint.
+ * If a parent section is provided, will relate the child class number accordingly.
+ *
+ * @param {ModifiedSection} selectedSection The section to add to cart
+ * @param {ModifiedSection} [parent] Optional parent (e.g., lecture) when adding related lab
+ * @returns {JSX.Element} Button element with transient alert popper
+ */
 export const ToCartButtonCell = (selectedSection: ModifiedSection, parent?: ModifiedSection) => {
     // Extract the necessary parameters from the row
     const {

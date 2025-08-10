@@ -19,6 +19,9 @@ interface AppThemeProps {
   themeComponents?: ThemeOptions['components'];
 }
 
+/**
+ * Wraps children with MUI CssVarsProvider and applies custom component theming.
+ */
 export default function AppTheme(props: AppThemeProps) {
   const { children, disableCustomTheme, themeComponents } = props;
   const theme = React.useMemo(() => {
