@@ -6,7 +6,6 @@ let isListenerRegistered = false;
 /**
  * Setup message listener with duplicate prevention.
  * Handles fetch proxy requests from content scripts.
- *
  * @returns {void}
  */
 function setupMessageListener() {
