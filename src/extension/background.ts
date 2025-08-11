@@ -5,7 +5,7 @@ let isListenerRegistered = false;
 
 /**
  * Setup message listener with duplicate prevention.
- * Handles fetch proxy requests from content scripts.
+ * Handles fetch proxy requests and ping messages from content scripts.
  * @returns {void}
  */
 function setupMessageListener() {
@@ -45,6 +45,12 @@ function setupMessageListener() {
       });
       
       return true; // Keep message channel open for async response
+    }
+
+    // Handle ping messages for connection testing
+    if (message.type === "ping") {
+      sendResponse({ type: "pong", timestamp: Date.now() });
+      return false;
     }
   });
   
