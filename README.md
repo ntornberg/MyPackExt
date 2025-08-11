@@ -34,7 +34,7 @@ There are some unused `.ts`/`.tsx` files hanging around from earlier iterations.
 Early on I had to override some MyPack table styles, so there’s CSS being injected in a few places. Needs consolidation.
 
 ### Too many data types
-Data formats evolved as I pulled from different sources. It needs a proper abstraction pass.
+Data formats evolved as I pulled from different sources. It needs a proper abstracton.
 
 ### Heavy UI lists (GEP + Plans)
 Those views display a lot of data. I ended up with a tree-based UI to keep things usable, but there’s likely leftover code from prior attempts.
@@ -43,7 +43,7 @@ Those views display a lot of data. I ended up with a tree-based UI to keep thing
 It’s not as organized as it should be. Some files are misnamed (e.g., an `index.ts` that only holds types). Reorganization is on the list.
 
 ## What’s next
-- Refactors for readability and better modular boundaries
+- Refactors for readability and better modularty
 - Smarter caching and invalidation rules
 - Automated testing: API contract checks + UI smoke tests so things keep working if MyPack changes its UI
 
