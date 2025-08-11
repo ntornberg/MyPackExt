@@ -43,7 +43,7 @@ Those views display a lot of data. I ended up with a tree-based UI to keep thing
 It’s not as organized as it should be. Some files are misnamed (e.g., an `index.ts` that only holds types). Reorganization is on the list.
 
 ## What’s next
-- Refactors for readability and better modularty
+- Refactors for readability and better modularity
 - Smarter caching and invalidation rules
 - Automated testing: API contract checks + UI smoke tests so things keep working if MyPack changes its UI
 
