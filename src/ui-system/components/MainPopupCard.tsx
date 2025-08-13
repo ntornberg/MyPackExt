@@ -5,7 +5,7 @@ import React from 'react';
 import {
     Box,
     Button,
-    Dialog,
+  Dialog,
     Tab,
 } from '@mui/material';
 import { TabContext, TabList, TabPanel } from '@mui/lab';

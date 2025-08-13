@@ -5,7 +5,6 @@ import {
   Box,
   Button,
   DialogContent,
-  
   List,
   TextField,
   Typography,
@@ -138,21 +137,12 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
  
   const major_options = Object.keys(majorPlans);
   const minor_options = Object.keys(minorPlans);
- 
-
-
   const subplanOptions = planSearchData.selectedMajor
     ? Object.keys(majorPlans[planSearchData.selectedMajor as keyof typeof majorPlans]?.subplans || {})
     : [];
 
-  // const handleClick = (event: React.SyntheticEvent, nodeId: string) => {
-  //   AppLogger.info("Requirement clicked:", { nodeId });
-  //   AppLogger.info("Open state:", planSearchData.open);
-  //   setPlanSearchTabData('open', nodeId);
-  // };
-
   const planSearch = async () => {
-    setPlanSearchTabData('progress', 10); // start
+    setPlanSearchTabData('progress', 10);
     setPlanSearchTabData('progressLabel', 'Initializing plan search...');
     setPlanSearchTabData('searchMajor', planSearchData.selectedMajor);
     setPlanSearchTabData('searchMinor', planSearchData.selectedMinor);
@@ -165,7 +155,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
     });
     // Call the async logic
     await fetchOpenCourses(planSearchData.selectedMajor, planSearchData.selectedMinor, planSearchData.selectedSubplan, planSearchData.selectedTerm);
-    setPlanSearchTabData('progress', 100); // done
+    setPlanSearchTabData('progress', 100);
     setPlanSearchTabData('progressLabel', 'Complete');
   };
 
@@ -208,8 +198,7 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
           (progressVal, statusMessage) => {
             // Scale the progress to fit between 20-90%
             setPlanSearchTabData('progress', 20 + Math.round(progressVal * 0.7));
-            
-            // Update progress label from the status message if provided
+
             if (statusMessage) {
               setPlanSearchTabData('progressLabel', statusMessage);
             }
@@ -227,8 +216,6 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
         setPlanSearchTabData('progressLabel', 'Processing course sections');
         
         for (const [courseKey, course] of Object.entries(data)) {
-          // Ensure each section has a unique ID
-  
           newOpenCourses[courseKey] = course;
         }
         
@@ -369,7 +356,6 @@ export default function PlanSearch({setPlanSearchTabData, planSearchData}: {setP
     <DialogContent>
       <Box sx={{ width: '100%', p: 2 }}>
         <List>
-          
           <Autocomplete
             sx={{ width: '50%', mb: 1 }}
             id="term_selector"

@@ -184,7 +184,6 @@ export const dataGridCustomizations = {
   },
 };
 
-// Add MuiAutocomplete customization
 export const autocompleteCustomizations = {
   MuiAutocomplete: {
     styleOverrides: {

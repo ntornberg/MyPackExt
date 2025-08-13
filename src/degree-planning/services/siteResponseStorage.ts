@@ -1,4 +1,4 @@
-﻿import {generateCacheKey, setGenericCache} from "../../course-management/cache/CourseRetrieval.tsx";
+﻿import {generateCacheKey, setGenericCache} from "../../course-management/cache/CourseRetrieval";
 import {AppLogger} from "../../core/utils/logger.ts";
 
 /**

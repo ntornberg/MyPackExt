@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {Autocomplete, Box, Button, DialogContent, List, TextField, Typography,} from '@mui/material';
 
 import {fetchSingleCourseData} from '../../services/api/DialogMenuSearch/dataService';
@@ -14,10 +14,9 @@ import {RateMyProfessorCell} from '../DataGridCells/RateMyProfessorCell';
 import {GradeDistributionCell} from '../DataGridCells/GradeDistributionCell';
 
 import {InfoCell} from '../DataGridCells/InfoCell';
-import {useMemoizedSearch} from '../../../core/hooks/useMemoizedSearch';
 import {AppLogger} from '../../../core/utils/logger';
 import {DEPT_COURSES} from '../../../degree-planning/DialogAutoCompleteKeys/CourseSearch/department_courses.typed';
-import type {GroupedSections, ModifiedSection} from '../../../core/utils/CourseSearch/MergeDataUtil';
+import type {GroupedSections, ModifiedSection, MergedCourseData} from '../../../core/utils/CourseSearch/MergeDataUtil';
 import {TermIdByName} from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
 
 import {customDataTableStyles} from "../../../ui-system/styles/dataTableStyles.ts";
@@ -38,15 +37,62 @@ interface DeptCourse {
  */
 export default function CourseSearch({setCourseSearchTabData, courseSearchData}: {setCourseSearchTabData: (key: keyof CourseSearchData, value: any) => void, courseSearchData: CourseSearchData}) {
 
-  // Use the memoized search hook
-  const { 
-    search, 
-    isLoading, 
-    progress, 
-    progressLabel, 
-    data: courseData, 
-    error 
-  } = useMemoizedSearch(fetchSingleCourseData);
+  // Local state for search lifecycle
+  const [isLoading, setIsLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [progressLabel, setProgressLabel] = useState('');
+  const [courseData, setCourseData] = useState<MergedCourseData | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+
+  const search = useCallback(
+    async (
+      subject: string | null,
+      course: string | null,
+      courseId: string,
+      term: string | null
+    ) => {
+      if (!subject || !course || !term) {
+        return null;
+      }
+
+      setIsLoading(true);
+      setProgress(10);
+      setProgressLabel('Initializing search...');
+      setError(null);
+
+      try {
+        setProgress(20);
+        setProgressLabel(`Searching for ${course} in ${term}`);
+
+        const result = await fetchSingleCourseData(
+          subject,
+          course,
+          courseId,
+          term,
+          (progressValue, statusMessage) => {
+            setProgress(20 + Math.round(progressValue * 0.75));
+            if (statusMessage) {
+              setProgressLabel(statusMessage);
+            }
+          }
+        );
+
+        if (result) {
+          setCourseData(result);
+        }
+        return result;
+      } catch (err) {
+        const e = err instanceof Error ? err : new Error('Unknown error occurred');
+        setError(e);
+        return null;
+      } finally {
+        setProgress(100);
+        setProgressLabel('Complete');
+        setIsLoading(false);
+      }
+    },
+    []
+  );
 
   const courseSearch = async () => {
     AppLogger.info("Course search clicked with:", { 
@@ -199,7 +245,7 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
             <style>{customDataTableStyles}</style>
             <DataTable 
               dataKey="uniqueRowId"
-              value={Object.values(courseData.sections).sort(sortSections).flatMap((section, index) => {
+              value={Object.values(courseData.sections).flatMap((section, index) => {
                 // If section has lecture and labs, return the grouped section (for expansion)
                 if (section.lecture && section.labs && section.labs.length > 0) {
                   return [{...section, uniqueRowId: `grouped-${section.lecture.section || index}`}];
@@ -217,7 +263,7 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
                 }
                 // Fallback
                 return [];
-              })}
+               }).sort(sortSections)}
               paginator
               expandedRows={expandedRows}
               onRowToggle={(e) => setExpandedRows(e.data)}

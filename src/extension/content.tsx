@@ -1,8 +1,7 @@
-import {debounce} from "../core/utils/common";
-import {ensureOverlayContainer, waitForCart, waitForScheduleTable} from "../core/utils/dom";
+import {ensureOverlayContainer, waitForScheduleTable} from "../core/utils/dom";
 import {AppLogger} from "../core/utils/logger";
 import {createRoot} from "react-dom/client";
-import {scrapePlanner, scrapeScheduleTable} from "../course-management/services/scraper";
+import {debouncedScrapePlanner, scrapeScheduleTable} from "../course-management/services/scraper";
 import SlideOutDrawer from "../ui-system/components/MainPopupCard.tsx";
 import FirstStartDialog from "../user-experience/components/UserGuide/FirstStart.tsx";
 import {CacheProvider} from "@emotion/react";
@@ -40,27 +39,6 @@ export function createEmotionCache() {
 }
 
 export const myEmotionCache = createEmotionCache();
-
-/**
- * Returns a debounced planner scraper function that re-scrapes after planner UI changes.
- *
- * @param {(plannerTableElement: Element) => Promise<void>} scrapePlanner Planner scraping function
- * @returns {() => void} Debounced trigger
- */
-function debounceScraper(scrapePlanner: (plannerTableElement: Element) => Promise<void>) {
-    // Debounce time of 100ms
-    return debounce(async () => {
-        AppLogger.info("Planner changes detected, re-scraping planner...");
-        try {
-            const plannerElement = await waitForCart(); // Re-ensure planner table is accessible
-            await scrapePlanner(plannerElement);
-        } catch (error) {
-            AppLogger.error("Error during debounced planner scrape:", error);
-        }
-    }, 100);
-}
-
-const debouncedScrapePlanner = debounceScraper(scrapePlanner);
 
 /**
  * Injects the fetch/XHR hook script into the main document to surface data to the content script.

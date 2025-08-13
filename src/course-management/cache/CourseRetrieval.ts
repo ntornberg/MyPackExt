@@ -1,4 +1,4 @@
-﻿import { AppLogger } from "../../core/utils/logger";
+import { AppLogger } from "../../core/utils/logger";
 
 // Define the structure of the cache entry
 export interface CacheEntry {
@@ -17,8 +17,6 @@ const SIZE_THRESHOLD = 100 * 1024;
 const DB_NAME = 'mypack-extension-cache';
 const STORE_NAME = 'cache-store';
 const DB_VERSION = 1;
-
-// -------------------- IndexedDB Setup --------------------
 
 /**
  * Opens a connection to the IndexedDB database
@@ -238,8 +236,6 @@ export async function getCacheCategory(cacheCategory: string): Promise<Record<st
  * @returns {Promise<CacheEntry | null>} - The cache entry or null if not found
  */
 async function getFromIndexedDB(cacheCategory: string, hash: string): Promise<CacheEntry | null> {
-
-
     let db: IDBDatabase | null = null;
     try {
         db = await openDatabase();
@@ -377,8 +373,6 @@ async function clearFromIndexedDB(cacheCategory: string): Promise<void> {
     }
 }
 
-// -------------------- Size Utilities --------------------
-
 /**
  * Estimates the size of a string in bytes
  * @param {string} str - The string to measure
@@ -389,15 +383,11 @@ function estimateSize(str: string): number {
     return str.length * 2;
 }
 
-// -------------------- Generic Cache Functions --------------------
-
 /**
  * Creates a hash from an object's values.
  * @param {Record<string, any>} item - The object to use for the hash.
  * @returns {Promise<string>} - The generated unique key.
  */
-
-
 export async function generateCacheKey(item: string): Promise<string> {
     return hashString(item);
 }
@@ -558,8 +548,7 @@ export async function clearCache(): Promise<void> {
     return clearGenericCache("courseList");
 }
 
-// ------------------------ Helper Function ------------------------
-
+// Should have chosen a lighter hash function
 /**
  * Creates a hash from a string.
  * @param {string} message - The string to hash.
