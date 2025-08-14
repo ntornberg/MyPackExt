@@ -153,18 +153,20 @@ async function storeInIndexedDB(
           };
 
           transaction.oncomplete = () => {
-            if (db) db.close();
+            db.close();
           };
         } catch (transactionError) {
           AppLogger.error(
             `[CACHE DB ERROR] Failed to create transaction: ${transactionError}`,
           );
-          if (db) db.close();
+          db.close();
           return transactionError as Error;
         }
       } catch (error) {
         AppLogger.error(`[CACHE DB ERROR] IndexedDB store error: ${error}`);
-        if (db) db.close();
+        if (db) {
+          db.close();
+        }
         return error as Error;
       }
       return null;

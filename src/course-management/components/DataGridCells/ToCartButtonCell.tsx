@@ -48,7 +48,7 @@ export const ToCartButtonCell = (
   const [severity, setSeverity] = useState<"success" | "error">("success");
   const anchorRef = useRef<HTMLButtonElement>(null);
 
-  if (!course_id || !classNumber || !catalog_nbr || !courseData || !unt_taken) {
+  if (!course_id || !classNumber || !catalog_nbr || !courseData) {
     AppLogger.warn("Missing required data for section: ", selectedSection);
     if (!course_id) {
       AppLogger.warn("Course ID is missing for section: ", selectedSection);
@@ -64,9 +64,6 @@ export const ToCartButtonCell = (
     }
     if (!courseData) {
       AppLogger.warn("Course data is missing for section: ", selectedSection);
-    }
-    if (!unt_taken) {
-      AppLogger.warn("Units taken is missing for section: ", selectedSection);
     }
     AppLogger.warn("Section: ", selectedSection);
     return (

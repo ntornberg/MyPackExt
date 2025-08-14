@@ -532,39 +532,35 @@ export async function batchFetchCoursesData(
       const course_data = mergedData[course_title];
 
       if (!cachedProfKeys[course_hash_key]) {
+        if (!course_data) {
+          return { cache_key: "", courses: null };
+        }
+
         const batchFetchCourses: BatchDataRequestResponse = {
-          courses:
-            Object.entries(course_data?.sections)
-              .filter(([_, groupedSections]) => {
-                return (
-                  groupedSections.lecture?.instructor_name[0] ===
-                  instructor_name
-                );
-              })
-
-              .flatMap(([_, groupedSections]) => {
-                const labSects = (groupedSections.labs ?? [])
-                  .map((sec) => sec.grade_distribution)
-                  .filter(Boolean);
-                const lectureSect = groupedSections.lecture?.grade_distribution;
-                return lectureSect ? [...labSects, lectureSect] : labSects;
-              })
-
-              .filter((grade): grade is GradeData => grade !== undefined) || [],
-          profs:
-            Object.entries(course_data?.sections ?? {})
-              .filter(
-                ([_, groupedSections]) =>
-                  groupedSections.lecture?.instructor_name[0] ===
-                  instructor_name,
-              )
-              .flatMap(
-                ([_, groupedSections]) =>
-                  groupedSections.lecture?.professor_rating,
-              )
-              .filter(
-                (prof): prof is MatchedRateMyProf => prof !== undefined,
-              ) || [],
+          courses: Object.entries(course_data.sections)
+            .filter(([_, groupedSections]) => {
+              return (
+                groupedSections.lecture?.instructor_name[0] === instructor_name
+              );
+            })
+            .flatMap(([_, groupedSections]) => {
+              const labSects = (groupedSections.labs ?? [])
+                .map((sec) => sec.grade_distribution)
+                .filter(Boolean);
+              const lectureSect = groupedSections.lecture?.grade_distribution;
+              return lectureSect ? [...labSects, lectureSect] : labSects;
+            })
+            .filter((grade): grade is GradeData => grade !== undefined),
+          profs: Object.entries(course_data.sections)
+            .filter(
+              ([_, groupedSections]) =>
+                groupedSections.lecture?.instructor_name[0] === instructor_name,
+            )
+            .flatMap(
+              ([_, groupedSections]) =>
+                groupedSections.lecture?.professor_rating,
+            )
+            .filter((prof): prof is MatchedRateMyProf => prof !== undefined),
         };
 
         cachedProfKeys[course_hash_key] = course_hash_key;
