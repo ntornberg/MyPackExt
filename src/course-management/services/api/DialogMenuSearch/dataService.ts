@@ -535,7 +535,11 @@ export async function batchFetchCoursesData(
         if (!course_data) {
           return { cache_key: "", courses: null };
         }
+      if (!course_data) {
+        return { cache_key: "", courses: null };
+      }
 
+      if (!cachedProfKeys[course_hash_key]) {
         const batchFetchCourses: BatchDataRequestResponse = {
           courses: Object.entries(course_data.sections)
             .filter(([_, groupedSections]) => {
