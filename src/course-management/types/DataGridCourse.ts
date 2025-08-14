@@ -16,8 +16,14 @@ export function sortSections(v1: GroupedSections, v2: GroupedSections) {
   const lecture1 = v1.lecture;
   const lecture2 = v2.lecture;
 
-  const v1Value = typeof lecture1?.availability === "string" ? availabilityOrder[lecture1.availability] ?? -1 : -1;
-  const v2Value = typeof lecture2?.availability === "string" ? availabilityOrder[lecture2.availability] ?? -1 : -1;
+  const v1Value =
+    typeof lecture1?.availability === "string"
+      ? (availabilityOrder[lecture1.availability] ?? -1)
+      : -1;
+  const v2Value =
+    typeof lecture2?.availability === "string"
+      ? (availabilityOrder[lecture2.availability] ?? -1)
+      : -1;
 
   const availabilityDiff = v2Value - v1Value;
   if (availabilityDiff === 0) {
@@ -28,5 +34,3 @@ export function sortSections(v1: GroupedSections, v2: GroupedSections) {
 
   return availabilityDiff;
 }
-
-

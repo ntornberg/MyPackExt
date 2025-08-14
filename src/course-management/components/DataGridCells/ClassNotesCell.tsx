@@ -1,7 +1,7 @@
-import {IconButton, Tooltip} from "@mui/material";
-import InfoIcon from '@mui/icons-material/Info';
-import type {ModifiedSection} from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
+import InfoIcon from "@mui/icons-material/Info";
+import { IconButton, Tooltip } from "@mui/material";
 
+import type { ModifiedSection } from "../../../core/utils/CourseSearch/MergeDataUtil.ts";
 
 /**
  * Displays a tooltip icon with class notes when present.
@@ -10,10 +10,12 @@ import type {ModifiedSection} from "../../../core/utils/CourseSearch/MergeDataUt
  * @returns {JSX.Element} Tooltip with info icon
  */
 export const ClassNotesCell = (params: ModifiedSection) => {
-    const { notes } = params;
-    return (<Tooltip title={notes}>
-        <IconButton>
-          <InfoIcon />
-        </IconButton>
-      </Tooltip>);
+  const { notes } = params;
+  return (
+    <Tooltip title={notes}>
+      <IconButton>
+        <InfoIcon />
+      </IconButton>
+    </Tooltip>
+  );
 };

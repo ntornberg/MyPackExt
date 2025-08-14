@@ -1,4 +1,4 @@
-import {Box, CircularProgress, Typography} from '@mui/material';
+import { Box, CircularProgress, Typography } from "@mui/material";
 
 /**
  * Circular progress indicator with optional status label underneath.
@@ -6,10 +6,23 @@ import {Box, CircularProgress, Typography} from '@mui/material';
  * @param {{ value: number; label?: string }} props Progress value and optional label
  * @returns {JSX.Element} Circular progress with label
  */
-export function CircularProgressWithLabel({ value, label }: { value: number; label?: string }) {
+export function CircularProgressWithLabel({
+  value,
+  label,
+}: {
+  value: number;
+  label?: string;
+}) {
   return (
-    <Box sx={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
-      <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+    <Box
+      sx={{
+        position: "relative",
+        display: "inline-flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      <Box sx={{ position: "relative", display: "inline-flex" }}>
         <CircularProgress variant="determinate" value={value} />
         <Box
           sx={{
@@ -17,10 +30,10 @@ export function CircularProgressWithLabel({ value, label }: { value: number; lab
             left: 0,
             bottom: 0,
             right: 0,
-            position: 'absolute',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            position: "absolute",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
           <Typography variant="caption" component="div" color="text.secondary">
@@ -29,10 +42,15 @@ export function CircularProgressWithLabel({ value, label }: { value: number; lab
         </Box>
       </Box>
       {label && (
-        <Typography variant="caption" component="div" color="text.secondary" sx={{ mt: 1, textAlign: 'center', maxWidth: '200px' }}>
+        <Typography
+          variant="caption"
+          component="div"
+          color="text.secondary"
+          sx={{ mt: 1, textAlign: "center", maxWidth: "200px" }}
+        >
           {label}
         </Typography>
       )}
     </Box>
   );
-} 
+}
