@@ -38,7 +38,8 @@ export function sortSections(v1: GroupedSections, v2: GroupedSections) {
       const enrollment2 = parseInt(
         lecture2?.enrollment.split("/")[0] || "0",
         10,
-      );
+      const enrollment1 = parseEnrollment(lecture1);
+      const enrollment2 = parseEnrollment(lecture2);
       return enrollment2 - enrollment1;
     }
     return ratingDiff;
