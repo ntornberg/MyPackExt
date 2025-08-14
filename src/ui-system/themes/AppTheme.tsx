@@ -1,14 +1,22 @@
-import * as React from 'react';
-import type { Components, Theme, ThemeOptions } from '@mui/material/styles';
-import { createTheme, Experimental_CssVarsProvider as CssVarsProvider } from '@mui/material/styles';
-import { inputsCustomizations } from './customizations/inputs';
-import { dataDisplayCustomizations } from './customizations/dataDisplay';
-import { autocompleteCustomizations, dataGridCustomizations } from './customizations/dataGrid';
-import { feedbackCustomizations } from './customizations/feedback';
-import { navigationCustomizations } from './customizations/navigation';
-import { surfacesCustomizations } from './customizations/surfaces';
-import { colorSchemes, shadows, shape, typography } from './themePrimitives';
-import { AppLogger } from '../../core/utils/logger.ts';
+import type { Components, Theme, ThemeOptions } from "@mui/material/styles";
+import {
+  createTheme,
+  Experimental_CssVarsProvider as CssVarsProvider,
+} from "@mui/material/styles";
+import * as React from "react";
+
+import { AppLogger } from "../../core/utils/logger.ts";
+
+import { dataDisplayCustomizations } from "./customizations/dataDisplay";
+import {
+  autocompleteCustomizations,
+  dataGridCustomizations,
+} from "./customizations/dataGrid";
+import { feedbackCustomizations } from "./customizations/feedback";
+import { inputsCustomizations } from "./customizations/inputs";
+import { navigationCustomizations } from "./customizations/navigation";
+import { surfacesCustomizations } from "./customizations/surfaces";
+import { colorSchemes, shadows, shape, typography } from "./themePrimitives";
 
 interface AppThemeProps {
   children: React.ReactNode;
@@ -16,7 +24,7 @@ interface AppThemeProps {
    * This is for the docs site. You can ignore it or remove it.
    */
   disableCustomTheme?: boolean;
-  themeComponents?: ThemeOptions['components'];
+  themeComponents?: ThemeOptions["components"];
 }
 
 /**
@@ -26,7 +34,7 @@ export default function AppTheme(props: AppThemeProps) {
   const { children, disableCustomTheme, themeComponents } = props;
   const theme = React.useMemo(() => {
     AppLogger.info("Creating theme with MUI components");
-    
+
     return disableCustomTheme
       ? {}
       : createTheme({
@@ -44,7 +52,6 @@ export default function AppTheme(props: AppThemeProps) {
             ...surfacesCustomizations,
             ...autocompleteCustomizations,
             ...themeComponents,
-            
           } as Components<Theme>,
         });
   }, [disableCustomTheme, themeComponents]);

@@ -1,6 +1,7 @@
-import { useRef, useState, useEffect } from 'react';
-import { Box, Paper, Typography } from '@mui/material';
-import type { ScheduleEvent } from './CalendarView';
+import { Box, Paper, Typography } from "@mui/material";
+import { useRef, useState, useEffect } from "react";
+
+import type { ScheduleEvent } from "./CalendarView";
 
 /**
  * Converts a 12-hour time string (e.g., "3:30 PM") to minutes since midnight.
@@ -9,10 +10,10 @@ import type { ScheduleEvent } from './CalendarView';
  * @returns {number} Minutes since midnight
  */
 export function toMinutes(time: string) {
-  const [hms, mod] = time.split(' ');
-  let [h, m] = hms.split(':').map(Number);
-  if (mod === 'PM' && h !== 12) h += 12;
-  if (mod === 'AM' && h === 12) h = 0;
+  const [hms, mod] = time.split(" ");
+  let [h, m] = hms.split(":").map(Number);
+  if (mod === "PM" && h !== 12) h += 12;
+  if (mod === "AM" && h === 12) h = 0;
   return h * 60 + m;
 }
 
@@ -48,7 +49,7 @@ function useSize<T extends HTMLElement>() {
   useEffect(() => {
     if (!ref.current) return;
     const ro = new ResizeObserver(([e]) =>
-      set({ w: e.contentRect.width, h: e.contentRect.height })
+      set({ w: e.contentRect.width, h: e.contentRect.height }),
     );
     ro.observe(ref.current);
     return () => ro.disconnect();
@@ -62,35 +63,40 @@ function useSize<T extends HTMLElement>() {
  * @param {{ eventData: ScheduleEvent[] }} props Events to render
  * @returns {JSX.Element} Calendar element
  */
-export default function CreateCalendar({ eventData }: { eventData: ScheduleEvent[] }) {
+export default function CreateCalendar({
+  eventData,
+}: {
+  eventData: ScheduleEvent[];
+}) {
   const windowStart = 6,
     windowEnd = 22;
   const hours = Array.from(
     { length: windowEnd - windowStart + 1 },
-    (_, i) => windowStart + i
+    (_, i) => windowStart + i,
   );
-  const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri"];
   const events = eventData;
 
   /* size of the body (6 AM–10 PM) */
   const [bodyRef, body] = useSize<HTMLDivElement>();
 
   return (
-    <Box sx={{
-        height: '25vh',
-        width: '100%',
-        maxWidth: '1400px',
-        margin: '0 auto',
-        display: 'grid',
+    <Box
+      sx={{
+        height: "25vh",
+        width: "100%",
+        maxWidth: "1400px",
+        margin: "0 auto",
+        display: "grid",
         gridTemplateColumns: {
-          xs: '40px repeat(5, 1fr)',
-          sm: 'clamp(50px, 8vw, 80px) repeat(5, 1fr)',
+          xs: "40px repeat(5, 1fr)",
+          sm: "clamp(50px, 8vw, 80px) repeat(5, 1fr)",
         },
         gridTemplateRows: {
-          xs: '35px 1fr',
-          sm: 'clamp(40px, 8vh, 60px) 1fr',
+          xs: "35px 1fr",
+          sm: "clamp(40px, 8vh, 60px) 1fr",
         },
-        overflow: 'hidden',
+        overflow: "hidden",
         p: { xs: 0.5, sm: 1, md: 2 },
       }}
     >
@@ -98,9 +104,9 @@ export default function CreateCalendar({ eventData }: { eventData: ScheduleEvent
         sx={{
           gridColumn: 1,
           gridRow: 1,
-          borderRight: '1px solid #ddd',
-          borderBottom: '1px solid #ddd',
-          bgcolor: '#fafafa',
+          borderRight: "1px solid #ddd",
+          borderBottom: "1px solid #ddd",
+          bgcolor: "#fafafa",
         }}
       />
 
@@ -113,18 +119,18 @@ export default function CreateCalendar({ eventData }: { eventData: ScheduleEvent
             px: { xs: 0.5, sm: 1, md: 2 },
             gridRow: 1,
             fontWeight: 600,
-            color: 'black',
-            fontSize: { xs: '12px', sm: '14px', md: '16px' },
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: '#fafafa',
-            borderBottom: '1px solid #ddd',
-            borderRight: i < 4 ? '1px solid #ddd' : 'none',
+            color: "black",
+            fontSize: { xs: "12px", sm: "14px", md: "16px" },
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: "#fafafa",
+            borderBottom: "1px solid #ddd",
+            borderRight: i < 4 ? "1px solid #ddd" : "none",
           }}
         >
-          <Box sx={{ display: { xs: 'block', sm: 'none' } }}>{d.charAt(0)}</Box>
-          <Box sx={{ display: { xs: 'none', sm: 'block' } }}>{d}</Box>
+          <Box sx={{ display: { xs: "block", sm: "none" } }}>{d.charAt(0)}</Box>
+          <Box sx={{ display: { xs: "none", sm: "block" } }}>{d}</Box>
         </Typography>
       ))}
 
@@ -132,9 +138,9 @@ export default function CreateCalendar({ eventData }: { eventData: ScheduleEvent
         sx={{
           gridColumn: 1,
           gridRow: 2,
-          position: 'relative',
-          borderRight: '1px solid #ddd',
-          bgcolor: '#fafafa',
+          position: "relative",
+          borderRight: "1px solid #ddd",
+          bgcolor: "#fafafa",
         }}
       >
         {hours.map((h) => {
@@ -144,17 +150,17 @@ export default function CreateCalendar({ eventData }: { eventData: ScheduleEvent
             <Typography
               key={h}
               sx={{
-                position: 'absolute',
+                position: "absolute",
                 top: top - 8,
                 left: { xs: 1, sm: 2, md: 4 },
-                fontSize: { xs: '8px', sm: '10px', md: '12px' },
-                color: '#666',
-                userSelect: 'none',
+                fontSize: { xs: "8px", sm: "10px", md: "12px" },
+                color: "#666",
+                userSelect: "none",
               }}
             >
               {window.innerWidth < 600
-                ? `${((h + 11) % 12) + 1}${h < 12 ? 'a' : 'p'}`
-                : `${((h + 11) % 12) + 1}${h < 12 ? 'AM' : 'PM'}`}
+                ? `${((h + 11) % 12) + 1}${h < 12 ? "a" : "p"}`
+                : `${((h + 11) % 12) + 1}${h < 12 ? "AM" : "PM"}`}
             </Typography>
           );
         })}
@@ -163,12 +169,12 @@ export default function CreateCalendar({ eventData }: { eventData: ScheduleEvent
       <Box
         ref={bodyRef}
         sx={{
-          gridColumn: '2 / span 5',
+          gridColumn: "2 / span 5",
           gridRow: 2,
-          position: 'relative',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(5, 1fr)',
-          bgcolor: 'white',
+          position: "relative",
+          display: "grid",
+          gridTemplateColumns: "repeat(5, 1fr)",
+          bgcolor: "white",
         }}
       >
         {hours.map((h) => {
@@ -179,11 +185,11 @@ export default function CreateCalendar({ eventData }: { eventData: ScheduleEvent
             <Box
               key={h}
               sx={{
-                position: 'absolute',
+                position: "absolute",
                 top,
                 left: 0,
                 right: 0,
-                borderTop: '1px solid #e0e0e0',
+                borderTop: "1px solid #e0e0e0",
                 zIndex: 1,
               }}
             />
@@ -194,9 +200,9 @@ export default function CreateCalendar({ eventData }: { eventData: ScheduleEvent
           <Box
             key={day}
             sx={{
-              color: 'black',
-              position: 'relative',
-              borderRight: colIdx < 4 ? '1px solid #e0e0e0' : 'none',
+              color: "black",
+              position: "relative",
+              borderRight: colIdx < 4 ? "1px solid #e0e0e0" : "none",
             }}
           >
             {body.h > 0 &&
@@ -206,36 +212,40 @@ export default function CreateCalendar({ eventData }: { eventData: ScheduleEvent
                   const { topPx, heightPx } = getMetrics(
                     ev.start,
                     ev.end,
-                    body.h
+                    body.h,
                   );
                   return (
                     <Paper
                       key={`${ev.id}-${day}`}
                       elevation={2}
                       sx={{
-                        position: 'absolute',
+                        position: "absolute",
                         top: topPx,
                         left: { xs: 1, sm: 2, md: 3 },
                         right: { xs: 1, sm: 2, md: 3 },
                         height: heightPx,
                         bgcolor: ev.color,
-                        opacity: ev.days.some((d) => d.isOverlapping && d.day === day) ? 0.5 : 1,
-                        color: '#fff',
+                        opacity: ev.days.some(
+                          (d) => d.isOverlapping && d.day === day,
+                        )
+                          ? 0.5
+                          : 1,
+                        color: "#fff",
                         px: { xs: 0.5, sm: 0.75, md: 1 },
                         py: { xs: 0.25, sm: 0.5 },
-                        fontSize: { xs: '8px', sm: '9px', md: '9px' },
+                        fontSize: { xs: "8px", sm: "9px", md: "9px" },
                         fontWeight: 500,
                         borderRadius: { xs: 0.5, sm: 1 },
-                        overflow: 'hidden',
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        minHeight: { xs: '12px', sm: '16px', md: '20px' },
+                        overflow: "hidden",
+                        display: "flex",
+                        alignItems: "flex-start",
+                        minHeight: { xs: "12px", sm: "16px", md: "20px" },
                         zIndex: 2,
                         lineHeight: 1.2,
                       }}
                     >
                       {ev.subj.length > 15 && window.innerWidth < 600
-                        ? `${ev.subj.split(' ')[0]} ${ev.subj.split(' ')[1]}...`
+                        ? `${ev.subj.split(" ")[0]} ${ev.subj.split(" ")[1]}...`
                         : ev.subj}
                     </Paper>
                   );

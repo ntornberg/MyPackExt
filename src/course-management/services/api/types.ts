@@ -1,8 +1,7 @@
 import type {
   GradeData,
-  MatchedRateMyProf
+  MatchedRateMyProf,
 } from "../../../degree-planning/types/DataBaseResponses/SupaBaseResponseType.ts";
-
 
 /**
  * Combined course grade data and RateMyProfessor info returned by backend for a single query.
@@ -46,4 +45,4 @@ export interface BatchDataRequestResponse {
 export interface CourseElements {
   gradeElement: HTMLDivElement;
   professorElement: HTMLDivElement;
-} 
+}

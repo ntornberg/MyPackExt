@@ -6,10 +6,10 @@
  * @param {number} [ms=100] Delay in milliseconds
  * @returns {() => void} Debounced function
  */
-export const debounce = (fn: () => void, ms = 100): () => void => {
-    let timeoutId: number;
-    return () => {
-        clearTimeout(timeoutId);
-        timeoutId = window.setTimeout(fn, ms);
-    };
+export const debounce = (fn: () => void, ms = 100): (() => void) => {
+  let timeoutId: number;
+  return () => {
+    clearTimeout(timeoutId);
+    timeoutId = window.setTimeout(fn, ms);
+  };
 };

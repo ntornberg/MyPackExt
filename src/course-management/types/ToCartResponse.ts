@@ -1,5 +1,5 @@
 export interface ToCartResponse {
-    status? : string;
-    message? : string;
-    title? : string;
+  status?: string;
+  message?: string;
+  title?: string;
 }
