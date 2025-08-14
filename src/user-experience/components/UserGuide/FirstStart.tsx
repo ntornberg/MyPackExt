@@ -1,18 +1,17 @@
-import {useEffect, useState} from "react";
 import {
-    Button,
-    Checkbox,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    FormControlLabel,
-    List,
-    ListItem,
-    ListItemText,
-    Typography
+  Button,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
+  List,
+  ListItem,
+  ListItemText,
+  Typography,
 } from "@mui/material";
-
+import { useEffect, useState } from "react";
 
 const LS_KEY = "firstStartDismissed";
 
@@ -52,7 +51,7 @@ export default function FirstStartDialog() {
             "Search by department and catalog number. Only sections that are **open** for registration are shown.",
             "Each section card displays the professor, their Rate‑My‑Professor score, and historical grade distributions.",
             "Hover the info icon to view meeting time, location, and a mini‑calendar. Your current schedule appears in **red**; the prospective section in **green**. Overlaps are rendered semi‑transparent.",
-            "Click **Add to Cart** to queue the section for enrollment. (Status feedback coming soon.)"
+            "Click **Add to Cart** to queue the section for enrollment. (Status feedback coming soon.)",
           ]}
         />
 
@@ -61,7 +60,7 @@ export default function FirstStartDialog() {
         <UnorderedList
           items={[
             "Search for courses by major, minor, or major sub‑plan instead of typing catalog numbers.",
-            "Requirements are based on Registrar data (accuracy may vary). Click a requirement to see matching courses and their open sections in the familiar grid view."
+            "Requirements are based on Registrar data (accuracy may vary). Click a requirement to see matching courses and their open sections in the familiar grid view.",
           ]}
         />
 
@@ -70,7 +69,7 @@ export default function FirstStartDialog() {
         <UnorderedList
           items={[
             "Find classes that fulfill General Education Program requirements.",
-            "Interface mirrors the other tabs; UX polish is on the roadmap."
+            "Interface mirrors the other tabs; UX polish is on the roadmap.",
           ]}
         />
 
@@ -79,7 +78,7 @@ export default function FirstStartDialog() {
         <UnorderedList
           items={[
             "The extension is still in active development and lightly tested.",
-            "Feedback and bug reports are very welcome!"
+            "Feedback and bug reports are very welcome!",
           ]}
         />
       </DialogContent>
@@ -101,10 +100,6 @@ export default function FirstStartDialog() {
     </Dialog>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/*                                Sub-components                               */
-/* -------------------------------------------------------------------------- */
 
 function SectionHeading({ text }: { text: string }) {
   return (
