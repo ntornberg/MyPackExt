@@ -108,6 +108,7 @@ function injectIntoIframe(iframe: HTMLIFrameElement) {
     AppLogger.info("[Hook] Injected into iframe:", iframe.src || iframe.id);
   } catch (err) {
     processedIframes.add(iframe);
+    AppLogger.error("[Hook] Error injecting into iframe:", err);
   }
 }
 

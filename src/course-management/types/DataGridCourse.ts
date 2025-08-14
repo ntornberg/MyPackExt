@@ -29,7 +29,13 @@ export function sortSections(v1: GroupedSections, v2: GroupedSections) {
   if (availabilityDiff === 0) {
     const rating1 = lecture1?.professor_rating?.avgRating || 0;
     const rating2 = lecture2?.professor_rating?.avgRating || 0;
-    return rating2 - rating1;
+    const ratingDiff = rating2 - rating1;
+    if (ratingDiff === 0) {
+      const enrollment1 = parseInt(lecture1?.enrollment.split("/")[0] || "0", 10);
+      const enrollment2 = parseInt(lecture2?.enrollment.split("/")[0] || "0", 10);
+      return enrollment2 - enrollment1;
+    }
+    return ratingDiff;
   }
 
   return availabilityDiff;

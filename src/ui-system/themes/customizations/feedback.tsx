@@ -3,7 +3,6 @@ import { alpha } from "@mui/material/styles";
 
 import { brand, gray, green, orange, red } from "../themePrimitives";
 
-/* eslint-disable import/prefer-default-export */
 export const feedbackCustomizations: Components<Theme> = {
   MuiAlert: {
     styleOverrides: {

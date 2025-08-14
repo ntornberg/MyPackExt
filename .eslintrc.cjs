@@ -31,7 +31,18 @@ module.exports = {
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/prefer-const': 'error',
+      'prefer-const': 'error',
+      'prettier/prettier': ['error', { endOfLine: 'lf' }],
+      'import/default': 'off',
+      'import/no-named-as-default-member': 'off',
+      'react/display-name': 'off',
+      'no-inner-declarations': 'off',
+      '@typescript-eslint/ban-ts-comment': 'warn',
+      '@typescript-eslint/no-empty-object-type': [
+        'warn',
+        { allowObjectTypes: 'always', allowInterfaces: 'always' }
+      ],
+      'jsx-a11y/no-autofocus': 'warn',
 
       'import/order': [
         'error',
@@ -54,7 +65,15 @@ module.exports = {
         version: 'detect',
       },
       'import/resolver': {
-        typescript: {},
+        typescript: {
+          project: ['./tsconfig.app.json'],
+        },
+        node: {
+          extensions: ['.js', '.jsx', '.ts', '.tsx']
+        },
       },
+      'import/parsers': {
+        '@typescript-eslint/parser': ['.ts', '.tsx']
+      }
     },
   };

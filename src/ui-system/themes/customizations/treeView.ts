@@ -4,7 +4,6 @@ import type { TreeViewComponents } from "@mui/x-tree-view/themeAugmentation";
 
 import { brand, gray } from "../themePrimitives";
 
-/* eslint-disable import/prefer-default-export */
 export const treeViewCustomizations: TreeViewComponents<Theme> = {
   MuiTreeItem: {
     styleOverrides: {

@@ -101,10 +101,6 @@ export default function FirstStartDialog() {
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*                                Sub-components                               */
-/* -------------------------------------------------------------------------- */
-
 function SectionHeading({ text }: { text: string }) {
   return (
     <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>

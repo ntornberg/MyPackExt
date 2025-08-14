@@ -30,7 +30,6 @@ export const ToCartButtonCell = (
   selectedSection: ModifiedSection,
   parent?: ModifiedSection,
 ) => {
-  // Extract the necessary parameters from the row
   const {
     course_id,
     classNumber,
@@ -42,10 +41,13 @@ export const ToCartButtonCell = (
     wait_list_okay = "N",
     courseData,
   } = selectedSection;
-  // Get units from the parent course data
-  const unt_taken = courseData?.units || "3";
 
-  // Skip if missing required data
+  const unt_taken = courseData?.units || "3";
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState("");
+  const [severity, setSeverity] = useState<"success" | "error">("success");
+  const anchorRef = useRef<HTMLButtonElement>(null);
+
   if (!course_id || !classNumber || !catalog_nbr || !courseData || !unt_taken) {
     AppLogger.warn("Missing required data for section: ", selectedSection);
     if (!course_id) {
@@ -93,11 +95,6 @@ export const ToCartButtonCell = (
       </Button>
     );
   }
-
-  const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState("");
-  const [severity, setSeverity] = useState<"success" | "error">("success");
-  const anchorRef = useRef<HTMLButtonElement>(null);
 
   const handleAddToCart = async () => {
     AppLogger.info(

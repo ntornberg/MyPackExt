@@ -8,7 +8,6 @@ import { typographyClasses } from "@mui/material/Typography";
 
 import { gray, green, red } from "../themePrimitives";
 
-/* eslint-disable import/prefer-default-export */
 export const dataDisplayCustomizations: Components<Theme> = {
   MuiList: {
     styleOverrides: {

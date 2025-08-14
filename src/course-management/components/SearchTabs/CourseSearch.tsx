@@ -15,13 +15,16 @@ import {
 } from "primereact/datatable";
 import { useCallback, useEffect, useState } from "react";
 
-import {DEPT_COURSES} from '../../../degree-planning/DialogAutoCompleteKeys/CourseSearch/department_courses.typed';
-import type {GroupedSections, ModifiedSection, MergedCourseData} from '../../../core/utils/CourseSearch/MergeDataUtil';
-import {AppLogger} from '../../../core/utils/logger';
+import type {
+  GroupedSections,
+  ModifiedSection,
+  MergedCourseData,
+} from "../../../core/utils/CourseSearch/MergeDataUtil";
+import { AppLogger } from "../../../core/utils/logger";
+import { DEPT_COURSES } from "../../../degree-planning/DialogAutoCompleteKeys/CourseSearch/department_courses.typed";
 import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
-
-import {CircularProgressWithLabel} from "../../../ui-system/components/shared/CircularProgressWithLabel.tsx";
-import {customDataTableStyles} from "../../../ui-system/styles/dataTableStyles.ts";
+import { CircularProgressWithLabel } from "../../../ui-system/components/shared/CircularProgressWithLabel.tsx";
+import { customDataTableStyles } from "../../../ui-system/styles/dataTableStyles.ts";
 import { fetchSingleCourseData } from "../../services/api/DialogMenuSearch/dataService";
 import { sortSections } from "../../types/DataGridCourse";
 import { CourseInfoCell } from "../DataGridCells/CourseInfoCell";

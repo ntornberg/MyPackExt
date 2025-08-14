@@ -11,7 +11,6 @@ import * as React from "react";
 
 import { brand, gray } from "../themePrimitives";
 
-/* eslint-disable import/prefer-default-export */
 export const navigationCustomizations: Components<Theme> = {
   MuiMenuItem: {
     styleOverrides: {

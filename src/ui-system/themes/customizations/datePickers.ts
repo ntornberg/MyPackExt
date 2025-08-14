@@ -6,7 +6,6 @@ import type { PickerComponents } from "@mui/x-date-pickers/themeAugmentation";
 
 import { brand, gray } from "../themePrimitives";
 
-/* eslint-disable import/prefer-default-export */
 export const datePickersCustomizations: PickerComponents<Theme> = {
   MuiPickerPopper: {
     styleOverrides: {

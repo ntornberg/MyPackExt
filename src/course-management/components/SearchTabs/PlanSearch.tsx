@@ -23,15 +23,21 @@ import { useState, useMemo, memo } from "react";
 import type {
   GroupedSections,
   MergedCourseData,
- ModifiedSection } from "../../../core/utils/CourseSearch/MergeDataUtil";
+  ModifiedSection,
+} from "../../../core/utils/CourseSearch/MergeDataUtil";
 import { AppLogger } from "../../../core/utils/logger";
 import { majorPlans } from "../../../degree-planning/DialogAutoCompleteKeys/PlanSearch/MajorPlans";
 import { minorPlans } from "../../../degree-planning/DialogAutoCompleteKeys/PlanSearch/MinorPlans";
-import { TermIdByName } from '../../../degree-planning/DialogAutoCompleteKeys/TermID';
-import type { MajorPlan, MinorPlan, RequiredCourse, Subplan } from '../../../degree-planning/types/Plans';
+import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID";
+import type {
+  MajorPlan,
+  MinorPlan,
+  RequiredCourse,
+  Subplan,
+} from "../../../degree-planning/types/Plans";
 import { CircularProgressWithLabel } from "../../../ui-system/components/shared/CircularProgressWithLabel";
 import { customDataTableStyles } from "../../../ui-system/styles/dataTableStyles";
-import { fetchCourseSearchData } from '../../services/api/DialogMenuSearch/dataService';
+import { fetchCourseSearchData } from "../../services/api/DialogMenuSearch/dataService";
 import { sortSections } from "../../types/DataGridCourse";
 import { CourseInfoCell } from "../DataGridCells/CourseInfoCell";
 import { GradeDistributionCell } from "../DataGridCells/GradeDistributionCell";

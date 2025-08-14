@@ -26,12 +26,12 @@ import type {
 } from "../../../core/utils/CourseSearch/MergeDataUtil";
 import { AppLogger } from "../../../core/utils/logger.ts";
 import { GEP_COURSES } from "../../../degree-planning/DialogAutoCompleteKeys/GEPSearch/gep_courses.typed.ts";
-import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
-import { customDataTableStyles } from "../../../ui-system/styles/dataTableStyles.ts";
-import type { RequiredCourse } from "../../../degree-planning/types/Plans";
-import { fetchGEPCourseData } from "../../services/api/DialogMenuSearch/dataService";
 import { SubjectMenuValues } from "../../../degree-planning/DialogAutoCompleteKeys/SubjectSearchValues";
+import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
+import type { RequiredCourse } from "../../../degree-planning/types/Plans";
 import { CircularProgressWithLabel } from "../../../ui-system/components/shared/CircularProgressWithLabel";
+import { customDataTableStyles } from "../../../ui-system/styles/dataTableStyles.ts";
+import { fetchGEPCourseData } from "../../services/api/DialogMenuSearch/dataService";
 import { sortSections } from "../../types/DataGridCourse";
 import { CourseInfoCell } from "../DataGridCells/CourseInfoCell";
 import { GradeDistributionCell } from "../DataGridCells/GradeDistributionCell";
