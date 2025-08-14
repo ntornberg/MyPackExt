@@ -30,7 +30,6 @@ interface DeptCourse {
 
 /**
  * Course Search tab allowing users to select term, subject, and course, then fetch sections.
- * Uses a memoized search hook to avoid redundant network calls.
  *
  * @param {{ setCourseSearchTabData: (key: keyof CourseSearchData, value: any) => void; courseSearchData: CourseSearchData }} props Tab state setter and current state
  * @returns {JSX.Element} Course Search tab UI
@@ -131,7 +130,7 @@ export default function CourseSearch({setCourseSearchTabData, courseSearchData}:
       
       if (courseSearchData.searchSubject in DEPT_COURSES) {
         const deptCourses = DEPT_COURSES[courseSearchData.searchSubject as keyof typeof DEPT_COURSES];
-        // Safely access the course info with type checking
+
         if (courseCode in deptCourses) {
           const courseInfo = deptCourses[courseCode as keyof typeof deptCourses] as unknown as DeptCourse;
           
