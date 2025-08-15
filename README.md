@@ -1,36 +1,50 @@
-# MyPack Course Picker Extension
+# MyPack Plus (Course Picker Extension)
 
-**MyPack Course Picker** is a browser extension that enhances the course selection experience for NCSU students. It integrates historical grade data and RateMyProfessor ratings directly into the MyPack Portal, making it easier to choose courses and instructors.
+MyPack Plus is a browser extension that makes course selection on the MyPack Portal less painful. It overlays historical grade distributions and RateMyProfessors info right where you’re making choices, and also pulls in live section availability.
 
 ## Features
-Injected tooltips to show rate my prof info and grade data
-Dialog to search by course and by data
+- Grade and professor overlays directly in the MyPack Portal UI
+- A dialog that lets you search by course, GEP plans, and major/minor plans (with concentrations)
+- Live availability checks to the registrar
+- Fast, $0-to-host backend: Supabase Edge Functions for consolidated grade/professor data
+- Performance-focused: batch retrievals, layered caching (Chrome storage + IndexedDB), and parallel subject lookups
 
+## Try it
+- Site: `mypackplus.me`
+- Not affiliated with NC State
 
+## How it works (short version)
+- Content script injects the UI and overlays into the existing MyPack pages
+- Background service worker proxies requests from the page when needed
+- Supabase Edge Functions serve consolidated grade and professor data
+- Registrar lookups are proxied and batched; caching keeps things quick and cheap
 
-## Notes to developers 
-This project is a bit of a mess. It is probably around 20k lines of code and I am the only developer. It was pretty rushed so there are parts of the code that could really use some refactoring.
-Over the course of the project I had made substantial changes in design and implementation that resulted in a lot of hacky code. This is my first time using typescript or doing any form of front end development so.
+## Tech stack
+- React, TypeScript, MUI, Vite
+- Supabase Edge Functions
+- Cloudflare Workers (registrar lookups)
+
+## Notes to developers
+This grew fast with one developer on a short timeline, so there are rough edges. I’ve cleaned up a lot but there’s still work to do.
 
 ### Dead code
-There is quite a bit of dead code scattered around the project. Unused ts and tsx files in particular. 
-
+There are some unused `.ts`/`.tsx` files hanging around from earlier iterations.
 
 ### Scattered CSS injections
-When I first started this project I had a few issues overriding the native tocart table in mypack. So there is just a lot of floating CSS that I used to inject into the page to override the mypack styles.
-I still haven't gotten around to organizing the styles in any meaningful way. 
+Early on I had to override some MyPack table styles, so there’s CSS being injected in a few places. Needs consolidation.
 
-### Way too many data types
-When I started the project I had to gather data from a bunch of different sources and I really never sat down and formulated an abstracton for this data (The format of the data has changed quite a bit since I started)
-^ this is huge one that needs fixing 
+### Too many data types
+Data formats evolved as I pulled from different sources. It needs a proper abstracton.
 
-### Inconsistent front end search functionalities
-Particularly in the GEP search and the Plan search a large amount of data needs to be displayed. The data itself isn't really an issue but the MUI and react elements **are**. I tried a couple of different ways to reduce the performance impact of these displays but eventually I just said screw it and put it in a tree. I suspect a lot of unnessecery code is left from my other unsucessful attemmpts to remedy the issue.
+### Heavy UI lists (GEP + Plans)
+Those views display a lot of data. I ended up with a tree-based UI to keep things usable, but there’s likely leftover code from prior attempts.
 
-### File names and organiziation
-As you probably will come to see the file names and organization are just all over the place. There is really no proper structure for a lot of this. like index.ts for example just holds data types for the supabase api response I think.
+### File names and organization
+It’s not as organized as it should be. Some files are misnamed (e.g., an `index.ts` that only holds types). Reorganization is on the list.
 
-I will work on reorganizing the files so it is easier to use. A lot of work needs to be done
+## What’s next
+- Refactors for readability and better modularity
+- Smarter caching and invalidation rules
+- Automated testing: API contract checks + UI smoke tests so things keep working if MyPack changes its UI
 
-One major todo is to make it so that the add to cart works for labs. since I recently made it so that labs are grouped with their section, the to cart button needs to be refactored ( if it ever worked for lab sections to begin with)
-I need to investigate how the tocart button functions when adding labs. I am not sure if the course id should be tied to the lab or what. later problem.
+Contributions and PRs are welcome.

@@ -27,7 +27,7 @@ export default defineConfig(({ mode }) => {
           manualChunks: isProduction ? {
             vendor: ['react', 'react-dom'],
             mui: ['@mui/material', '@mui/icons-material', '@mui/lab'],
-            utils: ['cheerio', 'jsonpath-plus']
+            utils: ['cheerio']
           } : undefined,
           chunkFileNames: isProduction ? 'assets/[name]-[hash].js' : 'assets/[name].js',
           entryFileNames: isProduction ? 'assets/[name]-[hash].js' : 'assets/[name].js',
@@ -47,11 +47,7 @@ export default defineConfig(({ mode }) => {
       reportCompressedSize: isProduction,
       chunkSizeWarningLimit: 1000
     },
-    resolve: {
-      alias: {
-        '@mui/styled-engine': '@mui/styled-engine',
-      },
-    },
+    resolve: {},
     define: {
       __DEV__: isDevelopment,
       __PROD__: isProduction,

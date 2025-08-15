@@ -1,10 +1,13 @@
-import {createRoot} from 'react-dom/client';
 import React from "react";
+import { createRoot } from "react-dom/client";
 
-import type {SingleCourseDataResponse} from '../../types';
-import type {Course, GradeData} from '../../../../../degree-planning/types/DataBaseResponses/SupaBaseResponseType';
-import {createShadowHost} from '../../../../../core/utils/dom';
-import {GradeCard} from '../../../../../degree-planning/components/DegreeAuditCards/GradeCard';
+import { createShadowHost } from "../../../../../utils/dom";
+import { GradeCard } from "../../../../../degree-planning/components/DegreeAuditCards/GradeCard";
+import type {
+  Course,
+  GradeData,
+  SingleCourseDataResponse,
+} from "../../../../../types/api.ts";
 
 /**
  * Creates a grade card component from course data.
@@ -12,16 +15,21 @@ import {GradeCard} from '../../../../../degree-planning/components/DegreeAuditCa
  * @param {SingleCourseDataResponse} data - The data to use for the card.
  * @returns {HTMLDivElement} - The HTML element containing the grade card.
  */
-export function createGradeCard(course: Course, data: SingleCourseDataResponse): HTMLDivElement {
-  const { host: wrapper, container } = createShadowHost("mypack-extension-data-grade");
+export function createGradeCard(
+  course: Course,
+  data: SingleCourseDataResponse,
+): HTMLDivElement {
+  const { host: wrapper, container } = createShadowHost(
+    "mypack-extension-data-grade",
+  );
   wrapper.style.marginTop = "0.5rem";
-  wrapper.style.overflow = 'visible';
+  wrapper.style.overflow = "visible";
   wrapper.style.maxWidth = "400px";
-  wrapper.style.display = 'inline-block';
-  wrapper.style.verticalAlign = 'top';
+  wrapper.style.display = "inline-block";
+  wrapper.style.verticalAlign = "top";
 
   const courseData = data.CourseData;
-  
+
   // Extract and parse grade data
   const a = parseFloat(courseData.a_average ?? "0");
   const b = parseFloat(courseData.b_average ?? "0");
@@ -46,13 +54,17 @@ export function createGradeCard(course: Course, data: SingleCourseDataResponse):
     c_average: c,
     d_average: d,
     f_average: f,
-    class_avg_min: courseData.class_avg_min ? parseFloat(courseData.class_avg_min) : 0,
-    class_avg_max: courseData.class_avg_max ? parseFloat(courseData.class_avg_max) : 0,
+    class_avg_min: courseData.class_avg_min
+      ? parseFloat(courseData.class_avg_min)
+      : 0,
+    class_avg_max: courseData.class_avg_max
+      ? parseFloat(courseData.class_avg_max)
+      : 0,
   };
 
   // Render the grade card component
   const root = createRoot(container);
   root.render(React.createElement(GradeCard, gradeData));
-  
+
   return wrapper;
-} 
+}

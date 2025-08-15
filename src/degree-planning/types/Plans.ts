@@ -28,4 +28,4 @@ export type MinorPlan = {
   readonly requirements: Record<string, Requirement>;
 };
 
-export type MinorPlans = Record<string, MinorPlan>; 
+export type MinorPlans = Record<string, MinorPlan>;
