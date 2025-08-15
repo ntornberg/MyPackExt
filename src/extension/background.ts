@@ -1,86 +1,100 @@
-import {AppLogger} from "../core/utils/logger";
+import { AppLogger } from "../utils/logger";
 
 // Service worker state tracking
 let isListenerRegistered = false;
 
 /**
- * Setup message listener with duplicate prevention
+ * Setup message listener with duplicate prevention.
+ * Handles fetch proxy requests and ping messages from content scripts.
+ * @returns {void}
  */
 function setupMessageListener() {
   // Prevent duplicate listeners
   if (isListenerRegistered) {
-    AppLogger.info('[Background] Message listener already registered, skipping');
+    AppLogger.info(
+      "[Background] Message listener already registered, skipping",
+    );
     return;
   }
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    AppLogger.info('[Background] Received message:', message);
-    
+    AppLogger.info("[Background] Received message:", message);
+
     if (message.type === "fetchData") {
-      AppLogger.info('[Background] Fetching URL:', message.url, 'with formData:', message.formData);
-      
+      AppLogger.info(
+        "[Background] Fetching URL:",
+        message.url,
+        "with formData:",
+        message.formData,
+      );
+
       // Handle the fetch request
-      fetch(message.url, { 
+      fetch(message.url, {
         method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        }, 
-        body: message.formData 
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: message.formData,
       })
-      .then(async res => {
-        let data = null;
-        try {
-          data = await res.text();
-          AppLogger.info(`[Background] Fetch response text for course:`, data);
-        } catch (err) {
-          AppLogger.error('[Background] Error reading response text:', err);
-        }
-        sendResponse({ success: true, data });
-      })
-      .catch(err => {
-        AppLogger.error('[Background] Fetch error:', err);
-        sendResponse({ success: false, error: err.toString() });
-      });
-      
+        .then(async (res) => {
+          let data = null;
+          try {
+            data = await res.text();
+            AppLogger.info(
+              `[Background] Fetch response text for course:`,
+              data,
+            );
+          } catch (err) {
+            AppLogger.error("[Background] Error reading response text:", err);
+          }
+          sendResponse({ success: true, data });
+        })
+        .catch((err) => {
+          AppLogger.error("[Background] Fetch error:", err);
+          sendResponse({ success: false, error: err.toString() });
+        });
+
       return true; // Keep message channel open for async response
     }
-    
+
     // Handle ping messages for connection testing
     if (message.type === "ping") {
       sendResponse({ type: "pong", timestamp: Date.now() });
       return false;
     }
   });
-  
+
   isListenerRegistered = true;
-  AppLogger.info('[Background] Message listener registered successfully');
+  AppLogger.info("[Background] Message listener registered successfully");
 }
 
 /**
- * Initialize service worker on startup/restart
+ * Initialize service worker on startup/restart, ensuring listeners are registered.
+ *
+ * @returns {void}
  */
 function initializeServiceWorker() {
-  AppLogger.info('[Background] Initializing service worker...');
-  
+  AppLogger.info("[Background] Initializing service worker...");
+
   // Setup message listener
   setupMessageListener();
-  
-  AppLogger.info('[Background] Service worker initialization complete');
+
+  AppLogger.info("[Background] Service worker initialization complete");
 }
 
 /**
- * Handle service worker install event
+ * Handle service worker install event by initializing listeners.
  */
 chrome.runtime.onInstalled.addListener((details) => {
-  AppLogger.info('[Background] Extension installed/updated:', details.reason);
+  AppLogger.info("[Background] Extension installed/updated:", details.reason);
   initializeServiceWorker();
 });
 
 /**
- * Handle service worker startup
+ * Handle service worker startup by initializing listeners.
  */
 chrome.runtime.onStartup.addListener(() => {
-  AppLogger.info('[Background] Service worker startup event');
+  AppLogger.info("[Background] Service worker startup event");
   initializeServiceWorker();
 });
 
