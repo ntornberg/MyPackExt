@@ -10,7 +10,7 @@ MyPack Plus is a browser extension that makes course selection on the MyPack Por
 - Performance-focused: batch retrievals, layered caching (Chrome storage + IndexedDB), and parallel subject lookups
 
 ## Try it
-- Site: `mypackplus.me`
+- Site: [mypackplus.me](https://mypackplus.me/)
 - Not affiliated with NC State
 
 ## How it works (short version)
