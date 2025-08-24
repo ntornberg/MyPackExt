@@ -1,4 +1,5 @@
 import {defineConfig} from 'vite';
+declare const process: { env?: Record<string, string | undefined> };
 import react from '@vitejs/plugin-react';
 import type {ManifestV3Export} from '@crxjs/vite-plugin';
 import {crx} from '@crxjs/vite-plugin';
@@ -8,6 +9,7 @@ export default defineConfig(({ mode }) => {
   const isProduction = mode === 'production';
   const isStaging = mode === 'staging';
   const isDevelopment = mode === 'development' || (!isProduction && !isStaging);
+  const enableDebugLogs = (process && process.env && process.env.VITE_ENABLE_DEBUG_LOGS) === 'true';
 
   return {
     plugins: [
@@ -15,7 +17,6 @@ export default defineConfig(({ mode }) => {
       crx({
         manifest: manifestJson as ManifestV3Export,
       }),
-      // Obfuscation removed for faster builds
     ],
     build: {
       outDir: 'dist',
@@ -34,7 +35,7 @@ export default defineConfig(({ mode }) => {
           assetFileNames: isProduction ? 'assets/[name]-[hash].[ext]' : 'assets/[name].[ext]'
         }
       },
-      terserOptions: isProduction ? {
+      terserOptions: isProduction && !enableDebugLogs ? {
         compress: {
           drop_console: true,
           drop_debugger: true,
@@ -54,7 +55,7 @@ export default defineConfig(({ mode }) => {
       __STAGING__: isStaging
     },
     esbuild: {
-      drop: isProduction ? ['console', 'debugger'] : []
+      drop: isProduction && !enableDebugLogs ? ['console', 'debugger'] : []
     }
   };
 });

@@ -17,20 +17,27 @@
     ];
 
     const receiverPromise = (function () {
-        if (window.top.__receiverPromise) return window.top.__receiverPromise;
+        if (window.__receiverPromise) return window.__receiverPromise;
 
-        return (window.top.__receiverPromise = new Promise((resolve) => {
-            if (window.top.__receiverReady) return resolve(true);
+        return (window.__receiverPromise = new Promise((resolve) => {
+            if (window.__receiverReady) return resolve(true);
 
-            window.top.addEventListener("message", (ev) => {
-                if (
-                    ev.data?.type === "RECEIVER_READY" &&
-                    ev.data.source === "content-script"
-                ) {
-                    window.top.__receiverReady = true;
-                    resolve(true);
+            window.addEventListener("message", (ev) => {
+                try {
+                    if (
+                        ev.data?.type === "RECEIVER_READY" &&
+                        ev.data.source === "content-script"
+                    ) {
+                        window.__receiverReady = true;
+                        resolve(true);
+                    }
+                } catch (_) {
+                    // ignore
                 }
             });
+
+            // Fallback resolve in case message is missed
+            setTimeout(() => resolve(true), 2000);
         }));
     })();
 
@@ -65,7 +72,7 @@
                         }
 
                         const ok = await receiverPromise;
-                        window.top.postMessage(
+                        window.postMessage(
                             {
                                 source: "realFetchHook",
                                 type: "CLASS_DATA",

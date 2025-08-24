@@ -45,6 +45,15 @@ export function createEmotionCache() {
 
 export const myEmotionCache = createEmotionCache();
 
+// Initialize message receiver early to avoid race with hook postings
+(async () => {
+  try {
+    await setupListener();
+  } catch (err) {
+    AppLogger.error("Failed to initialize siteResponseStorage listener early:", err);
+  }
+})();
+
 /**
  * Injects the fetch/XHR hook script into the main document to surface data to the content script.
  *
@@ -174,7 +183,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const initialIframe = document.querySelector<HTMLIFrameElement>(
       '[id$="divPSPAGECONTAINER"] iframe',
     );
-    await setupListener();
     if (initialIframe) {
       const initialIframeDoc = initialIframe.contentDocument;
       if (!initialIframeDoc) {
