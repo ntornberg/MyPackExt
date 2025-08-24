@@ -9,9 +9,9 @@ import {
  * persists relevant class data in cache categories for later display.
  */
 export async function setupListener() {
-  const target = window.top ?? window;
-  target.postMessage({ type: "RECEIVER_READY", source: "content-script" }, "*");
-  target.addEventListener("message", async (event) => {
+  // Signal readiness within the same frame to avoid cross-origin top access
+  window.postMessage({ type: "RECEIVER_READY", source: "content-script" }, "*");
+  window.addEventListener("message", async (event) => {
     if (event.data?.source !== "realFetchHook") return;
     AppLogger.info("Received message from page:", event.data, event);
 

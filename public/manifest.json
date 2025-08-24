@@ -2,7 +2,7 @@
   "manifest_version": 3,
 
   "name": "MyPack Plus",
-  "version": "3.8.0",
+  "version": "3.8.1",
 
   "description": "If the menu isn't working please refresh mypack and if that doesn't work please toggle the extension off and on again.",
   "permissions": ["storage"],
@@ -18,7 +18,10 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://portalsp.acs.ncsu.edu/*"],
+      "matches": [
+        "https://portalsp.acs.ncsu.edu/*",
+        "https://webappprd.acs.ncsu.edu/*"
+      ],
       "js": ["src/extension/content.tsx"],
       "run_at": "document_start",
       "all_frames": true
