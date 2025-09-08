@@ -2,7 +2,7 @@
   "manifest_version": 3,
 
   "name": "MyPack Plus",
-  "version": "3.8.1",
+  "version": "3.8.2",
 
   "description": "If the menu isn't working please refresh mypack and if that doesn't work please toggle the extension off and on again.",
   "permissions": ["storage"],
