@@ -3,6 +3,10 @@
  * Keys **exactly match** the text inside each <option>.
  */
 export const TermIdByName: Record<string, string> = {
+    "2026 Summer Term 2":    "2267",
+    "2026 Summer Term 1":    "2266",
+    "2026 Spring Term":      "2261",
+
     "2025 Fall Term":        "2258",
     "2025 Summer Term 2":    "2257",
     "2025 Summer Term 1":    "2256",
