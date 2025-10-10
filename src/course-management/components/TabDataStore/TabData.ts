@@ -15,7 +15,7 @@ export type CourseSearchData = {
   };
 };
 export const CourseSearchDataInitialState: CourseSearchData = {
-  selectedTerm: Object.keys(TermIdByName)[0],
+  selectedTerm: Object.keys(TermIdByName)[2],
   searchSubject: null,
   searchCourse: null,
   selectedCourseInfo: { code: null, catalogNum: null, title: null, id: "" },
@@ -38,7 +38,7 @@ export type PlanSearchData = {
 export const PlanSearchDataInitialState: PlanSearchData = {
   open: {},
   selectedMajor: null,
-  selectedTerm: Object.keys(TermIdByName)[0],
+  selectedTerm: Object.keys(TermIdByName)[2],
   selectedMinor: null,
   selectedSubplan: null,
   searchMajor: null,
@@ -62,7 +62,7 @@ export type GEPData = {
   hideNoSections: boolean;
 };
 export const GEPDataInitialState: GEPData = {
-  selectedTerm: Object.keys(TermIdByName)[0],
+  selectedTerm: Object.keys(TermIdByName)[2],
   searchSubject: "",
   isLoaded: true,
   progress: 0,
