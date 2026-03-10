@@ -33,6 +33,10 @@ const CACHE_KEYS = {
   NULL_COURSES: "nullCourses", // Cache for courses that return no data
 };
 
+function buildNullCourseCacheKey(courseKey: string, term: string): string {
+  return `null-${courseKey} ${term}`;
+}
+
 /**
  * Fetches course data for a single course by combining open-sections data and instructor grade/professor info.
  * Utilizes multiple layered caches to minimize network calls and returns fully merged data ready for display.
@@ -63,7 +67,7 @@ export async function fetchSingleCourseData(
 
   // Check if this course is known to return null
   onProgress?.(15, `Checking if ${courseKey} is known to be unavailable`);
-  const nullCacheKey = `null-${openCoursesCacheKey}`;
+  const nullCacheKey = buildNullCourseCacheKey(courseKey, term);
   const nullHashKey = await generateCacheKey(nullCacheKey);
   const cachedNull = await getGenericCache(
     CACHE_KEYS.NULL_COURSES,
@@ -297,7 +301,7 @@ export async function batchFetchCoursesData(
     openCoursesHashKeys[courseKey] = hashKey;
 
     // Check if this course is known to return null
-    const nullCacheKey = `null-${openCoursesCacheKey}`;
+    const nullCacheKey = buildNullCourseCacheKey(courseKey, term);
     const nullHashKey = await generateCacheKey(nullCacheKey);
     const cachedNull = await getGenericCache(
       CACHE_KEYS.NULL_COURSES,
@@ -372,7 +376,7 @@ export async function batchFetchCoursesData(
           } else {
             const filteredCourseData = openCoursesToFetch[`${courseData.code}`];
             if (!filteredCourseData) {
-              const nullCacheKey = `null-${courseData.code}`;
+              const nullCacheKey = buildNullCourseCacheKey(courseData.code, term);
               const nullHashKey = await generateCacheKey(nullCacheKey);
               await setGenericCache(CACHE_KEYS.NULL_COURSES, {
                 [nullHashKey]: {
