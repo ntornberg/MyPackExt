@@ -393,32 +393,47 @@ async function clearFromIndexedDB(cacheCategory: string): Promise<void> {
 
       getAllKeysRequest.onsuccess = () => {
         const keys = getAllKeysRequest.result;
-        let deleted = 0;
+        const matchingKeys = keys.filter(
+          (key): key is string =>
+            typeof key === "string" && key.startsWith(`${cacheCategory}:`),
+        );
 
-        // If no keys, resolve immediately
-        if (keys.length === 0) {
+        let completed = 0;
+        let firstDeleteError: DOMException | null = null;
+
+        // If no matching keys, resolve immediately
+        if (matchingKeys.length === 0) {
           resolve();
           return;
         }
 
-        // Delete all entries that start with the category prefix
-        for (const key of keys) {
-          if (typeof key === "string" && key.startsWith(`${cacheCategory}:`)) {
-            const deleteRequest = store.delete(key);
-            deleteRequest.onsuccess = () => {
-              deleted++;
-              if (deleted === keys.length) {
-                resolve();
-              }
-            };
-            deleteRequest.onerror = () => {
-              AppLogger.error(
-                `[CACHE ERROR] Failed to delete from IndexedDB:`,
-                deleteRequest.error,
-              );
-              reject(deleteRequest.error);
-            };
+        const markDeleteCompleted = () => {
+          completed++;
+          if (completed === matchingKeys.length) {
+            if (firstDeleteError) {
+              reject(firstDeleteError);
+            } else {
+              resolve();
+            }
           }
+        };
+
+        // Delete all entries that start with the category prefix
+        for (const key of matchingKeys) {
+          const deleteRequest = store.delete(key);
+          deleteRequest.onsuccess = () => {
+            markDeleteCompleted();
+          };
+          deleteRequest.onerror = () => {
+            AppLogger.error(
+              `[CACHE ERROR] Failed to delete from IndexedDB:`,
+              deleteRequest.error,
+            );
+            if (!firstDeleteError) {
+              firstDeleteError = deleteRequest.error;
+            }
+            markDeleteCompleted();
+          };
         }
       };
 
