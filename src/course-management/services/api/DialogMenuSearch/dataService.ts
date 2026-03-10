@@ -328,11 +328,21 @@ export async function batchFetchCoursesData(
   await Promise.all(openCoursesCachePromises);
 
   // Phase 2: Fetch Missing Open Courses Data (in parallel)
-  if (Object.keys(openCoursesToFetch).length > 0) {
-    onProgress?.(
-      20,
-      `Fetching open courses data for ${openCoursesToFetch.length} courses`,
-    );
+  const openCoursesToFetchCount = Object.keys(openCoursesToFetch).length;
+
+  if (openCoursesToFetchCount > 0) {
+    const fetchProgressMessage =
+      `Fetching open courses data for ${openCoursesToFetchCount} courses`;
+
+    // Regression guard: this message should always reflect the actual record key count.
+    if (courses.length > 1) {
+      console.assert(
+        fetchProgressMessage.includes(`${openCoursesToFetchCount} courses`),
+        "Open courses fetch progress message count mismatch",
+      );
+    }
+
+    onProgress?.(20, fetchProgressMessage);
 
     // Create a promise for each course to fetch
     const subjects_to_fetch = [
