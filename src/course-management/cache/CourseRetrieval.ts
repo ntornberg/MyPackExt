@@ -4,11 +4,27 @@ import { AppLogger } from "../../utils/logger";
 export interface CacheEntry {
   combinedData: any;
   timestamp: number;
-  expiresAt: number;
+  expiresAt?: number;
 }
 
 // Cache expiration time (24 hours in milliseconds)
 const CACHE_EXPIRATION = 24 * 60 * 60 * 1000;
+
+/**
+ * Returns whether a cache entry is expired.
+ * Uses expiresAt when present, and falls back to timestamp + default expiration
+ * for legacy entries that do not have expiresAt.
+ */
+export function isCacheEntryExpired(
+  entry: CacheEntry,
+  now = Date.now(),
+): boolean {
+  if (typeof entry.expiresAt === "number") {
+    return now > entry.expiresAt;
+  }
+
+  return !!entry.timestamp && now - entry.timestamp > CACHE_EXPIRATION;
+}
 
 // Size threshold in bytes above which to use IndexedDB instead of chrome.storage
 const SIZE_THRESHOLD = 100 * 1024;
@@ -310,7 +326,7 @@ async function getFromIndexedDB(
 
             // Check if expired
             const now = Date.now();
-            if (entry.expiresAt && now > entry.expiresAt) {
+            if (isCacheEntryExpired(entry, now)) {
               AppLogger.info(
                 `[CACHE DB EXPIRED] Cache entry expired: ${cacheCategory}:${hash}...`,
               );
@@ -492,7 +508,7 @@ export async function getGenericCache(
           if (entry) {
             // Check if the cache entry has expired
             const now = Date.now();
-            if (entry.timestamp && now - entry.timestamp > CACHE_EXPIRATION) {
+            if (isCacheEntryExpired(entry, now)) {
               AppLogger.info(
                 `[CACHE EXPIRED] ${cacheCategory} cache expired for hash: ${hash}...`,
               );
