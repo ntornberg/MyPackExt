@@ -349,7 +349,7 @@ export async function batchFetchCoursesData(
   if (Object.keys(openCoursesToFetch).length > 0) {
     onProgress?.(
       20,
-      `Fetching open courses data for ${openCoursesToFetch.length} courses`,
+      `Fetching open courses data for ${Object.keys(openCoursesToFetch).length} courses`,
     );
 
     // Create a promise for each course to fetch
@@ -377,7 +377,7 @@ export async function batchFetchCoursesData(
           } else {
             const filteredCourseData = openCoursesToFetch[`${courseData.code}`];
             if (!filteredCourseData) {
-              const nullCacheKey = `null-${courseData.code}`;
+              const nullCacheKey = `null-${courseData.code} ${term}`;
               const nullHashKey = await generateCacheKey(nullCacheKey);
               await setGenericCache(CACHE_KEYS.NULL_COURSES, {
                 [nullHashKey]: {
