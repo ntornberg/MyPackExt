@@ -5,6 +5,7 @@ import {
   waitForRows,
 } from "../../utils/dom";
 import { AppLogger } from "../../utils/logger";
+import { DEBUG } from "../../utils/settings";
 import type { Course } from "../../types/api.ts";
 
 import { getCourseAndProfessorDetails } from "./api/PackPlannerAPI/courseDetail/courseDetailService";
@@ -12,6 +13,8 @@ import { getCourseAndProfessorDetails } from "./api/PackPlannerAPI/courseDetail/
 // Arrays to store course data
 export const courses: Course[] = []; // Stores courses from the main schedule table
 export const planner_courses: Course[] = []; // Stores courses from the planner/cart
+
+let dialogStyleObserver: MutationObserver | null = null;
 
 // --- DOM Extraction Helpers ---
 /**
@@ -316,10 +319,18 @@ async function applyFlexDialogLayout(
   inner_dialog: HTMLElement,
 ): Promise<void> {
   const dlg = document.querySelector(".ui-dialog.cust-ui-dialog");
-  if (dlg) {
-    new MutationObserver((muts) =>
+  if (DEBUG && dlg) {
+    dialogStyleObserver?.disconnect();
+    dialogStyleObserver = new MutationObserver((muts) =>
       AppLogger.info("Dialog mutations observed:", muts),
-    ).observe(dlg, { attributes: true, attributeFilter: ["style"] });
+    );
+    dialogStyleObserver.observe(dlg, {
+      attributes: true,
+      attributeFilter: ["style"],
+    });
+  } else if (dialogStyleObserver) {
+    dialogStyleObserver.disconnect();
+    dialogStyleObserver = null;
   }
   const titleBar = parent_dialog.querySelector(
     ".ui-dialog-titlebar",
