@@ -33,6 +33,24 @@ const CACHE_KEYS = {
   NULL_COURSES: "nullCourses", // Cache for courses that return no data
 };
 
+export async function cacheSingleOpenCourseData(
+  courseData: CourseData,
+  openCoursesHashKeys: Record<string, string>,
+  openCoursesCache: Record<string, CourseData>,
+): Promise<void> {
+  const hashKey = openCoursesHashKeys[courseData.code];
+  if (!hashKey) {
+    AppLogger.warn(
+      `Missing open-courses hash key for ${courseData.code}; skipping cache write`,
+    );
+    return;
+  }
+
+  const cacheData = JSON.stringify(courseData);
+  await setGenericCache(CACHE_KEYS.OPEN_COURSES, { [hashKey]: cacheData }, 120);
+  openCoursesCache[courseData.code] = courseData;
+}
+
 /**
  * Fetches course data for a single course by combining open-sections data and instructor grade/professor info.
  * Utilizes multiple layered caches to minimize network calls and returns fully merged data ready for display.
@@ -350,14 +368,11 @@ export async function batchFetchCoursesData(
               return openCoursesToFetch[`${course.code}`];
             });
             for (const course of filteredCourseData) {
-              const hashKey = openCoursesHashKeys[course.code];
-              const cacheData = JSON.stringify(course);
-              await setGenericCache(
-                CACHE_KEYS.OPEN_COURSES,
-                { [hashKey]: cacheData },
-                120,
+              await cacheSingleOpenCourseData(
+                course,
+                openCoursesHashKeys,
+                openCoursesCache,
               );
-              openCoursesCache[course.code] = course;
             }
           } else {
             const filteredCourseData = openCoursesToFetch[`${courseData.code}`];
@@ -372,15 +387,11 @@ export async function batchFetchCoursesData(
                 },
               });
             } else {
-              const cacheKey = openCoursesHashKeys[courseData.code];
-              const cacheData = JSON.stringify(courseData);
-              const hashKey = await generateCacheKey(cacheKey);
-              await setGenericCache(
-                CACHE_KEYS.OPEN_COURSES,
-                { [hashKey]: cacheData },
-                120,
+              await cacheSingleOpenCourseData(
+                courseData,
+                openCoursesHashKeys,
+                openCoursesCache,
               );
-              openCoursesCache[courseData.code] = courseData;
             }
           }
 
