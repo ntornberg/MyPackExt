@@ -361,14 +361,11 @@ export async function batchFetchCoursesData(
               return openCoursesToFetch[`${course.code}`];
             });
             for (const course of filteredCourseData) {
-              const hashKey = openCoursesHashKeys[course.code];
-              const cacheData = JSON.stringify(course);
-              await setGenericCache(
-                CACHE_KEYS.OPEN_COURSES,
-                { [hashKey]: cacheData },
-                120,
+              await cacheSingleOpenCourseData(
+                course,
+                openCoursesHashKeys,
+                openCoursesCache,
               );
-              openCoursesCache[course.code] = course;
             }
           } else {
             const filteredCourseData = openCoursesToFetch[`${courseData.code}`];
