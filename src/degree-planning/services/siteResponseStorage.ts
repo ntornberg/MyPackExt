@@ -18,23 +18,23 @@ export async function setupListener() {
     const { type, payload } = event.data;
     if (type === "CLASS_DATA") {
       for (const item of payload.data) {
-        if (payload.responseType == "_getScheduleTableData") {
+        if (payload.responseType === "_getScheduleTableData") {
           const hash = await generateCacheKey(item.crse_id);
           await setGenericCache("scheduleTableData", { [hash]: item });
         }
-        if (payload.responseType == "_getShopCartTableData") {
+        if (payload.responseType === "_getShopCartTableData") {
           const hash = await generateCacheKey(item.crse_id);
           await setGenericCache("shopCartTableData", { [hash]: item });
         }
-        if (payload.responseType == "_getPlanTermTableData") {
+        if (payload.responseType === "_getPlanTermTableData") {
           const hash = await generateCacheKey(item.crse_id);
           await setGenericCache("planTermTableData", { [hash]: item });
         }
-        if (payload.responseType == "_getShopCartCalEvents") {
+        if (payload.responseType === "_getShopCartCalEvents") {
           const hash = await generateCacheKey(item.class_nbr);
           await setGenericCache("shopCartCalEventsData", { [hash]: item });
         }
-        if (payload.responseType == "_getScheduleCalEvents") {
+        if (payload.responseType === "_getScheduleCalEvents") {
           const hash = await generateCacheKey(item.class_nbr);
           await setGenericCache("scheduleCalEventsData", { [hash]: item });
         }
