@@ -37,17 +37,17 @@ function setupMessageListener() {
         body: message.formData,
       })
         .then(async (res) => {
-          let data = null;
           try {
-            data = await res.text();
+            const data = await res.text();
             AppLogger.info(
               `[Background] Fetch response text for course:`,
               data,
             );
+            sendResponse({ success: true, data });
           } catch (err) {
             AppLogger.error("[Background] Error reading response text:", err);
+            sendResponse({ success: false, error: (err as Error).toString() });
           }
-          sendResponse({ success: true, data });
         })
         .catch((err) => {
           AppLogger.error("[Background] Fetch error:", err);

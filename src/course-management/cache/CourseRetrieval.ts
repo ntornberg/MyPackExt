@@ -23,7 +23,7 @@ export function isCacheEntryExpired(
     return now > entry.expiresAt;
   }
 
-  return !!entry.timestamp && now - entry.timestamp > CACHE_EXPIRATION;
+  return entry.timestamp !== undefined && now - entry.timestamp > CACHE_EXPIRATION;
 }
 
 // Size threshold in bytes above which to use IndexedDB instead of chrome.storage
@@ -126,16 +126,16 @@ async function storeInIndexedDB(
   db = await openDatabase();
   const entryPromises: Promise<Error | null>[] = [];
   for (const [hash, cacheEntry] of Object.entries(cacheEntries)) {
-    const entryPromise = async (
+    const entryPromise = (
       hash: string,
       cacheEntry: CacheEntry,
     ): Promise<Error | null> => {
-      try {
+      return new Promise((resolve) => {
         if (!db) {
           const error = new Error("Failed to open database");
           AppLogger.error(`[CACHE DB ERROR] ${error.message}`);
-
-          return error;
+          resolve(error);
+          return;
         }
 
         try {
@@ -143,53 +143,35 @@ async function storeInIndexedDB(
           const store = transaction.objectStore(STORE_NAME);
 
           // Store the entry with a composite key of category:hash
-          const request = store.put({
+          store.put({
             key: `${cacheCategory}:${hash}`,
             category: cacheCategory,
             hash: hash,
             ...cacheEntry,
           });
 
-          request.onsuccess = () => {
-            return;
-          };
-
-          request.onerror = () => {
-            AppLogger.error(
-              `[CACHE DB ERROR] Failed to store in IndexedDB: ${request.error?.message || "Unknown error"}`,
-            );
-            return request.error;
-          };
-
-          transaction.onerror = (_) => {
+          transaction.onerror = () => {
             AppLogger.error(
               `[CACHE DB ERROR] Transaction error: ${transaction.error?.message || "Unknown error"}`,
             );
-            return transaction.error;
+            resolve(transaction.error as Error);
           };
 
           transaction.oncomplete = () => {
-            db.close();
+            resolve(null);
           };
         } catch (transactionError) {
           AppLogger.error(
             `[CACHE DB ERROR] Failed to create transaction: ${transactionError}`,
           );
-          db.close();
-          return transactionError as Error;
+          resolve(transactionError as Error);
         }
-      } catch (error) {
-        AppLogger.error(`[CACHE DB ERROR] IndexedDB store error: ${error}`);
-        if (db) {
-          db.close();
-        }
-        return error as Error;
-      }
-      return null;
+      });
     };
     entryPromises.push(entryPromise(hash, cacheEntry));
   }
   const result = await Promise.all(entryPromises);
+  if (db) db.close();
   if (result.some((error) => error !== null)) {
     AppLogger.error(
       `[CACHE DB ERROR] Failed to store all entries in IndexedDB: ${result
