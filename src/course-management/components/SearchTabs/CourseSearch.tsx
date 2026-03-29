@@ -1,9 +1,8 @@
+import SearchIcon from "@mui/icons-material/Search";
 import {
   Autocomplete,
   Box,
   Button,
-  DialogContent,
-  List,
   TextField,
   Typography,
 } from "@mui/material";
@@ -13,7 +12,7 @@ import {
   type DataTableExpandedRows,
   type DataTableValueArray,
 } from "primereact/datatable";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type {
   GroupedSections,
@@ -24,10 +23,10 @@ import { AppLogger } from "../../../utils/logger";
 import { DEPT_COURSES } from "../../../degree-planning/DialogAutoCompleteKeys/CourseSearch/department_courses.typed";
 import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
 import { CircularProgressWithLabel } from "../../../ui-system/components/shared/CircularProgressWithLabel.tsx";
-import { customDataTableStyles } from "../../../ui-system/styles/dataTableStyles.ts";
 import { fetchSingleCourseData } from "../../services/api/DialogMenuSearch/dataService";
 import { sortSections } from "../../types/DataGridCourse";
 import { CourseInfoCell } from "../DataGridCells/CourseInfoCell";
+import { CourseTimeCell } from "../DataGridCells/CourseTimeCell";
 import { GradeDistributionCell } from "../DataGridCells/GradeDistributionCell";
 import { InfoCell } from "../DataGridCells/InfoCell";
 import { RateMyProfessorCell } from "../DataGridCells/RateMyProfessorCell";
@@ -40,6 +39,35 @@ interface DeptCourse {
   course_id: string;
   course_title: string;
 }
+
+const searchButtonSx = {
+  px: 2.5,
+  minWidth: 112,
+  height: 44,
+  alignSelf: "start",
+  mt: 0.5,
+  fontWeight: 600,
+  letterSpacing: 0.15,
+  backgroundColor: "#2a3f64",
+  backgroundImage: "none",
+  boxShadow: 3,
+  "&:hover": {
+    backgroundColor: "#243657",
+    boxShadow: 5,
+  },
+  "&:active": {
+    backgroundColor: "#1d2d49",
+  },
+  "@media (prefers-color-scheme: dark)": {
+    backgroundColor: "#3a5687",
+    "&:hover": {
+      backgroundColor: "#334d79",
+    },
+    "&:active": {
+      backgroundColor: "#2b4268",
+    },
+  },
+} as const;
 
 /**
  * Course Search tab allowing users to select term, subject, and course, then fetch sections.
@@ -192,8 +220,68 @@ export default function CourseSearch({
   const [expandedRows, setExpandedRows] = useState<
     DataTableExpandedRows | DataTableValueArray | undefined
   >(undefined);
+  const courseOptions = useMemo(() => {
+    if (!courseSearchData.searchSubject) {
+      return [];
+    }
+    return Object.entries(
+      DEPT_COURSES[courseSearchData.searchSubject as keyof typeof DEPT_COURSES],
+    ).map(
+      ([code, details]) =>
+        `${code} ${(details as unknown as DeptCourse).course_title}`,
+    );
+  }, [courseSearchData.searchSubject]);
+  const tableRows = useMemo(
+    () =>
+      courseData?.sections
+        ? Object.values(courseData.sections)
+            .flatMap((section, index) => {
+              if (section.lecture && section.labs && section.labs.length > 0) {
+                return [
+                  {
+                    ...section,
+                    uniqueRowId: `grouped-${section.lecture.section || index}`,
+                  },
+                ];
+              }
+              if (section.lecture && (!section.labs || section.labs.length === 0)) {
+                return [
+                  {
+                    ...section,
+                    uniqueRowId: `lecture-only-${section.lecture.section || index}`,
+                  },
+                ];
+              }
+              if (section.labs && section.labs.length > 0) {
+                return section.labs.reduce(
+                  (acc: (GroupedSections & { uniqueRowId: string })[], lab, labIndex) => {
+                    acc.push({
+                      labs: null,
+                      lecture: lab,
+                      uniqueRowId: `lab-only-${lab.section || `${index}-${labIndex}`}`,
+                    });
+                    return acc;
+                  },
+                  [],
+                );
+              }
+              return [];
+            })
+            .sort(sortSections)
+        : [],
+    [courseData?.sections],
+  );
+  const isSearchDisabled =
+    !courseSearchData.selectedTerm ||
+    !courseSearchData.searchSubject ||
+    !courseSearchData.selectedCourseInfo?.catalogNum ||
+    isLoading;
+  const courseHelperText = !courseSearchData.searchSubject
+    ? "Choose a subject to load course options."
+    : courseSearchData.selectedCourseInfo?.catalogNum
+      ? "Ready to search."
+      : "Select a course to enable search.";
   const rowExpansionTemplate = (data: GroupedSections) => {
-    AppLogger.info("Row expansion template", { data });
     if (!data.labs) return null; // No labs to show
     return (
       <Box sx={{ width: "50%", display: "flex", flexDirection: "column" }}>
@@ -226,84 +314,104 @@ export default function CourseSearch({
     );
   };
   return (
-    <DialogContent>
-      <Box sx={{ width: "100%", p: 2 }}>
-        <List>
+    <Box sx={{ width: "100%", p: 2 }}>
+      <Box
+        sx={{
+          width: "100%",
+          p: 2,
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          backgroundColor: "background.default",
+          borderRadius: 2,
+        }}
+      >
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+            gap: 2,
+            mb: 2,
+          }}
+        >
           <Autocomplete
-            sx={{ width: "50%", mb: 1 }}
             id="term_selector"
             options={Object.keys(TermIdByName)}
             value={courseSearchData.selectedTerm}
             onChange={(_, value) =>
               setCourseSearchTabData("selectedTerm", value)
             }
-            renderInput={(params) => (
-              <TextField {...params} label="Term" sx={{ padding: "10px" }} />
-            )}
+            renderInput={(params) => <TextField {...params} label="Term" />}
           />
           <Autocomplete
-            sx={{ width: "50%", mb: 1 }}
             id="subject_selector"
             options={Object.keys(DEPT_COURSES)}
             value={courseSearchData.searchSubject}
             onChange={(_, value) =>
               setCourseSearchTabData("searchSubject", value)
             }
-            renderInput={(params) => (
-              <TextField {...params} label="Subject" sx={{ padding: "10px" }} />
-            )}
+            renderInput={(params) => <TextField {...params} label="Subject" />}
           />
+        </Box>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1fr) auto" },
+            gap: 2,
+            alignItems: "start",
+          }}
+        >
           <Autocomplete
-            sx={{ width: "50%", mb: 1 }}
             id="course_selector"
-            options={
-              courseSearchData.searchSubject
-                ? Object.entries(
-                    DEPT_COURSES[
-                      courseSearchData.searchSubject as keyof typeof DEPT_COURSES
-                    ],
-                  ).map(
-                    ([code, details]) =>
-                      `${code} ${(details as unknown as DeptCourse).course_title}`,
-                  )
-                : []
-            }
+            options={courseOptions}
             value={courseSearchData.searchCourse}
             onChange={handleCourseChange}
+            noOptionsText={
+              courseSearchData.searchSubject
+                ? "No courses match this subject"
+                : "Pick a subject to see available courses"
+            }
             renderInput={(params) => (
-              <TextField {...params} label="Course" sx={{ padding: "10px" }} />
+              <TextField
+                {...params}
+                label="Course"
+                placeholder={
+                  courseSearchData.searchSubject
+                    ? "Type course code or title"
+                    : "Select subject first"
+                }
+                helperText={courseHelperText}
+              />
             )}
-            disabled={!courseSearchData.searchSubject}
           />
           <Button
-            variant="outlined"
-            sx={{ width: "50%" }}
+            color="secondary"
+            variant="contained"
+            size="medium"
+            sx={searchButtonSx}
             onClick={courseSearch}
-            disabled={
-              !courseSearchData.selectedTerm ||
-              !courseSearchData.searchSubject ||
-              !courseSearchData.selectedCourseInfo ||
-              isLoading
-            }
+            disabled={isSearchDisabled}
           >
             Search
           </Button>
-          {isLoading && (
+        </Box>
+        {isLoading && (
+          <Box sx={{ mt: 2 }}>
             <CircularProgressWithLabel value={progress} label={progressLabel} />
-          )}
-          {error && (
-            <Typography color="error" sx={{ mt: 2 }}>
-              Error: {error.message}
-            </Typography>
-          )}
-        </List>
+          </Box>
+        )}
+        {error && (
+          <Typography color="error" sx={{ mt: 2 }}>
+            Error: {error.message}
+          </Typography>
+        )}
       </Box>
       <Box
         sx={{
           width: "100%",
           display: "flex",
           flexDirection: "column",
-          mb: 4,
+          mt: 2,
+          mb: 2,
         }}
       >
         {courseData?.sections && Object.keys(courseData.sections).length > 0 ? (
@@ -314,58 +422,9 @@ export default function CourseSearch({
               flexDirection: "column",
             }}
           >
-            <style>{customDataTableStyles}</style>
             <DataTable
               dataKey="uniqueRowId"
-              value={Object.values(courseData.sections)
-                .flatMap((section, index) => {
-                  // If section has lecture and labs, return the grouped section (for expansion)
-                  if (
-                    section.lecture &&
-                    section.labs &&
-                    section.labs.length > 0
-                  ) {
-                    return [
-                      {
-                        ...section,
-                        uniqueRowId: `grouped-${section.lecture.section || index}`,
-                      },
-                    ];
-                  }
-                  // If section has lecture but no labs, return just the lecture
-                  if (
-                    section.lecture &&
-                    (!section.labs || section.labs.length === 0)
-                  ) {
-                    return [
-                      {
-                        ...section,
-                        uniqueRowId: `lecture-only-${section.lecture.section || index}`,
-                      },
-                    ];
-                  }
-                  // If no lecture but has labs, return individual lab rows
-                  if (section.labs && section.labs.length > 0) {
-                    return section.labs.reduce(
-                      (
-                        acc: (GroupedSections & { uniqueRowId: string })[],
-                        lab,
-                        labIndex,
-                      ) => {
-                        acc.push({
-                          labs: null,
-                          lecture: lab,
-                          uniqueRowId: `lab-only-${lab.section || `${index}-${labIndex}`}`,
-                        });
-                        return acc;
-                      },
-                      [],
-                    );
-                  }
-                  // Fallback
-                  return [];
-                })
-                .sort(sortSections)}
+              value={tableRows}
               paginator
               expandedRows={expandedRows}
               onRowToggle={(e) => setExpandedRows(e.data)}
@@ -376,10 +435,13 @@ export default function CourseSearch({
             >
               <Column
                 expander={(row) => row.labs && row.labs.length > 0}
+                header=""
+                style={{ width: "2.5rem" }}
               ></Column>
               <Column
                 field="to_cart_button"
-                header=""
+                header="Action"
+                style={{ width: "118px" }}
                 body={(params: GroupedSections) =>
                   params.lecture && ToCartButtonCell(params.lecture)
                 }
@@ -387,6 +449,7 @@ export default function CourseSearch({
               <Column
                 field="availability"
                 header="Status"
+                style={{ width: "140px" }}
                 body={(params: GroupedSections) =>
                   params.lecture && StatusAndSlotsCell(params.lecture)
                 }
@@ -394,13 +457,23 @@ export default function CourseSearch({
               <Column
                 field="section"
                 header="Course Info"
+                style={{ width: "170px" }}
                 body={(params: GroupedSections) =>
                   params.lecture && CourseInfoCell(params.lecture)
                 }
               />
               <Column
+                field="dayTime"
+                header="Time"
+                style={{ width: "190px" }}
+                body={(params: GroupedSections) =>
+                  params.lecture && CourseTimeCell(params.lecture)
+                }
+              />
+              <Column
                 field="instructor_name"
                 header="Instructor"
+                style={{ width: "240px" }}
                 body={(row: GroupedSections) =>
                   Array.isArray(row.lecture?.instructor_name)
                     ? row.lecture?.instructor_name.join(", ")
@@ -411,6 +484,7 @@ export default function CourseSearch({
               <Column
                 field="professor_rating"
                 header="Rating"
+                style={{ width: "130px" }}
                 body={(params: GroupedSections) =>
                   params.lecture && RateMyProfessorCell(params.lecture)
                 }
@@ -418,6 +492,7 @@ export default function CourseSearch({
               <Column
                 field="grade_distribution"
                 header="Grades"
+                style={{ width: "130px" }}
                 body={(params: GroupedSections) =>
                   params.lecture && GradeDistributionCell(params.lecture)
                 }
@@ -425,6 +500,7 @@ export default function CourseSearch({
               <Column
                 field="info"
                 header="Info"
+                style={{ width: "72px" }}
                 body={(params: GroupedSections) =>
                   params.lecture && InfoCell(params.lecture)
                 }
@@ -432,13 +508,24 @@ export default function CourseSearch({
             </DataTable>
           </Box>
         ) : (
-          <Typography variant="body1" sx={{ p: 2 }}>
-            {courseData
-              ? "No sections available"
-              : "Search for a course to see sections"}
-          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              py: 8,
+              gap: 2,
+            }}
+          >
+            <SearchIcon sx={{ fontSize: 56, color: "primary.main", opacity: 0.35 }} />
+            <Typography sx={{ color: "text.secondary", textAlign: "center" }}>
+              {courseData
+                ? "No sections found for this course"
+                : "Select a term, subject, and course above to search"}
+            </Typography>
+          </Box>
         )}
       </Box>
-    </DialogContent>
+    </Box>
   );
 }

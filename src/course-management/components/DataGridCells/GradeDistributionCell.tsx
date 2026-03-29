@@ -24,7 +24,20 @@ export const GradeDistributionCell = (params: ModifiedSection) => {
   const gradeData = params.grade_distribution;
 
   if (!gradeData) {
-    return null;
+    return (
+      <Typography
+        variant="caption"
+        sx={{
+          color: "text.secondary",
+          fontStyle: "italic",
+          whiteSpace: "nowrap",
+          lineHeight: 1.1,
+          display: "inline-block",
+        }}
+      >
+        No grade info
+      </Typography>
+    );
   }
 
   const handleOpen = () => {
@@ -61,7 +74,14 @@ export const GradeDistributionCell = (params: ModifiedSection) => {
         variant="outlined"
         size="small"
         onClick={handleOpen}
-        sx={{ textTransform: "none" }}
+        sx={{
+          textTransform: "none",
+          whiteSpace: "nowrap",
+          lineHeight: 1.05,
+          minWidth: 96,
+          px: 1.25,
+          py: 0.35,
+        }}
       >
         View Grades
       </Button>

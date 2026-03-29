@@ -2,8 +2,6 @@ import {
   Autocomplete,
   Box,
   Button,
-  DialogContent,
-  List,
   TextField,
   Typography,
   Checkbox,
@@ -36,16 +34,84 @@ import type {
   Subplan,
 } from "../../../degree-planning/types/Plans";
 import { CircularProgressWithLabel } from "../../../ui-system/components/shared/CircularProgressWithLabel";
-import { customDataTableStyles } from "../../../ui-system/styles/dataTableStyles";
 import { fetchCourseSearchData } from "../../services/api/DialogMenuSearch/dataService";
 import { sortSections } from "../../types/DataGridCourse";
 import { CourseInfoCell } from "../DataGridCells/CourseInfoCell";
+import { CourseTimeCell } from "../DataGridCells/CourseTimeCell";
 import { GradeDistributionCell } from "../DataGridCells/GradeDistributionCell";
 import { InfoCell } from "../DataGridCells/InfoCell";
 import { RateMyProfessorCell } from "../DataGridCells/RateMyProfessorCell";
 import { StatusAndSlotsCell } from "../DataGridCells/StatusAndSlotsCell";
 import { ToCartButtonCell } from "../DataGridCells/ToCartButtonCell";
 import { type PlanSearchData } from "../TabDataStore/TabData";
+
+type TabUpdater<T> = (keyOrPatch: keyof T | Partial<T>, value?: any) => void;
+
+const searchButtonSx = {
+  px: 2.5,
+  minWidth: 112,
+  height: 44,
+  alignSelf: "start",
+  mt: 0.5,
+  fontWeight: 600,
+  letterSpacing: 0.15,
+  backgroundColor: "#2a3f64",
+  backgroundImage: "none",
+  boxShadow: 3,
+  "&:hover": {
+    backgroundColor: "#243657",
+    boxShadow: 5,
+  },
+  "&:active": {
+    backgroundColor: "#1d2d49",
+  },
+  "@media (prefers-color-scheme: dark)": {
+    backgroundColor: "#3a5687",
+    "&:hover": {
+      backgroundColor: "#334d79",
+    },
+    "&:active": {
+      backgroundColor: "#2b4268",
+    },
+  },
+} as const;
+
+const requirementTreeSx = {
+  "& .MuiTreeItem-root": {
+    "& .MuiTreeItem-content": {
+      backgroundColor: "transparent !important",
+      padding: "12px 16px",
+      borderRadius: "8px",
+      margin: "4px 0",
+      border: "1px solid rgba(255, 255, 255, 0.1)",
+      borderColor: "divider",
+      "&:hover": {
+        backgroundColor: "action.hover !important",
+      },
+      "&.Mui-selected": {
+        backgroundColor: "action.selected !important",
+        "&:hover": {
+          backgroundColor: "action.selected !important",
+        },
+      },
+      "&.Mui-focused": {
+        backgroundColor: "action.selected !important",
+      },
+    },
+    "& .MuiTreeItem-label": {
+      fontSize: "1rem",
+      fontWeight: 600,
+      color: "text.primary",
+      padding: "8px 0",
+    },
+    "& .MuiTreeItem-iconContainer": {
+      color: "text.secondary",
+      "& svg": {
+        fontSize: "1rem",
+      },
+    },
+  },
+} as const;
 
 const CourseSectionsDataTable = ({
   sections,
@@ -57,7 +123,6 @@ const CourseSectionsDataTable = ({
   >(undefined);
 
   const rowExpansionTemplate = (data: GroupedSections) => {
-    AppLogger.info("Row expansion template in Plan Search", { data });
     if (!data.labs || data.labs.length === 0) return null;
     return (
       <Box sx={{ width: "50%", display: "flex", flexDirection: "column" }}>
@@ -91,7 +156,7 @@ const CourseSectionsDataTable = ({
   };
 
   const processedSections = useMemo(() => {
-    return sections.sort(sortSections).flatMap((section, index) => {
+    return [...sections].sort(sortSections).flatMap((section, index) => {
       if (section.lecture) {
         return [
           {
@@ -113,7 +178,6 @@ const CourseSectionsDataTable = ({
 
   return (
     <>
-      <style>{customDataTableStyles}</style>
       <DataTable
         dataKey="id"
         value={processedSections}
@@ -131,7 +195,8 @@ const CourseSectionsDataTable = ({
         />
         <Column
           field="to_cart_button"
-          header=""
+          header="Action"
+          style={{ width: "118px" }}
           body={(params: GroupedSections) =>
             params.lecture && ToCartButtonCell(params.lecture)
           }
@@ -139,6 +204,7 @@ const CourseSectionsDataTable = ({
         <Column
           field="availability"
           header="Status"
+          style={{ width: "140px" }}
           body={(params: GroupedSections) =>
             params.lecture && StatusAndSlotsCell(params.lecture)
           }
@@ -146,13 +212,23 @@ const CourseSectionsDataTable = ({
         <Column
           field="section"
           header="Course Info"
+          style={{ width: "170px" }}
           body={(params: GroupedSections) =>
             params.lecture && CourseInfoCell(params.lecture)
           }
         />
         <Column
+          field="dayTime"
+          header="Time"
+          style={{ width: "190px" }}
+          body={(params: GroupedSections) =>
+            params.lecture && CourseTimeCell(params.lecture)
+          }
+        />
+        <Column
           field="instructor_name"
           header="Instructor"
+          style={{ width: "240px" }}
           body={(row: GroupedSections) =>
             Array.isArray(row.lecture?.instructor_name)
               ? row.lecture?.instructor_name.join(", ")
@@ -162,6 +238,7 @@ const CourseSectionsDataTable = ({
         <Column
           field="professor_rating"
           header="Rating"
+          style={{ width: "130px" }}
           body={(params: GroupedSections) =>
             params.lecture && RateMyProfessorCell(params.lecture)
           }
@@ -169,6 +246,7 @@ const CourseSectionsDataTable = ({
         <Column
           field="grade_distribution"
           header="Grades"
+          style={{ width: "130px" }}
           body={(params: GroupedSections) =>
             params.lecture && GradeDistributionCell(params.lecture)
           }
@@ -176,6 +254,7 @@ const CourseSectionsDataTable = ({
         <Column
           field="info"
           header="Info"
+          style={{ width: "72px" }}
           body={(params: GroupedSections) =>
             params.lecture && InfoCell(params.lecture)
           }
@@ -219,7 +298,7 @@ const CourseDisplay = memo(
         variant="body1"
         sx={{
           p: 3,
-          color: "rgba(255, 255, 255, 0.6)",
+          color: "text.secondary",
           fontSize: "1rem",
           textAlign: "center",
           fontStyle: "italic",
@@ -241,7 +320,7 @@ export default function PlanSearch({
   setPlanSearchTabData,
   planSearchData,
 }: {
-  setPlanSearchTabData: (key: keyof PlanSearchData, value: any) => void;
+  setPlanSearchTabData: TabUpdater<PlanSearchData>;
   planSearchData: PlanSearchData;
 }) {
   const major_options = Object.keys(majorPlans);
@@ -252,14 +331,22 @@ export default function PlanSearch({
           ?.subplans || {},
       )
     : [];
+  const isSearchDisabled =
+    !planSearchData.selectedTerm ||
+    !(
+      planSearchData.selectedMinor ||
+      (planSearchData.selectedMajor && planSearchData.selectedSubplan)
+    );
 
   const planSearch = async () => {
-    setPlanSearchTabData("progress", 10);
-    setPlanSearchTabData("progressLabel", "Initializing plan search...");
-    setPlanSearchTabData("searchMajor", planSearchData.selectedMajor);
-    setPlanSearchTabData("searchMinor", planSearchData.selectedMinor);
-    setPlanSearchTabData("searchSubplan", planSearchData.selectedSubplan);
-    setPlanSearchTabData("isLoaded", false);
+    setPlanSearchTabData({
+      progress: 10,
+      progressLabel: "Initializing plan search...",
+      searchMajor: planSearchData.selectedMajor,
+      searchMinor: planSearchData.selectedMinor,
+      searchSubplan: planSearchData.selectedSubplan,
+      isLoaded: false,
+    });
     AppLogger.info("Search clicked with:", {
       selectedMajor: planSearchData.selectedMajor,
       selectedSubplan: planSearchData.selectedSubplan,
@@ -272,8 +359,10 @@ export default function PlanSearch({
       planSearchData.selectedSubplan,
       planSearchData.selectedTerm,
     );
-    setPlanSearchTabData("progress", 100);
-    setPlanSearchTabData("progressLabel", "Complete");
+    setPlanSearchTabData({
+      progress: 100,
+      progressLabel: "Complete",
+    });
   };
 
   const fetchOpenCourses = async (
@@ -282,17 +371,18 @@ export default function PlanSearch({
     subplan: string | null,
     term: string | null,
   ) => {
-    setPlanSearchTabData("progress", 10);
-    setPlanSearchTabData(
-      "progressLabel",
-      `Preparing to search for ${major} - ${subplan} courses`,
-    );
+    setPlanSearchTabData({
+      progress: 10,
+      progressLabel: `Preparing to search for ${major} - ${subplan} courses`,
+    });
     AppLogger.info("fetchOpenCourses called with:", { major, subplan, term });
 
     if (((major && subplan) || minor) && term) {
       try {
-        setPlanSearchTabData("progress", 15);
-        setPlanSearchTabData("progressLabel", `Loading ${major} plan data`);
+        setPlanSearchTabData({
+          progress: 15,
+          progressLabel: `Loading ${major} plan data`,
+        });
         const major_data = majorPlans[
           major as keyof typeof majorPlans
         ] as MajorPlan;
@@ -325,12 +415,11 @@ export default function PlanSearch({
           ),
         );
         const reqCount = Object.keys(requirements).length;
-        setPlanSearchTabData(
-          "progressLabel",
-          `Processing ${reqCount} requirements for ${subplan}`,
-        );
+        setPlanSearchTabData({
+          progress: 20,
+          progressLabel: `Processing ${reqCount} requirements for ${subplan}`,
+        });
         AppLogger.info("Requirements:", Object.keys(requirements));
-        setPlanSearchTabData("progress", 20);
 
         const newOpenCourses: Record<string, MergedCourseData> = {};
 
@@ -339,15 +428,10 @@ export default function PlanSearch({
           Object.values(requirements),
           term,
           (progressVal, statusMessage) => {
-            // Scale the progress to fit between 20-90%
-            setPlanSearchTabData(
-              "progress",
-              20 + Math.round(progressVal * 0.7),
-            );
-
-            if (statusMessage) {
-              setPlanSearchTabData("progressLabel", statusMessage);
-            }
+            setPlanSearchTabData({
+              progress: 20 + Math.round(progressVal * 0.7),
+              ...(statusMessage ? { progressLabel: statusMessage } : {}),
+            });
           },
         );
 
@@ -361,18 +445,24 @@ export default function PlanSearch({
         }
 
         AppLogger.info("Data returned from API:", data);
-        setPlanSearchTabData("progress", 90);
-        setPlanSearchTabData("progressLabel", "Processing course sections");
+        setPlanSearchTabData({
+          progress: 90,
+          progressLabel: "Processing course sections",
+        });
 
         for (const [courseKey, course] of Object.entries(data)) {
           newOpenCourses[courseKey] = course;
         }
 
-        setPlanSearchTabData("progress", 95);
-        setPlanSearchTabData("progressLabel", "Finalizing search results");
+        setPlanSearchTabData({
+          progress: 95,
+          progressLabel: "Finalizing search results",
+        });
         AppLogger.info("Setting openCourses with:", newOpenCourses);
-        setPlanSearchTabData("isLoaded", true);
-        setPlanSearchTabData("openCourses", newOpenCourses);
+        setPlanSearchTabData({
+          isLoaded: true,
+          openCourses: newOpenCourses,
+        });
         AppLogger.info("Updated open courses:", newOpenCourses);
       } catch (error) {
         AppLogger.error("Error in fetchOpenCourses:", error);
@@ -381,19 +471,25 @@ export default function PlanSearch({
           `Error fetching courses: ${error}`,
         );
       } finally {
-        setPlanSearchTabData("progress", 100);
-        setPlanSearchTabData("progressLabel", "Complete");
+        setPlanSearchTabData({
+          progress: 100,
+          progressLabel: "Complete",
+        });
       }
     }
   };
 
-  // Build requirements list if search was performed
-  let requirementsList = null;
-  if (
-    ((planSearchData.selectedMajor && planSearchData.selectedSubplan) ||
-      planSearchData.selectedMinor) &&
-    planSearchData.selectedTerm
-  ) {
+  const requirements = useMemo(() => {
+    if (
+      !(
+        (planSearchData.selectedMajor && planSearchData.selectedSubplan) ||
+        planSearchData.selectedMinor
+      ) ||
+      !planSearchData.selectedTerm
+    ) {
+      return {} as Record<string, { courses: readonly RequiredCourse[] }>;
+    }
+
     const major_data = majorPlans[
       planSearchData.selectedMajor as keyof typeof majorPlans
     ] as MajorPlan;
@@ -405,222 +501,224 @@ export default function PlanSearch({
     ] as MinorPlan | undefined;
     const major_requirements = subplan_data?.requirements ?? {};
     const minor_requirements = minor_data?.requirements ?? {};
-    AppLogger.info(`[PLAN SEARCH] Major Requirements:`, major_requirements);
-    AppLogger.info(`[PLAN SEARCH] Minor Requirements:`, minor_requirements);
-    const requirements = { ...minor_requirements, ...major_requirements };
-    AppLogger.info(`[PLAN SEARCH] Requirements:`, requirements);
-    if (Object.keys(requirements).length > 0) {
-      requirementsList = (
-        <SimpleTreeView
-          sx={{
-            "& .MuiTreeItem-root": {
-              "& .MuiTreeItem-content": {
-                backgroundColor: "transparent !important",
-                padding: "12px 16px",
-                borderRadius: "8px",
-                margin: "4px 0",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                "&:hover": {
-                  backgroundColor: "rgba(255, 255, 255, 0.08) !important",
-                },
-                "&.Mui-selected": {
-                  backgroundColor: "rgba(255, 255, 255, 0.12) !important",
-                  "&:hover": {
-                    backgroundColor: "rgba(255, 255, 255, 0.16) !important",
-                  },
-                },
-                "&.Mui-focused": {
-                  backgroundColor: "rgba(255, 255, 255, 0.12) !important",
-                },
-              },
-              "& .MuiTreeItem-label": {
-                fontSize: "1.2rem",
-                fontWeight: 600,
-                color: "#ffffff",
-                padding: "8px 0",
-              },
-              "& .MuiTreeItem-iconContainer": {
-                color: "rgba(255, 255, 255, 0.7)",
-                "& svg": {
-                  fontSize: "1.2rem",
-                },
-              },
-            },
-          }}
-        >
-          {Object.keys(requirements).map((requirementKey) => (
-            <TreeItem
-              key={requirementKey}
-              itemId={requirementKey}
-              label={requirementKey}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  width: "100%",
-                  padding: "16px",
-                  backgroundColor: "transparent",
-                }}
-              >
-                {requirements[requirementKey].courses
-                  .filter((course: RequiredCourse) => {
-                    if (planSearchData.hideNoSections) {
-                      const courseData = (
-                        planSearchData.openCourses as Record<
-                          string,
-                          MergedCourseData
-                        >
-                      )?.[`${course.course_abr} ${course.catalog_num}`];
-                      return (
-                        !!courseData?.sections &&
-                        Object.keys(courseData.sections).length > 0
-                      );
-                    }
-                    return true;
-                  })
-                  .map(
-                    (
-                      course: RequiredCourse,
-                      index: number,
-                      filteredCourses: RequiredCourse[],
-                    ) => (
-                      <Box
-                        key={`${course.course_abr} ${course.catalog_num}`}
-                        sx={{ mb: 3 }}
-                      >
-                        {/* Course Header */}
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            color: "rgba(255, 255, 255, 0.95)",
-                            fontSize: "1.1rem",
-                            fontWeight: 500,
-                            mb: 2,
-                            pb: 1,
-                            borderBottom: "2px solid rgba(255, 255, 255, 0.2)",
-                          }}
-                        >
-                          {course.course_descrip} ({course.course_abr}{" "}
-                          {parseInt(course.catalog_num)})
-                        </Typography>
 
-                        {/* Course Content */}
-                        <Box
-                          sx={{
-                            width: "100%",
-                            mb: 2,
-                          }}
-                        >
-                          <CourseDisplay
-                            course={course}
-                            openCourses={planSearchData.openCourses}
-                          />
-                        </Box>
+    return {
+      ...minor_requirements,
+      ...major_requirements,
+    } as Record<string, { courses: readonly RequiredCourse[] }>;
+  }, [
+    planSearchData.selectedMajor,
+    planSearchData.selectedSubplan,
+    planSearchData.selectedMinor,
+    planSearchData.selectedTerm,
+  ]);
 
-                        {/* Divider between courses (except for the last one) */}
-                        {index < filteredCourses.length - 1 && (
-                          <Box
-                            sx={{
-                              width: "100%",
-                              height: "1px",
-                              backgroundColor: "rgba(255, 255, 255, 0.1)",
-                              my: 3,
-                            }}
-                          />
-                        )}
-                      </Box>
-                    ),
-                  )}
-              </Box>
-            </TreeItem>
-          ))}
-        </SimpleTreeView>
-      );
+  const requirementEntries = useMemo(
+    () =>
+      Object.entries(requirements)
+        .map(([requirementKey, requirement]) => ({
+          requirementKey,
+          courses: requirement.courses.filter((course: RequiredCourse) => {
+            if (!planSearchData.hideNoSections) {
+              return true;
+            }
+            const courseData = (planSearchData.openCourses as Record<
+              string,
+              MergedCourseData
+            >)?.[`${course.course_abr} ${course.catalog_num}`];
+            return !!courseData?.sections && Object.keys(courseData.sections).length > 0;
+          }),
+        }))
+        .filter(({ courses }) => courses.length > 0),
+    [requirements, planSearchData.hideNoSections, planSearchData.openCourses],
+  );
+  const hasPlanSearchRun = Boolean(
+    planSearchData.isLoaded &&
+      (planSearchData.searchMajor || planSearchData.searchMinor),
+  );
+
+  const requirementsList = useMemo(() => {
+    if (requirementEntries.length === 0) {
+      return null;
     }
-  }
+
+    return (
+      <SimpleTreeView sx={requirementTreeSx}>
+        {requirementEntries.map(({ requirementKey, courses }) => (
+          <TreeItem key={requirementKey} itemId={requirementKey} label={requirementKey}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                width: "100%",
+                padding: "16px",
+                backgroundColor: "transparent",
+              }}
+            >
+              {courses.map((course: RequiredCourse, index: number) => (
+                <Box key={`${course.course_abr} ${course.catalog_num}`} sx={{ mb: 3 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: "text.primary",
+                      fontSize: "1rem",
+                      fontWeight: 500,
+                      mb: 2,
+                      pb: 1,
+                      borderBottom: "1px solid",
+                      borderColor: "divider",
+                    }}
+                  >
+                    {course.course_descrip} ({course.course_abr}{" "}
+                    {parseInt(course.catalog_num)})
+                  </Typography>
+
+                  <Box
+                    sx={{
+                      width: "100%",
+                      mb: 2,
+                    }}
+                  >
+                    <CourseDisplay
+                      course={course}
+                      openCourses={planSearchData.openCourses}
+                    />
+                  </Box>
+
+                  {index < courses.length - 1 && (
+                    <Box
+                      sx={{
+                        width: "100%",
+                        height: "1px",
+                        backgroundColor: "divider",
+                        my: 3,
+                      }}
+                    />
+                  )}
+                </Box>
+              ))}
+            </Box>
+          </TreeItem>
+        ))}
+      </SimpleTreeView>
+    );
+  }, [requirementEntries, planSearchData.openCourses]);
 
   return (
-    <DialogContent>
+    <Box sx={{ width: "100%", p: 2 }}>
       <Box sx={{ width: "100%", p: 2 }}>
-        <List>
-          <Autocomplete
-            sx={{ width: "50%", mb: 1 }}
-            id="term_selector"
-            options={Object.keys(TermIdByName)}
-            value={planSearchData.selectedTerm}
-            onChange={(_, value) => setPlanSearchTabData("selectedTerm", value)}
-            renderInput={(params) => (
-              <TextField {...params} label="Term" sx={{ padding: "10px" }} />
-            )}
-          />
-
-          <Autocomplete
-            sx={{ width: "50%", mb: 1 }}
-            id="major_selector"
-            options={major_options}
-            value={planSearchData.selectedMajor}
-            onChange={(_, value) =>
-              setPlanSearchTabData("selectedMajor", value)
-            }
-            renderInput={(params) => (
-              <TextField {...params} label="Major" sx={{ padding: "10px" }} />
-            )}
-          />
-
-          <Autocomplete
-            sx={{ width: "50%", mb: 1 }}
-            id="minor_selector"
-            options={minor_options}
-            value={planSearchData.selectedMinor}
-            onChange={(_, value) =>
-              setPlanSearchTabData("selectedMinor", value)
-            }
-            renderInput={(params: any) => (
-              <TextField {...params} label="Minor" sx={{ padding: "10px" }} />
-            )}
-          />
-
-          <Autocomplete
-            sx={{ width: "50%", mb: 1 }}
-            id="subplan_selector"
-            options={subplanOptions}
-            value={planSearchData.selectedSubplan}
-            onChange={(_, value) =>
-              setPlanSearchTabData("selectedSubplan", value)
-            }
-            renderInput={(params: any) => (
-              <TextField {...params} label="Subplan" sx={{ padding: "10px" }} />
-            )}
-          />
-
-          <Button
-            variant="outlined"
-            sx={{ width: "50%", mb: 1 }}
-            onClick={planSearch}
+        <Box
+          sx={{
+            pb: 2,
+            borderBottom: "1px solid",
+            borderColor: "divider",
+            backgroundColor: "background.default",
+            borderRadius: 2,
+            p: 2,
+          }}
+        >
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+              gap: 2,
+              mb: 2,
+            }}
           >
-            Search
-          </Button>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={planSearchData.hideNoSections}
-                onChange={(_, checked: boolean) =>
-                  setPlanSearchTabData("hideNoSections", checked)
-                }
-              />
-            }
-            label="Hide courses with no open sections"
-          />
-          {!planSearchData.isLoaded && (
-            <CircularProgressWithLabel
-              value={planSearchData.progress}
-              label={planSearchData.progressLabel || ""}
+            <Autocomplete
+              id="term_selector"
+              options={Object.keys(TermIdByName)}
+              value={planSearchData.selectedTerm}
+              onChange={(_, value) => setPlanSearchTabData("selectedTerm", value)}
+              renderInput={(params) => <TextField {...params} label="Term" />}
             />
+            <Autocomplete
+              id="major_selector"
+              options={major_options}
+              value={planSearchData.selectedMajor}
+              onChange={(_, value) =>
+                setPlanSearchTabData("selectedMajor", value)
+              }
+              renderInput={(params) => <TextField {...params} label="Major" />}
+            />
+          </Box>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+              gap: 2,
+              mb: 2,
+            }}
+          >
+            <Autocomplete
+              id="minor_selector"
+              options={minor_options}
+              value={planSearchData.selectedMinor}
+              onChange={(_, value) =>
+                setPlanSearchTabData("selectedMinor", value)
+              }
+              renderInput={(params: any) => (
+                <TextField {...params} label="Minor" />
+              )}
+            />
+            <Autocomplete
+              id="subplan_selector"
+              options={subplanOptions}
+              value={planSearchData.selectedSubplan}
+              onChange={(_, value) =>
+                setPlanSearchTabData("selectedSubplan", value)
+              }
+              renderInput={(params: any) => (
+                <TextField {...params} label="Subplan" />
+              )}
+            />
+          </Box>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "auto 1fr" },
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <Button
+              color="secondary"
+              variant="contained"
+              size="medium"
+              sx={searchButtonSx}
+              onClick={planSearch}
+              disabled={isSearchDisabled}
+            >
+              Search
+            </Button>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={planSearchData.hideNoSections}
+                  onChange={(_, checked: boolean) =>
+                    setPlanSearchTabData("hideNoSections", checked)
+                  }
+                />
+              }
+              label="Hide courses with no open sections"
+            />
+          </Box>
+          {!planSearchData.isLoaded && (
+            <Box sx={{ mt: 2 }}>
+              <CircularProgressWithLabel
+                value={planSearchData.progress}
+                label={planSearchData.progressLabel || ""}
+              />
+            </Box>
           )}
-          {planSearchData.isLoaded && requirementsList}
-        </List>
+        </Box>
+        {hasPlanSearchRun && requirementsList}
+        {hasPlanSearchRun && !requirementsList && (
+          <Typography sx={{ p: 3, color: "text.secondary", textAlign: "center" }}>
+            No search results found for the selected plan and filters.
+          </Typography>
+        )}
       </Box>
-    </DialogContent>
+    </Box>
   );
 }

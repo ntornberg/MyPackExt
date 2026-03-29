@@ -50,6 +50,147 @@ type CalendarViewProps = ModifiedSection & {
   courseData?: { code?: string };
 };
 
+let cachedScheduleEvents: ScheduleEvent[] | null = null;
+let cachedScheduleEventsPromise: Promise<ScheduleEvent[]> | null = null;
+
+const dayTokenMap: Record<string, string> = {
+  M: "Mon",
+  T: "Tue",
+  W: "Wed",
+  Th: "Thu",
+  F: "Fri",
+};
+
+const hasSharedDay = (daysA: ScheduleEvent["days"], daysB: ScheduleEvent["days"]) => {
+  const daySet = new Set(daysA.map((day) => day.day));
+  return daysB.some((day) => daySet.has(day.day));
+};
+
+const markOverlaps = (events: ScheduleEvent[]) => {
+  for (let i = 0; i < events.length; i++) {
+    for (let j = i + 1; j < events.length; j++) {
+      const eventA = events[i];
+      const eventB = events[j];
+      if (
+        toMinutes(eventA.start) < toMinutes(eventB.end) &&
+        toMinutes(eventA.end) > toMinutes(eventB.start) &&
+        hasSharedDay(eventA.days, eventB.days)
+      ) {
+        const daysA = Object.fromEntries(eventA.days.map((day) => [day.day, true]));
+        const daysB = Object.fromEntries(eventB.days.map((day) => [day.day, true]));
+        eventA.days = eventA.days.map((day) =>
+          daysB[day.day] ? { ...day, isOverlapping: true } : day,
+        );
+        eventB.days = eventB.days.map((day) =>
+          daysA[day.day] ? { ...day, isOverlapping: true } : day,
+        );
+      }
+    }
+  }
+};
+
+const parseDayTimeEvent = (
+  dayTime: string | undefined,
+  subjectCode: string | undefined,
+): ScheduleEvent | null => {
+  if (!dayTime) {
+    return null;
+  }
+
+  const tokens = dayTime.split(" ");
+  const meetingDays: string[] = [];
+  let startTime = "";
+  let endTime = "";
+
+  for (const [index, token] of tokens.entries()) {
+    if (token in dayTokenMap) {
+      meetingDays.push(dayTokenMap[token]);
+      continue;
+    }
+    if (index + 4 < tokens.length) {
+      startTime = `${token} ${tokens[index + 1]}`;
+      endTime = `${tokens[index + 3]} ${tokens[index + 4]}`;
+      break;
+    }
+  }
+
+  if (!meetingDays.length || !startTime || !endTime) {
+    return null;
+  }
+
+  return {
+    id: 1,
+    subj: subjectCode || "",
+    start: startTime,
+    end: endTime,
+    days: meetingDays.map((day) => ({ day, isOverlapping: false })),
+    color: "#2ECC71",
+  };
+};
+
+const loadScheduleEvents = async (): Promise<ScheduleEvent[]> => {
+  if (cachedScheduleEvents) {
+    return cachedScheduleEvents;
+  }
+  if (cachedScheduleEventsPromise) {
+    return cachedScheduleEventsPromise;
+  }
+
+  cachedScheduleEventsPromise = (async () => {
+    const courses = await getCacheCategory("scheduleTableData");
+    const events: ScheduleEvent[] = [];
+    let eventId = 1;
+
+    if (courses) {
+      for (const course of Object.values(courses)) {
+        const scheduleEntry: ScheduleTableEntry =
+          typeof course.combinedData === "string"
+            ? (JSON.parse(course.combinedData) as ScheduleTableEntry)
+            : (course.combinedData as unknown as ScheduleTableEntry);
+
+        if (!scheduleEntry?.section_details) {
+          continue;
+        }
+
+        for (const section of scheduleEntry.section_details) {
+          if (!section.meet_days || !section.time) {
+            continue;
+          }
+
+          const recurrRule = section.meet_days
+            .split("/")
+            .map((day) => day.trim())
+            .filter((day): day is "Mon" | "Tue" | "Wed" | "Thu" | "Fri" =>
+              ["Mon", "Tue", "Wed", "Thu", "Fri"].includes(day),
+            );
+
+          if (!recurrRule.length) {
+            continue;
+          }
+
+          const [startTime, endTime] = section.time.split("-").map((t) => t.trim());
+          const sectionType = section.type || "Section";
+          const subject = `${scheduleEntry.classs?.trim() || ""} ${sectionType}`.trim();
+          events.push({
+            id: eventId++,
+            subj: subject,
+            start: startTime,
+            end: endTime,
+            days: recurrRule.map((day) => ({ day, isOverlapping: false })),
+            color: "#E74C3C",
+          });
+        }
+      }
+    }
+
+    markOverlaps(events);
+    cachedScheduleEvents = events;
+    return events;
+  })();
+
+  return cachedScheduleEventsPromise;
+};
+
 /**
  * Displays a miniature weekly calendar for a section using cached schedule data.
  * If `dayTime` is provided, renders that event; otherwise derives from cached entries.
@@ -62,161 +203,58 @@ export const CalendarView = (params: CalendarViewProps) => {
 
   const [eventData, setEventData] = useState<ScheduleEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
+    let mounted = true;
+
     const fetchData = async () => {
       try {
-        const courses = await getCacheCategory("scheduleTableData");
-        const events: ScheduleEvent[] = [];
-        let eventId = 1;
-
-        if (courses) {
-          // Handle dayTime event
-          if (dayTime) {
-            const time_array = dayTime.split(" ");
-            const meeting_days: string[] = [];
-            let start_time = "";
-            let end_time = "";
-
-            for (const [index, item] of time_array.entries()) {
-              if (["M", "T", "W", "Th", "F", "Sa", "Su"].includes(item)) {
-                switch (item) {
-                  case "M":
-                    meeting_days.push("Mon");
-                    break;
-                  case "T":
-                    meeting_days.push("Tue");
-                    break;
-                  case "W":
-                    meeting_days.push("Wed");
-                    break;
-                  case "Th":
-                    meeting_days.push("Thu");
-                    break;
-                  case "F":
-                    meeting_days.push("Fri");
-                    break;
-                }
-              } else if (index + 4 < time_array.length) {
-                start_time = `${item} ${time_array[index + 1]}`;
-                end_time = `${time_array[index + 3]} ${time_array[index + 4]}`;
-                break;
-              }
-            }
-
-            if (meeting_days.length > 0 && start_time && end_time) {
-              events.push({
-                id: eventId++,
-                subj: courseData?.code || "",
-                start: start_time,
-                end: end_time,
-                days: meeting_days.map((dayValue) => {
-                  return { day: dayValue, isOverlapping: false };
-                }),
-                color: "#2ECC71", // Green color
-              });
-            }
-          }
-
-          // Process course data
-          for (const course of Object.values(courses)) {
-            let schedule_entry: ScheduleTableEntry | null = null;
-            if (typeof course.combinedData !== "string") {
-              schedule_entry =
-                course.combinedData as unknown as ScheduleTableEntry;
-            } else {
-              schedule_entry = JSON.parse(
-                course.combinedData,
-              ) as unknown as ScheduleTableEntry;
-            }
-
-            if (schedule_entry?.section_details) {
-              for (const section of schedule_entry.section_details) {
-                if (section.meet_days && section.time) {
-                  const recurrRule: string[] = [];
-
-                  for (const day of section.meet_days.split("/")) {
-                    switch (day.trim()) {
-                      case "Mon":
-                        recurrRule.push("Mon");
-                        break;
-                      case "Tue":
-                        recurrRule.push("Tue");
-                        break;
-                      case "Wed":
-                        recurrRule.push("Wed");
-                        break;
-                      case "Thu":
-                        recurrRule.push("Thu");
-                        break;
-                      case "Fri":
-                        recurrRule.push("Fri");
-                        break;
-                    }
-                  }
-
-                  if (recurrRule.length > 0) {
-                    const [startTime, endTime] = section.time
-                      .split("-")
-                      .map((t) => t.trim());
-
-                    const sectionType = section.type || "Section";
-                    const subject =
-                      `${schedule_entry.classs?.trim() || ""} ${sectionType}`.trim();
-
-                    events.push({
-                      id: eventId++,
-                      subj: subject,
-                      start: startTime,
-                      end: endTime,
-                      days: recurrRule.map((dayValue) => {
-                        return { day: dayValue, isOverlapping: false };
-                      }),
-                      color: "#E74C3C", // Red color
-                    });
-                  }
-                }
-              }
-            }
-          }
-        }
-
-        for (let i = 0; i < events.length; i++) {
-          for (let j = i + 1; j < events.length; j++) {
-            const eventA = events[i];
-            const eventB = events[j];
-
+        const cachedEvents = await loadScheduleEvents();
+        const dayTimeEvent = parseDayTimeEvent(dayTime, courseData?.code);
+        if (dayTimeEvent) {
+          const overlappingDays = new Set<string>();
+          for (const event of cachedEvents) {
             if (
-              toMinutes(eventA.start) < toMinutes(eventB.end) &&
-              toMinutes(eventA.end) > toMinutes(eventB.start)
+              toMinutes(dayTimeEvent.start) < toMinutes(event.end) &&
+              toMinutes(dayTimeEvent.end) > toMinutes(event.start)
             ) {
-              const daysA = Object.fromEntries(
-                eventA.days.map((day) => [day.day, true]),
-              );
-              const daysB = Object.fromEntries(
-                eventB.days.map((day) => [day.day, true]),
-              );
-
-              // Mark overlaps for both events, only on shared days
-              eventA.days = eventA.days.map((day) =>
-                daysB[day.day] ? { ...day, isOverlapping: true } : day,
-              );
-              eventB.days = eventB.days.map((day) =>
-                daysA[day.day] ? { ...day, isOverlapping: true } : day,
-              );
+              for (const day of dayTimeEvent.days) {
+                if (event.days.some((eventDay) => eventDay.day === day.day)) {
+                  overlappingDays.add(day.day);
+                }
+              }
             }
           }
+          if (overlappingDays.size > 0) {
+            dayTimeEvent.days = dayTimeEvent.days.map((day) =>
+              overlappingDays.has(day.day)
+                ? { ...day, isOverlapping: true }
+                : day,
+            );
+          }
+          if (mounted) {
+            setEventData([dayTimeEvent, ...cachedEvents]);
+          }
+          return;
         }
 
-        setEventData(events);
+        if (mounted) {
+          setEventData(cachedEvents);
+        }
       } catch (error) {
         console.error("Error fetching schedule data:", error);
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchData();
-  }, [dayTime, courseData]); // Add dependencies that should trigger refetch
+    return () => {
+      mounted = false;
+    };
+  }, [dayTime, courseData?.code]);
 
   if (isLoading) {
     return <div>Loading...</div>; // Or a loading spinner

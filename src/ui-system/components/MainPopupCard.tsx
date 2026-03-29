@@ -1,7 +1,12 @@
-﻿import { TabContext, TabList, TabPanel } from "@mui/lab";
-import { Box, Button, Dialog, Tab } from "@mui/material";
+import { TabContext, TabList, TabPanel } from "@mui/lab";
+import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
+import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
+import { Box, Button, Dialog, Tab, Typography } from "@mui/material";
 import CssBaseline from "@mui/material/CssBaseline";
-import React, { useCallback, useMemo, useState } from "react";
+import { useColorScheme } from "@mui/material/styles";
+import IconButton from "@mui/material/IconButton";
+import Tooltip from "@mui/material/Tooltip";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import CourseSearch from "../../course-management/components/SearchTabs/CourseSearch";
 import GEPSearch from "../../course-management/components/SearchTabs/GEPSearch";
@@ -16,7 +21,10 @@ import {
   type PlanSearchData,
   type GEPData,
 } from "../../course-management/components/TabDataStore/TabData";
+import { customDataTableStyles } from "../styles/dataTableStyles";
 import AppTheme from "../themes/AppTheme";
+
+type TabUpdater<T> = (keyOrPatch: keyof T | Partial<T>, value?: any) => void;
 
 const MemoizedCourseSearchTab = React.memo(
   ({
@@ -38,7 +46,7 @@ const MemoizedGEPSearchTab = React.memo(
     setGepSearchTabData,
     gepSearchData,
   }: {
-    setGepSearchTabData: (key: keyof GEPData, value: any) => void;
+    setGepSearchTabData: TabUpdater<GEPData>;
     gepSearchData: GEPData;
   }) => (
     <GEPSearch
@@ -53,7 +61,7 @@ const MemoizedPlanSearchTab = React.memo(
     setPlanSearchTabData,
     planSearchData,
   }: {
-    setPlanSearchTabData: (key: keyof PlanSearchData, value: any) => void;
+    setPlanSearchTabData: TabUpdater<PlanSearchData>;
     planSearchData: PlanSearchData;
   }) => (
     <PlanSearch
@@ -62,6 +70,78 @@ const MemoizedPlanSearchTab = React.memo(
     />
   ),
 );
+
+const triggerButtonSx = {
+  fontWeight: 600,
+  letterSpacing: 0.2,
+  px: 2.25,
+  minWidth: 128,
+  fontSize: {
+    xs: "0.7rem",
+    sm: "0.8rem",
+    md: "0.875rem",
+  },
+  backgroundColor: "#2a3f64",
+  backgroundImage: "none",
+  boxShadow: 3,
+  "&:hover": {
+    backgroundColor: "#243657",
+    boxShadow: 5,
+  },
+  "&:active": {
+    backgroundColor: "#1d2d49",
+  },
+  "@media (prefers-color-scheme: dark)": {
+    backgroundColor: "#3a5687",
+    "&:hover": {
+      backgroundColor: "#334d79",
+    },
+    "&:active": {
+      backgroundColor: "#2b4268",
+    },
+  },
+} as const;
+
+const dialogPaperSx = {
+  height: "min(92vh, 980px)",
+  maxHeight: "min(92vh, 980px)",
+  display: "flex",
+  flexDirection: "column",
+  overflow: "hidden",
+  backgroundImage: "none",
+  backgroundColor: "background.paper",
+  color: "text.primary",
+  border: "1px solid",
+  borderColor: "divider",
+  borderRadius: 2.5,
+  boxShadow: 8,
+} as const;
+
+function ThemeModeToggle() {
+  const { mode, setMode } = useColorScheme();
+  const isDark = mode !== "light";
+  const nextMode = isDark ? "light" : "dark";
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-pp-mode", isDark ? "dark" : "light");
+  }, [isDark]);
+
+  return (
+    <Tooltip title={`Switch to ${nextMode} mode`}>
+      <IconButton
+        size="small"
+        onClick={() => setMode(nextMode)}
+        sx={{ border: "1px solid", borderColor: "divider" }}
+      >
+        {isDark ? (
+          <LightModeOutlinedIcon fontSize="small" />
+        ) : (
+          <DarkModeOutlinedIcon fontSize="small" />
+        )}
+      </IconButton>
+    </Tooltip>
+  );
+}
 
 /**
  * Root UI component hosting the three search tabs inside a dialog mounted in the overlay container.
@@ -78,32 +158,51 @@ export default function SlideOutDrawer() {
   const [gepSearchData, setGepSearchData] = useState(GEPDataInitialState);
 
   // Create stable references for all setter functions
-  const setCourseSearchTabData = useCallback(
-    (key: keyof CourseSearchData, value: any) => {
-      setCourseSearchData((prev) => ({ ...prev, [key]: value }));
+  const setCourseSearchTabData: TabUpdater<CourseSearchData> = useCallback(
+    (keyOrPatch, value) => {
+      setCourseSearchData((prev) =>
+        typeof keyOrPatch === "object"
+          ? { ...prev, ...keyOrPatch }
+          : { ...prev, [keyOrPatch]: value },
+      );
     },
     [],
   );
 
-  const setPlanSearchTabData = useCallback(
-    (key: keyof PlanSearchData, value: any) => {
-      if (key === "open") {
+  const setPlanSearchTabData: TabUpdater<PlanSearchData> = useCallback(
+    (keyOrPatch, value) => {
+      if (typeof keyOrPatch === "object") {
+        setPlanSearchData((prev) => ({ ...prev, ...keyOrPatch }));
+        return;
+      }
+      if (keyOrPatch === "open") {
+        if (typeof value === "string") {
+          setPlanSearchData((prevState) => ({
+            ...prevState,
+            open: {
+              ...prevState.open,
+              [value]: !prevState.open[value],
+            },
+          }));
+          return;
+        }
         setPlanSearchData((prevState) => ({
           ...prevState,
-          open: {
-            ...prevState.open,
-            [value]: !prevState.open[value],
-          },
+          open: (value as Record<string, boolean>) ?? prevState.open,
         }));
-      } else {
-        setPlanSearchData((prev) => ({ ...prev, [key]: value }));
+        return;
       }
+      setPlanSearchData((prev) => ({ ...prev, [keyOrPatch]: value }));
     },
     [],
   );
 
-  const setGepSearchTabData = useCallback((key: keyof GEPData, value: any) => {
-    setGepSearchData((prev) => ({ ...prev, [key]: value }));
+  const setGepSearchTabData: TabUpdater<GEPData> = useCallback((keyOrPatch, value) => {
+    setGepSearchData((prev) =>
+      typeof keyOrPatch === "object"
+        ? { ...prev, ...keyOrPatch }
+        : { ...prev, [keyOrPatch]: value },
+    );
   }, []);
 
   // Memoize all other handlers
@@ -158,22 +257,12 @@ export default function SlideOutDrawer() {
     <AppTheme>
       <CssBaseline enableColorScheme />
       <Box sx={{ p: 2, pointerEvents: "auto" }}>
+        <style>{customDataTableStyles}</style>
         <Button
-          variant="outlined"
-          sx={{
-            color: "white",
-            backgroundColor: "rgb(11, 14, 20) !important",
-            borderColor: "rgb(51, 60, 77) !important",
-            backgroundImage: "none !important",
-            fontSize: {
-              xs: "0.7rem",
-              sm: "0.8rem",
-              md: "0.875rem",
-            },
-            "&:hover": {
-              backgroundColor: "rgb(20, 25, 35) !important",
-            },
-          }}
+          variant="contained"
+          color="secondary"
+          size="medium"
+          sx={triggerButtonSx}
           onClick={handleDrawerOpen}
         >
           Course Search
@@ -188,49 +277,60 @@ export default function SlideOutDrawer() {
           id="course-search-dialog"
           slotProps={{
             paper: {
-              sx: {
-                height: "90vh",
-                maxHeight: "90vh",
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
-                backgroundImage: `radial-gradient(80% 80% at 50% -15%, rgb(0, 41, 82), transparent)`,
-                backgroundColor: "rgb(5, 7, 10)", // fallback for the rest of the dialog
-                boxShadow: `0 0 10px 4px rgba(33, 150, 243, 0.6)`,
-                color: "white",
-                border: "2px solid black",
-                borderRadius: 2,
-              },
+              sx: dialogPaperSx,
             },
           }}
         >
-          <Box
-            sx={{
-              width: "100%",
-              p: 2,
-              borderBottom: "1px solid rgba(255,255,255,0.1)",
-              flexShrink: 0,
-            }}
-          >
-            <TabContext value={selectedTab}>
-              <TabList onChange={handleTabChange}>
+          <TabContext value={selectedTab}>
+            <Box
+              sx={{
+                width: "100%",
+                p: 2,
+                borderBottom: "1px solid",
+                borderColor: "divider",
+                backgroundColor: "background.default",
+                flexShrink: 0,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+                <Typography variant="h6">Pack Planner</Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Button
+                    component="a"
+                    href="mailto:nicktornberg12@gmail.com?subject=Pack%20Planner%20Feedback"
+                    variant="outlined"
+                    size="small"
+                    sx={{ textTransform: "none", fontWeight: 600 }}
+                  >
+                    Report bug / Feedback
+                  </Button>
+                  <ThemeModeToggle />
+                </Box>
+              </Box>
+              <Typography
+                variant="caption"
+                sx={{ display: "block", mb: 1, color: "text.secondary" }}
+              >
+                Contact: nicktornberg12@gmail.com
+              </Typography>
+              <TabList onChange={handleTabChange} aria-label="Planner search tabs">
                 <Tab value="0" label="Course Search" />
                 <Tab value="1" label="GEP Search" />
                 <Tab value="2" label="Major Search" />
               </TabList>
-            </TabContext>
-          </Box>
+            </Box>
 
-          <Box
-            id="dialog-scroll-container"
-            sx={{
-              flexGrow: 1,
-              overflow: "auto",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <TabContext value={selectedTab}>
+            <Box
+              id="dialog-scroll-container"
+              sx={{
+                flexGrow: 1,
+                minHeight: 0,
+                overflow: "auto",
+                display: "flex",
+                flexDirection: "column",
+                backgroundColor: "background.paper",
+              }}
+            >
               <TabPanel value="0" keepMounted={true} sx={{ p: 0, flex: 1 }}>
                 {tabContent.courseSearch}
               </TabPanel>
@@ -240,8 +340,8 @@ export default function SlideOutDrawer() {
               <TabPanel value="2" keepMounted={true} sx={{ p: 0, flex: 1 }}>
                 {tabContent.planSearch}
               </TabPanel>
-            </TabContext>
-          </Box>
+            </Box>
+          </TabContext>
         </Dialog>
       </Box>
     </AppTheme>

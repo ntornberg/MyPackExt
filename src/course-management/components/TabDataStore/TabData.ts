@@ -1,6 +1,5 @@
 // Keeps track of search info when switching dialog tabs.
 import type { MergedCourseData } from "../../types/Section";
-import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
 import type { RequiredCourse } from "../../../degree-planning/types/Plans.ts";
 
 export type CourseSearchData = {
@@ -15,7 +14,7 @@ export type CourseSearchData = {
   };
 };
 export const CourseSearchDataInitialState: CourseSearchData = {
-  selectedTerm: Object.keys(TermIdByName)[2],
+  selectedTerm: "2026 Fall Term",
   searchSubject: null,
   searchCourse: null,
   selectedCourseInfo: { code: null, catalogNum: null, title: null, id: "" },
@@ -38,7 +37,7 @@ export type PlanSearchData = {
 export const PlanSearchDataInitialState: PlanSearchData = {
   open: {},
   selectedMajor: null,
-  selectedTerm: Object.keys(TermIdByName)[2],
+  selectedTerm: "2026 Fall Term",
   selectedMinor: null,
   selectedSubplan: null,
   searchMajor: null,
@@ -62,7 +61,7 @@ export type GEPData = {
   hideNoSections: boolean;
 };
 export const GEPDataInitialState: GEPData = {
-  selectedTerm: Object.keys(TermIdByName)[2],
+  selectedTerm: "2026 Fall Term",
   searchSubject: "",
   isLoaded: true,
   progress: 0,
