@@ -37,7 +37,8 @@
     "primereact": "^10.9.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-gauge-component": "^1.2.64"
+    "react-gauge-component": "^1.2.64",
+    "vitest": "^4.1.2"
   },
   "devDependencies": {
     "@babel/plugin-transform-react-constant-elements": "^7.25.9",

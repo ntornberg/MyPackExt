@@ -3,29 +3,24 @@ import { Box, Chip } from "@mui/material";
 import type { ModifiedSection } from "../../types/Section";
 
 function getEnrollmentColor(enrollment: string | undefined): string {
-  if (!enrollment) return "#bdbdbd"; // grey for unknown
+  if (!enrollment) return "rgba(120, 130, 145, 0.25)";
   const match = enrollment.match(/(\d+)\/(\d+)/);
-  if (!match) return "#bdbdbd";
+  if (!match) return "rgba(120, 130, 145, 0.25)";
   const current = parseInt(match[1], 10);
   const max = parseInt(match[2], 10);
-  if (isNaN(current) || isNaN(max) || max === 0) return "#bdbdbd";
+  if (isNaN(current) || isNaN(max) || max === 0) return "rgba(120, 130, 145, 0.25)";
   const ratio = current / max;
-  // This doesn't even work
+  // green when mostly empty → yellow at half → orange/red when nearly full
   if (ratio < 0.5) {
-    // Red to yellow
-    const g = Math.round(255 * (ratio / 0.5));
-    return `rgb(255,${g},0)`;
+    return `hsl(120, 60%, 35%)`; // green
   } else if (ratio < 0.8) {
-    // Yellow to green
-    const r = Math.round(255 * (1 - (ratio - 0.5) / 0.3));
-    return `rgb(${r},255,0)`;
+    const hue = Math.round(120 - ((ratio - 0.5) / 0.3) * 65); // 120→55
+    return `hsl(${hue}, 75%, 38%)`;
   } else if (ratio < 0.98) {
-    // Green to black
-    const v = Math.round(255 * (1 - (ratio - 0.8) / 0.18));
-    return `rgb(0,${v},0)`;
+    const hue = Math.round(55 - ((ratio - 0.8) / 0.18) * 45); // 55→10
+    return `hsl(${hue}, 80%, 38%)`;
   } else {
-    // Nearly full: black
-    return "#111";
+    return `hsl(0, 75%, 32%)`; // dark red — full
   }
 }
 
@@ -73,8 +68,8 @@ export const StatusAndSlotsCell = (params: ModifiedSection) => {
         label={section}
         size="small"
         sx={{
-          backgroundColor: "#000",
-          color: "#fff",
+          backgroundColor: "action.hover",
+          color: "text.primary",
           fontWeight: 600,
           fontSize: { xs: "0.7rem", sm: "0.75rem", md: "0.8rem" },
         }}

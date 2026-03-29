@@ -1,4 +1,5 @@
-import { Alert, AlertTitle, Button, ButtonBase, Popper } from "@mui/material";
+import AddShoppingCartIcon from "@mui/icons-material/AddShoppingCart";
+import { Alert, AlertTitle, Button, Popper } from "@mui/material";
 import { useState, useRef } from "react";
 
 import type { ModifiedSection } from "../../types/Section";
@@ -56,24 +57,18 @@ export const ToCartButtonCell = (
     AppLogger.warn("Section: ", selectedSection);
     return (
       <Button
-        variant="contained"
+        color="secondary"
+        variant="outlined"
         disabled
+        size="small"
+        startIcon={<AddShoppingCartIcon />}
         title="Missing required data"
         sx={{
-          color: "white",
-          backgroundColor: "rgb(11, 14, 20)",
-          borderColor: "rgb(65, 70, 81)",
-          padding: "6px 8px",
-          borderRadius: "2px",
-          backgroundImage: "none",
-          fontSize: {
-            xs: "0.7rem",
-            sm: "0.8rem",
-            md: "0.875rem",
-          },
-          "&:hover": {
-            backgroundColor: "rgb(20, 25, 35)",
-          },
+          fontSize: "0.72rem",
+          py: 0.4,
+          px: 1,
+          whiteSpace: "nowrap",
+          backgroundImage: "none !important",
         }}
       >
         Add to Cart
@@ -145,26 +140,23 @@ export const ToCartButtonCell = (
 
   return (
     <>
-      <ButtonBase
+      <Button
         ref={anchorRef}
+        color="secondary"
+        variant="outlined"
+        size="small"
         onClick={handleAddToCart}
+        startIcon={<AddShoppingCartIcon sx={{ fontSize: "0.9rem !important" }} />}
         sx={{
-          color: "white",
-          backgroundColor: "rgb(11, 14, 20) !important",
-          borderColor: "rgb(51, 60, 77) !important",
+          fontSize: "0.72rem",
+          py: 0.4,
+          px: 1,
+          whiteSpace: "nowrap",
           backgroundImage: "none !important",
-          fontSize: {
-            xs: "0.7rem",
-            sm: "0.8rem",
-            md: "0.875rem",
-          },
-          "&:hover": {
-            backgroundColor: "rgb(20, 25, 35) !important",
-          },
         }}
       >
         Add to Cart
-      </ButtonBase>
+      </Button>
       <Popper anchorEl={anchorRef.current} sx={{ zIndex: 10000 }} open={open}>
         <Alert severity={severity}>
           <AlertTitle>{message || "Course added to cart"}</AlertTitle>

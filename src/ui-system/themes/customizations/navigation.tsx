@@ -175,11 +175,13 @@ export const navigationCustomizations: Components<Theme> = {
   },
   MuiTabs: {
     styleOverrides: {
-      root: { minHeight: "fit-content" },
+      root: { minHeight: "fit-content", gap: 8 },
       indicator: ({ theme }) => ({
-        backgroundColor: (theme.vars || theme).palette.grey[800],
+        height: 3,
+        borderRadius: 999,
+        backgroundColor: (theme.vars || theme).palette.primary.main,
         ...theme.applyStyles("dark", {
-          backgroundColor: (theme.vars || theme).palette.grey[200],
+          backgroundColor: (theme.vars || theme).palette.primary.light,
         }),
       }),
     },
@@ -187,31 +189,36 @@ export const navigationCustomizations: Components<Theme> = {
   MuiTab: {
     styleOverrides: {
       root: ({ theme }) => ({
-        padding: "6px 8px",
-        marginBottom: "8px",
+        padding: "8px 12px",
+        marginBottom: "6px",
         textTransform: "none",
         minWidth: "fit-content",
         minHeight: "fit-content",
+        fontWeight: 600,
         color: (theme.vars || theme).palette.text.secondary,
         borderRadius: (theme.vars || theme).shape.borderRadius,
         border: "1px solid",
         borderColor: "transparent",
         ":hover": {
           color: (theme.vars || theme).palette.text.primary,
-          backgroundColor: gray[100],
-          borderColor: gray[200],
+          backgroundColor: alpha((theme.vars || theme).palette.primary.main, 0.08),
+          borderColor: alpha((theme.vars || theme).palette.primary.main, 0.18),
         },
         [`&.${tabClasses.selected}`]: {
-          color: gray[900],
+          color: (theme.vars || theme).palette.text.primary,
+          backgroundColor: alpha((theme.vars || theme).palette.primary.main, 0.12),
+          borderColor: alpha((theme.vars || theme).palette.primary.main, 0.28),
         },
         ...theme.applyStyles("dark", {
           ":hover": {
             color: (theme.vars || theme).palette.text.primary,
-            backgroundColor: gray[800],
-            borderColor: gray[700],
+            backgroundColor: alpha((theme.vars || theme).palette.primary.main, 0.18),
+            borderColor: alpha((theme.vars || theme).palette.primary.main, 0.4),
           },
           [`&.${tabClasses.selected}`]: {
             color: "#fff",
+            backgroundColor: alpha((theme.vars || theme).palette.primary.main, 0.24),
+            borderColor: alpha((theme.vars || theme).palette.primary.main, 0.45),
           },
         }),
       }),
