@@ -1,0 +1,13 @@
+{
+  "plugins": {
+    "context7-plugin": {
+      "enabled": true
+    },
+    "cursor-team-kit": {
+      "enabled": true
+    },
+    "continual-learning": {
+      "enabled": true
+    }
+  }
+}

@@ -32,6 +32,12 @@ import { SubjectMenuValues } from "../../../degree-planning/DialogAutoCompleteKe
 import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
 import type { RequiredCourse } from "../../../degree-planning/types/Plans";
 import { CircularProgressWithLabel } from "../../../ui-system/components/shared/CircularProgressWithLabel";
+import { PlannerWorkbenchLayout } from "../../../ui-system/components/workbench/PlannerWorkbenchLayout";
+import {
+  createSectionPreview,
+  getPreviewSectionId,
+  type PlannerSectionPreview,
+} from "../../../ui-system/components/workbench/workbenchTypes";
 import { logEvent } from "../../../analytics/ga4";
 import { fetchGEPCourseData } from "../../services/api/DialogMenuSearch/dataService";
 import { sortSections } from "../../types/DataGridCourse";
@@ -75,8 +81,8 @@ const MemoizedAutocompletes: React.FC<AutocompletesProps> = React.memo(
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-          gap: 2,
+          gridTemplateColumns: "1fr",
+          gap: 1.5,
           width: "100%",
         }}
       >
@@ -108,9 +114,13 @@ const MemoizedDataTable = React.memo(
   ({
     sections,
     sortFunc,
+    onPreviewSectionChange,
+    selectedPreviewId,
   }: {
     sections: GroupedSections[];
     sortFunc: (a: GroupedSections, b: GroupedSections) => number;
+    onPreviewSectionChange: (preview: PlannerSectionPreview | null) => void;
+    selectedPreviewId: string | null;
   }) => {
     const [expandedRows, setExpandedRows] = useState<
       DataTableExpandedRows | DataTableValueArray | undefined
@@ -125,6 +135,24 @@ const MemoizedDataTable = React.memo(
             paginator
             rows={10}
             rowsPerPageOptions={[10, 25, 50]}
+          onRowClick={(event) => {
+            const target = event.originalEvent.target;
+            if (
+              target instanceof HTMLElement &&
+              target.closest("button, a, input, [role='button'], .p-row-toggler")
+            ) {
+              return;
+            }
+
+            onPreviewSectionChange(
+              createSectionPreview("gep_search", event.data as ModifiedSection),
+            );
+          }}
+          rowClassName={(rowData: ModifiedSection) =>
+            getPreviewSectionId(rowData) === selectedPreviewId
+              ? "pp-selected-row"
+              : ""
+          }
           >
             <Column
               field="id"
@@ -182,6 +210,28 @@ const MemoizedDataTable = React.memo(
           expandedRows={expandedRows}
           onRowToggle={(e: DataTableRowToggleEvent) => setExpandedRows(e.data)}
           rowExpansionTemplate={rowExpansionTemplate}
+          onRowClick={(event) => {
+            const target = event.originalEvent.target;
+            if (
+              target instanceof HTMLElement &&
+              target.closest("button, a, input, [role='button'], .p-row-toggler")
+            ) {
+              return;
+            }
+
+            onPreviewSectionChange(
+              createSectionPreview(
+                "gep_search",
+                event.data?.lecture as ModifiedSection,
+              ),
+            );
+          }}
+          rowClassName={(rowData: GroupedSections) =>
+            rowData.lecture &&
+            getPreviewSectionId(rowData.lecture) === selectedPreviewId
+              ? "pp-selected-row"
+              : ""
+          }
         >
           <Column
             expander={(row: GroupedSections) =>
@@ -272,10 +322,20 @@ interface GEPTreeProps {
   expandedGroups: Record<string, boolean>;
   onToggleGroup: (courseAbr: string) => void;
   courseData: Record<string, MergedCourseData> | {};
+  onPreviewSectionChange: (preview: PlannerSectionPreview | null) => void;
+  selectedPreviewId: string | null;
 }
 
 const CourseSections = React.memo(
-  ({ courseDataEntry }: { courseDataEntry: MergedCourseData | undefined }) => {
+  ({
+    courseDataEntry,
+    onPreviewSectionChange,
+    selectedPreviewId,
+  }: {
+    courseDataEntry: MergedCourseData | undefined;
+    onPreviewSectionChange: (preview: PlannerSectionPreview | null) => void;
+    selectedPreviewId: string | null;
+  }) => {
     const sections = useMemo(() => {
       if (courseDataEntry?.sections) {
         return Object.values(courseDataEntry.sections);
@@ -286,7 +346,12 @@ const CourseSections = React.memo(
     if (sections.length > 0) {
       return (
         <Box sx={{ height: "auto", width: "100%", display: "flex" }}>
-          <MemoizedDataTable sections={sections} sortFunc={sortSections} />
+          <MemoizedDataTable
+            sections={sections}
+            sortFunc={sortSections}
+            onPreviewSectionChange={onPreviewSectionChange}
+            selectedPreviewId={selectedPreviewId}
+          />
         </Box>
       );
     }
@@ -303,7 +368,14 @@ const CourseSections = React.memo(
 );
 
 const GEPTree: React.FC<GEPTreeProps> = React.memo(
-  ({ groupedData, expandedGroups, onToggleGroup, courseData }) => {
+  ({
+    groupedData,
+    expandedGroups,
+    onToggleGroup,
+    courseData,
+    onPreviewSectionChange,
+    selectedPreviewId,
+  }) => {
     return (
       <Box sx={{ width: "100%" }}>
         {groupedData.map((group) => (
@@ -366,7 +438,11 @@ const GEPTree: React.FC<GEPTreeProps> = React.memo(
                         secondary={courseKey}
                         sx={{ mb: 1 }}
                       />
-                      <CourseSections courseDataEntry={courseDataEntry} />
+                      <CourseSections
+                        courseDataEntry={courseDataEntry}
+                        onPreviewSectionChange={onPreviewSectionChange}
+                        selectedPreviewId={selectedPreviewId}
+                      />
                     </Box>
                   </ListItem>
                 );
@@ -388,9 +464,15 @@ const GEPTree: React.FC<GEPTreeProps> = React.memo(
 export default function GEPSearch({
   setGepSearchTabData,
   gepSearchData,
+  onPreviewSectionChange,
+  previewContent,
+  selectedPreviewId,
 }: {
   setGepSearchTabData: TabUpdater<GEPData>;
   gepSearchData: GEPData;
+  onPreviewSectionChange: (preview: PlannerSectionPreview | null) => void;
+  previewContent: React.ReactNode;
+  selectedPreviewId: string | null;
 }) {
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     {},
@@ -415,6 +497,7 @@ export default function GEPSearch({
       subject: searchSubject ?? "unknown",
     });
     setExpandedGroups({});
+    onPreviewSectionChange(null);
     setGepSearchTabData({
       progress: 10,
       progressLabel: "Initializing GEP course search...",
@@ -478,7 +561,12 @@ export default function GEPSearch({
         isLoaded: true,
       });
     }
-  }, [selectedTerm, searchSubject, setGepSearchTabData]);
+  }, [
+    onPreviewSectionChange,
+    searchSubject,
+    selectedTerm,
+    setGepSearchTabData,
+  ]);
 
   const filteredCourses = useMemo(() => {
     if (!isLoaded || !courses || courses.length === 0) return [];
@@ -531,71 +619,125 @@ export default function GEPSearch({
     [setGepSearchTabData],
   );
 
-  return (
-    <Box sx={{ width: "100%", p: 2 }}>
+  const controlsPanel = (
+    <Box
+      sx={{
+        p: 2,
+        border: "1px solid",
+        borderColor: "rgba(93, 122, 186, 0.16)",
+        backgroundColor: "rgba(22, 27, 34, 0.45)",
+        borderRadius: 2.5,
+        boxShadow: 1,
+      }}
+    >
       <Box
         sx={{
-          p: 2,
-          pb: 2,
-          borderBottom: "1px solid",
-          borderColor: "divider",
-          backgroundColor: "background.default",
-          borderRadius: 2,
+          display: "flex",
+          flexDirection: "column",
+          gap: 0.5,
+          mb: 2,
         }}
       >
-        <MemoizedAutocompletes
-          selectedTerm={selectedTerm}
-          searchSubject={searchSubject}
-          setGepSearchTabData={setGepSearchTabData}
-        />
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "auto 1fr" },
-            alignItems: "center",
-            gap: 2,
-            mt: 2,
-          }}
-        >
-          <Button
-            color="secondary"
-            variant="contained"
-            size="medium"
-            sx={searchButtonSx}
-            onClick={courseSearch}
-            disabled={isSearchDisabled}
+        <Box>
+          <Typography
+            variant="overline"
+            sx={{ color: "rgba(169, 191, 233, 0.7)", lineHeight: 1.2 }}
           >
-            Search
-          </Button>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={hideNoSections}
-                onChange={handleHideNoSectionsChange}
-              />
-            }
-            label="Hide courses with no open sections"
+            GEP Search
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{ color: "rgba(189, 206, 238, 0.68)", mt: 0.25 }}
+          >
+            Browse matching requirement buckets and keep a section preview pinned
+            while you compare.
+          </Typography>
+        </Box>
+      </Box>
+      <MemoizedAutocompletes
+        selectedTerm={selectedTerm}
+        searchSubject={searchSubject}
+        setGepSearchTabData={setGepSearchTabData}
+      />
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "stretch",
+          gap: 1,
+          mt: 1.5,
+        }}
+      >
+        <Button
+          color="secondary"
+          variant="contained"
+          size="medium"
+          sx={{ ...searchButtonSx, width: "100%", mt: 0 }}
+          onClick={courseSearch}
+          disabled={isSearchDisabled}
+        >
+          Search
+        </Button>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={hideNoSections}
+              onChange={handleHideNoSectionsChange}
+            />
+          }
+          label="Hide courses with no open sections"
+        />
+      </Box>
+      {!isLoaded && (
+        <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
+          <CircularProgressWithLabel
+            value={progress}
+            label={progressLabel || ""}
           />
         </Box>
-        {!isLoaded && (
-          <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
-            <CircularProgressWithLabel
-              value={progress}
-              label={progressLabel || ""}
-            />
-          </Box>
-        )}
+      )}
+    </Box>
+  );
+
+  const resultsPanel = (
+    <Box
+      sx={{
+        p: 2,
+        border: "1px solid",
+        borderColor: "rgba(93, 122, 186, 0.16)",
+        backgroundColor: "rgba(22, 27, 34, 0.28)",
+        borderRadius: 2.5,
+        boxShadow: 1,
+        minHeight: "100%",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 2,
+          mb: 1.5,
+        }}
+      >
+        <Box>
+          <Typography variant="overline" sx={{ color: "text.secondary" }}>
+            Comparison Workspace
+          </Typography>
+          <Typography variant="h6">Requirement Matches</Typography>
+        </Box>
       </Box>
 
-      {isLoaded && groupedAndFilteredCourses.length > 0 && (
+      {isLoaded && groupedAndFilteredCourses.length > 0 ? (
         <GEPTree
           groupedData={groupedAndFilteredCourses}
           expandedGroups={expandedGroups}
           onToggleGroup={handleToggleGroup}
           courseData={courseData}
+          onPreviewSectionChange={onPreviewSectionChange}
+          selectedPreviewId={selectedPreviewId}
         />
-      )}
-      {isLoaded && groupedAndFilteredCourses.length === 0 && (
+      ) : (
         <Typography
           variant="body1"
           sx={{ p: 4, textAlign: "center", color: "text.secondary" }}
@@ -606,5 +748,13 @@ export default function GEPSearch({
         </Typography>
       )}
     </Box>
+  );
+
+  return (
+    <PlannerWorkbenchLayout
+      controls={controlsPanel}
+      results={resultsPanel}
+      preview={previewContent}
+    />
   );
 }

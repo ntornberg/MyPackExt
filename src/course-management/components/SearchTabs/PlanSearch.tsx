@@ -30,6 +30,12 @@ import type {
   Subplan,
 } from "../../../degree-planning/types/Plans";
 import { CircularProgressWithLabel } from "../../../ui-system/components/shared/CircularProgressWithLabel";
+import { PlannerWorkbenchLayout } from "../../../ui-system/components/workbench/PlannerWorkbenchLayout";
+import {
+  createSectionPreview,
+  getPreviewSectionId,
+  type PlannerSectionPreview,
+} from "../../../ui-system/components/workbench/workbenchTypes";
 import { AppLogger } from "../../../utils/logger";
 import { fetchCourseSearchData } from "../../services/api/DialogMenuSearch/dataService";
 import { sortSections } from "../../types/DataGridCourse";
@@ -88,8 +94,12 @@ const requirementTreeSx = {
 
 const CourseSectionsDataTable = ({
   sections,
+  onPreviewSectionChange,
+  selectedPreviewId,
 }: {
   sections: GroupedSections[];
+  onPreviewSectionChange: (preview: PlannerSectionPreview | null) => void;
+  selectedPreviewId: string | null;
 }) => {
   const [expandedRows, setExpandedRows] = useState<
     DataTableExpandedRows | DataTableValueArray | undefined
@@ -104,6 +114,24 @@ const CourseSectionsDataTable = ({
           paginator
           rows={10}
           rowsPerPageOptions={[10, 25, 50]}
+          onRowClick={(event) => {
+            const target = event.originalEvent.target;
+            if (
+              target instanceof HTMLElement &&
+              target.closest("button, a, input, [role='button'], .p-row-toggler")
+            ) {
+              return;
+            }
+
+            onPreviewSectionChange(
+              createSectionPreview("plan_search", event.data as ModifiedSection),
+            );
+          }}
+          rowClassName={(rowData: ModifiedSection) =>
+            getPreviewSectionId(rowData) === selectedPreviewId
+              ? "pp-selected-row"
+              : ""
+          }
         >
           <Column
             field="id"
@@ -161,6 +189,28 @@ const CourseSectionsDataTable = ({
         expandedRows={expandedRows}
         onRowToggle={(e: DataTableRowToggleEvent) => setExpandedRows(e.data)}
         rowExpansionTemplate={rowExpansionTemplate}
+        onRowClick={(event) => {
+          const target = event.originalEvent.target;
+          if (
+            target instanceof HTMLElement &&
+            target.closest("button, a, input, [role='button'], .p-row-toggler")
+          ) {
+            return;
+          }
+
+          onPreviewSectionChange(
+            createSectionPreview(
+              "plan_search",
+              event.data?.lecture as ModifiedSection,
+            ),
+          );
+        }}
+        rowClassName={(rowData: GroupedSections) =>
+          rowData.lecture &&
+          getPreviewSectionId(rowData.lecture) === selectedPreviewId
+            ? "pp-selected-row"
+            : ""
+        }
       >
         <Column
           expander={(row: GroupedSections) => !!row.labs && row.labs.length > 0}
@@ -243,9 +293,13 @@ const CourseDisplay = memo(
   ({
     course,
     openCourses,
+    onPreviewSectionChange,
+    selectedPreviewId,
   }: {
     course: RequiredCourse;
     openCourses: Record<string, MergedCourseData> | null;
+    onPreviewSectionChange: (preview: PlannerSectionPreview | null) => void;
+    selectedPreviewId: string | null;
   }) => {
     const courseData =
       openCourses?.[`${course.course_abr} ${course.catalog_num}`];
@@ -261,7 +315,11 @@ const CourseDisplay = memo(
     if (sectionsArray) {
       return (
         <Box sx={{ height: "100%", width: "100%", display: "flex" }}>
-          <MemoizedCourseSectionsDataTable sections={sectionsArray} />
+          <MemoizedCourseSectionsDataTable
+            sections={sectionsArray}
+            onPreviewSectionChange={onPreviewSectionChange}
+            selectedPreviewId={selectedPreviewId}
+          />
         </Box>
       );
     }
@@ -292,9 +350,15 @@ const CourseDisplay = memo(
 export default function PlanSearch({
   setPlanSearchTabData,
   planSearchData,
+  onPreviewSectionChange,
+  previewContent,
+  selectedPreviewId,
 }: {
   setPlanSearchTabData: TabUpdater<PlanSearchData>;
   planSearchData: PlanSearchData;
+  onPreviewSectionChange: (preview: PlannerSectionPreview | null) => void;
+  previewContent: React.ReactNode;
+  selectedPreviewId: string | null;
 }) {
   const major_options = Object.keys(majorPlans);
   const minor_options = Object.keys(minorPlans);
@@ -321,6 +385,7 @@ export default function PlanSearch({
     }).catch(() => {
       // Silently ignore analytics errors
     });
+    onPreviewSectionChange(null);
     setPlanSearchTabData({
       progress: 10,
       progressLabel: "Initializing plan search...",
@@ -574,6 +639,8 @@ export default function PlanSearch({
                     <CourseDisplay
                       course={course}
                       openCourses={planSearchData.openCourses}
+                      onPreviewSectionChange={onPreviewSectionChange}
+                      selectedPreviewId={selectedPreviewId}
                     />
                   </Box>
 
@@ -594,127 +661,184 @@ export default function PlanSearch({
         ))}
       </SimpleTreeView>
     );
-  }, [requirementEntries, planSearchData.openCourses]);
+  }, [
+    onPreviewSectionChange,
+    planSearchData.openCourses,
+    requirementEntries,
+    selectedPreviewId,
+  ]);
+
+  const controlsPanel = (
+    <Box
+      sx={{
+        p: 2,
+        border: "1px solid",
+        borderColor: "rgba(93, 122, 186, 0.16)",
+        backgroundColor: "rgba(22, 27, 34, 0.45)",
+        borderRadius: 2.5,
+        boxShadow: 1,
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 0.5,
+          mb: 2,
+        }}
+      >
+        <Box>
+          <Typography
+            variant="overline"
+            sx={{ color: "rgba(169, 191, 233, 0.7)", lineHeight: 1.2 }}
+          >
+            Major Search
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{ color: "rgba(189, 206, 238, 0.68)", mt: 0.25 }}
+          >
+            Open requirement groups, compare live sections, and keep schedule
+            context visible while you browse.
+          </Typography>
+        </Box>
+      </Box>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "1fr",
+          gap: 1.5,
+          mb: 1.5,
+        }}
+      >
+        <Autocomplete
+          id="term_selector"
+          options={Object.keys(TermIdByName)}
+          value={planSearchData.selectedTerm}
+          onChange={(_, value) => setPlanSearchTabData("selectedTerm", value)}
+          renderInput={(params) => <TextField {...params} label="Term" />}
+        />
+        <Autocomplete
+          id="major_selector"
+          options={major_options}
+          value={planSearchData.selectedMajor}
+          onChange={(_, value) => setPlanSearchTabData("selectedMajor", value)}
+          renderInput={(params) => <TextField {...params} label="Major" />}
+        />
+      </Box>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "1fr",
+          gap: 1.5,
+          mb: 1.5,
+        }}
+      >
+        <Autocomplete
+          id="minor_selector"
+          options={minor_options}
+          value={planSearchData.selectedMinor}
+          onChange={(_, value) => setPlanSearchTabData("selectedMinor", value)}
+          renderInput={(params: AutocompleteRenderInputParams) => (
+            <TextField {...params} label="Minor" />
+          )}
+        />
+        <Autocomplete
+          id="subplan_selector"
+          options={subplanOptions}
+          value={planSearchData.selectedSubplan}
+          onChange={(_, value) => setPlanSearchTabData("selectedSubplan", value)}
+          renderInput={(params: AutocompleteRenderInputParams) => (
+            <TextField {...params} label="Subplan" />
+          )}
+        />
+      </Box>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "stretch",
+          gap: 1,
+        }}
+      >
+        <Button
+          color="secondary"
+          variant="contained"
+          size="medium"
+          sx={{ ...searchButtonSx, width: "100%", mt: 0 }}
+          onClick={planSearch}
+          disabled={isSearchDisabled}
+        >
+          Search
+        </Button>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={planSearchData.hideNoSections}
+              onChange={(_, checked: boolean) =>
+                setPlanSearchTabData("hideNoSections", checked)
+              }
+            />
+          }
+          label="Hide courses with no open sections"
+        />
+      </Box>
+      {!planSearchData.isLoaded && (
+        <Box sx={{ mt: 2 }}>
+          <CircularProgressWithLabel
+            value={planSearchData.progress}
+            label={planSearchData.progressLabel || ""}
+          />
+        </Box>
+      )}
+    </Box>
+  );
+
+  const resultsPanel = (
+    <Box
+      sx={{
+        p: 2,
+        border: "1px solid",
+        borderColor: "rgba(93, 122, 186, 0.16)",
+        backgroundColor: "rgba(22, 27, 34, 0.28)",
+        borderRadius: 2.5,
+        boxShadow: 1,
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 2,
+          mb: 1.5,
+        }}
+      >
+        <Box>
+          <Typography variant="overline" sx={{ color: "text.secondary" }}>
+            Comparison Workspace
+          </Typography>
+          <Typography variant="h6">Requirement Tree</Typography>
+        </Box>
+      </Box>
+
+      {hasPlanSearchRun && requirementsList ? (
+        requirementsList
+      ) : (
+        <Typography
+          sx={{ p: 3, color: "text.secondary", textAlign: "center" }}
+        >
+          No search results found for the selected plan and filters.
+        </Typography>
+      )}
+    </Box>
+  );
 
   return (
-    <Box sx={{ width: "100%", p: 2 }}>
-      <Box sx={{ width: "100%", p: 2 }}>
-        <Box
-          sx={{
-            pb: 2,
-            borderBottom: "1px solid",
-            borderColor: "divider",
-            backgroundColor: "background.default",
-            borderRadius: 2,
-            p: 2,
-          }}
-        >
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-              gap: 2,
-              mb: 2,
-            }}
-          >
-            <Autocomplete
-              id="term_selector"
-              options={Object.keys(TermIdByName)}
-              value={planSearchData.selectedTerm}
-              onChange={(_, value) =>
-                setPlanSearchTabData("selectedTerm", value)
-              }
-              renderInput={(params) => <TextField {...params} label="Term" />}
-            />
-            <Autocomplete
-              id="major_selector"
-              options={major_options}
-              value={planSearchData.selectedMajor}
-              onChange={(_, value) =>
-                setPlanSearchTabData("selectedMajor", value)
-              }
-              renderInput={(params) => <TextField {...params} label="Major" />}
-            />
-          </Box>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-              gap: 2,
-              mb: 2,
-            }}
-          >
-            <Autocomplete
-              id="minor_selector"
-              options={minor_options}
-              value={planSearchData.selectedMinor}
-              onChange={(_, value) =>
-                setPlanSearchTabData("selectedMinor", value)
-              }
-              renderInput={(params: AutocompleteRenderInputParams) => (
-                <TextField {...params} label="Minor" />
-              )}
-            />
-            <Autocomplete
-              id="subplan_selector"
-              options={subplanOptions}
-              value={planSearchData.selectedSubplan}
-              onChange={(_, value) =>
-                setPlanSearchTabData("selectedSubplan", value)
-              }
-              renderInput={(params: AutocompleteRenderInputParams) => (
-                <TextField {...params} label="Subplan" />
-              )}
-            />
-          </Box>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "auto 1fr" },
-              alignItems: "center",
-              gap: 2,
-            }}
-          >
-            <Button
-              color="secondary"
-              variant="contained"
-              size="medium"
-              sx={searchButtonSx}
-              onClick={planSearch}
-              disabled={isSearchDisabled}
-            >
-              Search
-            </Button>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={planSearchData.hideNoSections}
-                  onChange={(_, checked: boolean) =>
-                    setPlanSearchTabData("hideNoSections", checked)
-                  }
-                />
-              }
-              label="Hide courses with no open sections"
-            />
-          </Box>
-          {!planSearchData.isLoaded && (
-            <Box sx={{ mt: 2 }}>
-              <CircularProgressWithLabel
-                value={planSearchData.progress}
-                label={planSearchData.progressLabel || ""}
-              />
-            </Box>
-          )}
-        </Box>
-        {hasPlanSearchRun && requirementsList}
-        {hasPlanSearchRun && !requirementsList && (
-          <Typography
-            sx={{ p: 3, color: "text.secondary", textAlign: "center" }}
-          >
-            No search results found for the selected plan and filters.
-          </Typography>
-        )}
-      </Box>
-    </Box>
+    <PlannerWorkbenchLayout
+      controls={controlsPanel}
+      results={resultsPanel}
+      preview={previewContent}
+    />
   );
 }

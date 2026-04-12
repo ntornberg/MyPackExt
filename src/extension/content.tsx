@@ -3,6 +3,7 @@ import { CacheProvider } from "@emotion/react";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 
+import "../index.css";
 import { initializeAnalytics, logEvent } from "../analytics/ga4";
 import {
   debouncedScrapePlanner,

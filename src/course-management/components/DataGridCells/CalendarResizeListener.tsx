@@ -1,5 +1,5 @@
 import { Box, Paper, Typography } from "@mui/material";
-import { useRef, useState, useEffect } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 
 import type { ScheduleEvent } from "../../types/Calendar";
 
@@ -25,9 +25,15 @@ export function toMinutes(time: string) {
  * @param {number} bodyPx Pixel height of the calendar body (6 AM – 10 PM)
  * @returns {{ topPx: number, heightPx: number }} Pixel metrics for positioning
  */
-function getMetrics(start: string, end: string, bodyPx: number) {
-  const windowStartMin = 6 * 60; // 6 AM
-  const windowLenMin = 16 * 60; // 6 AM->10 PM = 960 min
+function getMetrics(
+  start: string,
+  end: string,
+  bodyPx: number,
+  windowStart: number,
+  windowEnd: number,
+) {
+  const windowStartMin = windowStart * 60;
+  const windowLenMin = (windowEnd - windowStart) * 60;
   const pxPerMin = bodyPx / windowLenMin;
   const startMin = toMinutes(start);
   const endMin = toMinutes(end);
@@ -68,8 +74,21 @@ export default function CreateCalendar({
 }: {
   eventData: ScheduleEvent[];
 }) {
-  const windowStart = 6,
-    windowEnd = 22;
+  const { windowStart, windowEnd } = useMemo(() => {
+    if (eventData.length === 0) {
+      return { windowStart: 8, windowEnd: 18 };
+    }
+
+    const eventStarts = eventData.map((event) => toMinutes(event.start));
+    const eventEnds = eventData.map((event) => toMinutes(event.end));
+    const earliestHour = Math.floor(Math.min(...eventStarts) / 60);
+    const latestHour = Math.ceil(Math.max(...eventEnds) / 60);
+
+    return {
+      windowStart: Math.max(8, earliestHour - 1),
+      windowEnd: Math.min(22, Math.max(latestHour + 1, earliestHour + 6)),
+    };
+  }, [eventData]);
   const hours = Array.from(
     { length: windowEnd - windowStart + 1 },
     (_, i) => windowStart + i,
@@ -83,30 +102,36 @@ export default function CreateCalendar({
   return (
     <Box
       sx={{
-        height: "25vh",
+        height: 360,
         width: "100%",
+        minHeight: 360,
         maxWidth: "1400px",
         margin: "0 auto",
         display: "grid",
         gridTemplateColumns: {
-          xs: "40px repeat(5, 1fr)",
-          sm: "clamp(50px, 8vw, 80px) repeat(5, 1fr)",
+          xs: "44px repeat(5, 1fr)",
+          sm: "56px repeat(5, 1fr)",
         },
         gridTemplateRows: {
-          xs: "35px 1fr",
-          sm: "clamp(40px, 8vh, 60px) 1fr",
+          xs: "36px 1fr",
+          sm: "44px 1fr",
         },
         overflow: "hidden",
-        p: { xs: 0.5, sm: 1, md: 2 },
+        p: 1,
+        borderRadius: 3,
+        background:
+          "linear-gradient(180deg, rgba(7, 13, 24, 0.96), rgba(11, 18, 31, 0.98))",
+        border: "1px solid rgba(89, 117, 177, 0.16)",
+        boxShadow: "inset 0 1px 0 rgba(125, 160, 232, 0.08)",
       }}
     >
       <Box
         sx={{
           gridColumn: 1,
           gridRow: 1,
-          borderRight: "1px solid #ddd",
-          borderBottom: "1px solid #ddd",
-          bgcolor: "#fafafa",
+          borderRight: "1px solid rgba(111, 136, 188, 0.12)",
+          borderBottom: "1px solid rgba(111, 136, 188, 0.12)",
+          bgcolor: "rgba(255, 255, 255, 0.02)",
         }}
       />
 
@@ -119,14 +144,17 @@ export default function CreateCalendar({
             px: { xs: 0.5, sm: 1, md: 2 },
             gridRow: 1,
             fontWeight: 600,
-            color: "black",
-            fontSize: { xs: "12px", sm: "14px", md: "16px" },
+            color: "rgba(229, 238, 255, 0.92)",
+            fontSize: { xs: "11px", sm: "12px", md: "12px" },
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            bgcolor: "#fafafa",
-            borderBottom: "1px solid #ddd",
-            borderRight: i < 4 ? "1px solid #ddd" : "none",
+            bgcolor: "rgba(255, 255, 255, 0.02)",
+            borderBottom: "1px solid rgba(111, 136, 188, 0.12)",
+            borderRight:
+              i < 4 ? "1px solid rgba(111, 136, 188, 0.12)" : "none",
           }}
         >
           <Box sx={{ display: { xs: "block", sm: "none" } }}>{d.charAt(0)}</Box>
@@ -139,13 +167,16 @@ export default function CreateCalendar({
           gridColumn: 1,
           gridRow: 2,
           position: "relative",
-          borderRight: "1px solid #ddd",
-          bgcolor: "#fafafa",
+          borderRight: "1px solid rgba(111, 136, 188, 0.12)",
+          bgcolor: "rgba(255, 255, 255, 0.01)",
         }}
       >
         {hours.map((h) => {
           const top =
-            body.h > 0 ? (body.h / 960) * (h * 60 - windowStart * 60) : 0;
+            body.h > 0
+              ? (body.h / ((windowEnd - windowStart) * 60)) *
+                (h * 60 - windowStart * 60)
+              : 0;
           return (
             <Typography
               key={h}
@@ -153,8 +184,8 @@ export default function CreateCalendar({
                 position: "absolute",
                 top: top - 8,
                 left: { xs: 1, sm: 2, md: 4 },
-                fontSize: { xs: "8px", sm: "10px", md: "12px" },
-                color: "#666",
+                fontSize: { xs: "8px", sm: "9px", md: "10px" },
+                color: "rgba(160, 182, 223, 0.72)",
                 userSelect: "none",
               }}
             >
@@ -174,13 +205,16 @@ export default function CreateCalendar({
           position: "relative",
           display: "grid",
           gridTemplateColumns: "repeat(5, 1fr)",
-          bgcolor: "white",
+          bgcolor: "rgba(8, 14, 24, 0.78)",
         }}
       >
         {hours.map((h) => {
           if (h === windowStart) return null;
           const top =
-            body.h > 0 ? (body.h / 960) * (h * 60 - windowStart * 60) : 0;
+            body.h > 0
+              ? (body.h / ((windowEnd - windowStart) * 60)) *
+                (h * 60 - windowStart * 60)
+              : 0;
           return (
             <Box
               key={h}
@@ -189,7 +223,7 @@ export default function CreateCalendar({
                 top,
                 left: 0,
                 right: 0,
-                borderTop: "1px solid #e0e0e0",
+                borderTop: "1px solid rgba(111, 136, 188, 0.1)",
                 zIndex: 1,
               }}
             />
@@ -200,9 +234,10 @@ export default function CreateCalendar({
           <Box
             key={day}
             sx={{
-              color: "black",
+              color: "rgba(236, 243, 255, 0.95)",
               position: "relative",
-              borderRight: colIdx < 4 ? "1px solid #e0e0e0" : "none",
+              borderRight:
+                colIdx < 4 ? "1px solid rgba(111, 136, 188, 0.1)" : "none",
             }}
           >
             {body.h > 0 &&
@@ -213,6 +248,8 @@ export default function CreateCalendar({
                     ev.start,
                     ev.end,
                     body.h,
+                    windowStart,
+                    windowEnd,
                   );
                   return (
                     <Paper
@@ -221,27 +258,33 @@ export default function CreateCalendar({
                       sx={{
                         position: "absolute",
                         top: topPx,
-                        left: { xs: 1, sm: 2, md: 3 },
-                        right: { xs: 1, sm: 2, md: 3 },
+                        left: { xs: 2, sm: 4 },
+                        right: { xs: 2, sm: 4 },
                         height: heightPx,
-                        bgcolor: ev.color,
+                        bgcolor: ev.days.some(
+                          (d) => d.isOverlapping && d.day === day,
+                        )
+                          ? "#f9735b"
+                          : "#4c86ff",
                         opacity: ev.days.some(
                           (d) => d.isOverlapping && d.day === day,
                         )
-                          ? 0.5
-                          : 1,
+                          ? 0.88
+                          : 0.96,
                         color: "#fff",
-                        px: { xs: 0.5, sm: 0.75, md: 1 },
+                        px: { xs: 0.5, sm: 0.75 },
                         py: { xs: 0.25, sm: 0.5 },
-                        fontSize: { xs: "8px", sm: "9px", md: "9px" },
-                        fontWeight: 500,
-                        borderRadius: { xs: 0.5, sm: 1 },
+                        fontSize: { xs: "7px", sm: "8px", md: "8px" },
+                        fontWeight: 700,
+                        borderRadius: 999,
                         overflow: "hidden",
                         display: "flex",
-                        alignItems: "flex-start",
-                        minHeight: { xs: "12px", sm: "16px", md: "20px" },
+                        alignItems: "center",
+                        minHeight: { xs: "16px", sm: "18px", md: "20px" },
                         zIndex: 2,
                         lineHeight: 1.2,
+                        border: "1px solid rgba(255, 255, 255, 0.14)",
+                        boxShadow: "0 8px 18px rgba(0, 0, 0, 0.25)",
                       }}
                     >
                       {ev.subj.length > 15 && window.innerWidth < 600

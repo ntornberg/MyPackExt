@@ -104,7 +104,7 @@ const markOverlaps = (events: ScheduleEvent[]): ScheduleEvent[] => {
   return result;
 };
 
-const loadScheduleEvents = async (): Promise<ScheduleEvent[]> => {
+export const loadScheduleEvents = async (): Promise<ScheduleEvent[]> => {
   if (cachedScheduleEvents) {
     return cachedScheduleEvents;
   }
