@@ -3,6 +3,7 @@ import {
   generateCacheKey,
   setGenericCache,
 } from "../../course-management/cache/CourseRetrieval";
+import { invalidateScheduleCache } from "../../course-management/components/DataGridCells/CalendarView";
 
 /**
  * Listens for messages posted from the hook script injected into page/iframes and
@@ -21,6 +22,7 @@ export async function setupListener() {
         if (payload.responseType === "_getScheduleTableData") {
           const hash = await generateCacheKey(item.crse_id);
           await setGenericCache("scheduleTableData", { [hash]: item });
+          invalidateScheduleCache();
         }
         if (payload.responseType === "_getShopCartTableData") {
           const hash = await generateCacheKey(item.crse_id);

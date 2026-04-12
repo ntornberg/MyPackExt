@@ -146,7 +146,9 @@ export const ToCartButtonCell = (
         variant="outlined"
         size="small"
         onClick={handleAddToCart}
-        startIcon={<AddShoppingCartIcon sx={{ fontSize: "0.9rem !important" }} />}
+        startIcon={
+          <AddShoppingCartIcon sx={{ fontSize: "0.9rem !important" }} />
+        }
         sx={{
           fontSize: "0.72rem",
           py: 0.4,

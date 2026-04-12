@@ -23,7 +23,9 @@ export function isCacheEntryExpired(
     return now > entry.expiresAt;
   }
 
-  return entry.timestamp !== undefined && now - entry.timestamp > CACHE_EXPIRATION;
+  return (
+    entry.timestamp !== undefined && now - entry.timestamp > CACHE_EXPIRATION
+  );
 }
 
 // Size threshold in bytes above which to use IndexedDB instead of chrome.storage

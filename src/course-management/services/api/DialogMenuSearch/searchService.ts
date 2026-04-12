@@ -1,8 +1,8 @@
-  import {
-    parseHTMLContent,
-    formCourseURL,
-  } from "../../../../utils/course-search/parseRegistrarUtil";
-  import type { CourseData } from "../../../../utils/course-search/parseRegistrarUtil";
+import {
+  parseHTMLContent,
+  formCourseURL,
+} from "../../../../utils/course-search/parseRegistrarUtil";
+import type { CourseData } from "../../../../utils/course-search/parseRegistrarUtil";
 import { AppLogger } from "../../../../utils/logger";
 
 /**

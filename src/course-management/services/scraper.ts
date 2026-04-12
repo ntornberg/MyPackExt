@@ -1,9 +1,5 @@
 ﻿import { debounce } from "../../utils/debounce";
-import {
-  ensureExtensionCell,
-  waitForCart,
-  waitForRows,
-} from "../../utils/dom";
+import { ensureExtensionCell, waitForCart, waitForRows } from "../../utils/dom";
 import { AppLogger } from "../../utils/logger";
 import { DEBUG } from "../../utils/settings";
 import type { Course } from "../../types/api.ts";

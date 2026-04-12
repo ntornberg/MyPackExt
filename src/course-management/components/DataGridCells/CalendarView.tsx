@@ -1,11 +1,11 @@
 import { Box } from "@mui/material";
 import { useEffect, useState } from "react";
 
-import type { ModifiedSection } from "../../types/Section";
 import { getCacheCategory } from "../../cache/CourseRetrieval";
 
 import CreateCalendar, { toMinutes } from "./CalendarResizeListener";
 import type { ScheduleEvent } from "../../types/Calendar";
+import { parseDayTimeEvent } from "./parseScheduleDayTime";
 
 type ScheduleTableEntry = {
   DT_RowId: string | null;
@@ -45,7 +45,7 @@ type ScheduleTableEntry = {
   waitlist_total: string | null;
 };
 
-type CalendarViewProps = ModifiedSection & {
+type CalendarViewProps = {
   dayTime?: string;
   courseData?: { code?: string };
 };
@@ -53,79 +53,55 @@ type CalendarViewProps = ModifiedSection & {
 let cachedScheduleEvents: ScheduleEvent[] | null = null;
 let cachedScheduleEventsPromise: Promise<ScheduleEvent[]> | null = null;
 
-const dayTokenMap: Record<string, string> = {
-  M: "Mon",
-  T: "Tue",
-  W: "Wed",
-  Th: "Thu",
-  F: "Fri",
+export const invalidateScheduleCache = (): void => {
+  cachedScheduleEvents = null;
+  cachedScheduleEventsPromise = null;
 };
 
-const hasSharedDay = (daysA: ScheduleEvent["days"], daysB: ScheduleEvent["days"]) => {
+const hasSharedDay = (
+  daysA: ScheduleEvent["days"],
+  daysB: ScheduleEvent["days"],
+) => {
   const daySet = new Set(daysA.map((day) => day.day));
   return daysB.some((day) => daySet.has(day.day));
 };
 
-const markOverlaps = (events: ScheduleEvent[]) => {
-  for (let i = 0; i < events.length; i++) {
-    for (let j = i + 1; j < events.length; j++) {
-      const eventA = events[i];
-      const eventB = events[j];
+const markOverlaps = (events: ScheduleEvent[]): ScheduleEvent[] => {
+  const result = events.map((e) => ({
+    ...e,
+    days: e.days.map((d) => ({ ...d })),
+  }));
+  for (let i = 0; i < result.length; i++) {
+    for (let j = i + 1; j < result.length; j++) {
+      const eventA = result[i];
+      const eventB = result[j];
       if (
         toMinutes(eventA.start) < toMinutes(eventB.end) &&
         toMinutes(eventA.end) > toMinutes(eventB.start) &&
         hasSharedDay(eventA.days, eventB.days)
       ) {
-        const daysA = Object.fromEntries(eventA.days.map((day) => [day.day, true]));
-        const daysB = Object.fromEntries(eventB.days.map((day) => [day.day, true]));
-        eventA.days = eventA.days.map((day) =>
-          daysB[day.day] ? { ...day, isOverlapping: true } : day,
+        const daysA = Object.fromEntries(
+          eventA.days.map((day) => [day.day, true]),
         );
-        eventB.days = eventB.days.map((day) =>
-          daysA[day.day] ? { ...day, isOverlapping: true } : day,
+        const daysB = Object.fromEntries(
+          eventB.days.map((day) => [day.day, true]),
         );
+        result[i] = {
+          ...eventA,
+          days: eventA.days.map((day) =>
+            daysB[day.day] ? { ...day, isOverlapping: true } : day,
+          ),
+        };
+        result[j] = {
+          ...eventB,
+          days: eventB.days.map((day) =>
+            daysA[day.day] ? { ...day, isOverlapping: true } : day,
+          ),
+        };
       }
     }
   }
-};
-
-const parseDayTimeEvent = (
-  dayTime: string | undefined,
-  subjectCode: string | undefined,
-): ScheduleEvent | null => {
-  if (!dayTime) {
-    return null;
-  }
-
-  const tokens = dayTime.split(" ");
-  const meetingDays: string[] = [];
-  let startTime = "";
-  let endTime = "";
-
-  for (const [index, token] of tokens.entries()) {
-    if (token in dayTokenMap) {
-      meetingDays.push(dayTokenMap[token]);
-      continue;
-    }
-    if (index + 4 < tokens.length) {
-      startTime = `${token} ${tokens[index + 1]}`;
-      endTime = `${tokens[index + 3]} ${tokens[index + 4]}`;
-      break;
-    }
-  }
-
-  if (!meetingDays.length || !startTime || !endTime) {
-    return null;
-  }
-
-  return {
-    id: 1,
-    subj: subjectCode || "",
-    start: startTime,
-    end: endTime,
-    days: meetingDays.map((day) => ({ day, isOverlapping: false })),
-    color: "#2ECC71",
-  };
+  return result;
 };
 
 const loadScheduleEvents = async (): Promise<ScheduleEvent[]> => {
@@ -168,9 +144,12 @@ const loadScheduleEvents = async (): Promise<ScheduleEvent[]> => {
             continue;
           }
 
-          const [startTime, endTime] = section.time.split("-").map((t) => t.trim());
+          const [startTime, endTime] = section.time
+            .split("-")
+            .map((t) => t.trim());
           const sectionType = section.type || "Section";
-          const subject = `${scheduleEntry.classs?.trim() || ""} ${sectionType}`.trim();
+          const subject =
+            `${scheduleEntry.classs?.trim() || ""} ${sectionType}`.trim();
           events.push({
             id: eventId++,
             subj: subject,
@@ -183,9 +162,8 @@ const loadScheduleEvents = async (): Promise<ScheduleEvent[]> => {
       }
     }
 
-    markOverlaps(events);
-    cachedScheduleEvents = events;
-    return events;
+    cachedScheduleEvents = markOverlaps(events);
+    return cachedScheduleEvents;
   })();
 
   return cachedScheduleEventsPromise;

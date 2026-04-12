@@ -422,36 +422,36 @@ export const inputsCustomizations: Components<Theme> = {
         // Specificity for each part is 0,2,0 - higher than host's 0,1,1.
         // Add !important ONLY to properties where inspection showed the host rule won AND used !important.
         [INPUT_TYPE_SELECTOR]: {
-            // Override properties listed in the host rule that you want to change.
-            // Add !important if necessary based on your browser inspection.
-            fontFamily: "inherit !important", // Example: if host overrides font-family
-            border: "none !important", // Example: if host applies a border directly to input
-            borderRadius: "0px !important", // Example: if host sets border-radius
-            fontWeight: "normal !important", // Example: if host sets font-weight
-            fontSize: "1em !important", // Example: if host sets font-size
-            backgroundImage: "none !important", // Example: if host sets background-image
-            height: "auto !important", // Example: if host sets height
-            padding: "10px 12px !important", // Adjust value and add !important if needed
-            boxSizing: "border-box !important", // Example: if host sets box-sizing
-            backgroundColor: `${(theme.vars || theme).palette.background.default} !important`, // Adjust value and add !important if needed
-            borderColor: `${(theme.vars || theme).palette.divider} !important`, // Example: if host sets border-color directly
-            color: `${(theme.vars || theme).palette.text.primary} !important`, // Adjust value and add !important if needed
+          // Override properties listed in the host rule that you want to change.
+          // Add !important if necessary based on your browser inspection.
+          fontFamily: "inherit !important", // Example: if host overrides font-family
+          border: "none !important", // Example: if host applies a border directly to input
+          borderRadius: "0px !important", // Example: if host sets border-radius
+          fontWeight: "normal !important", // Example: if host sets font-weight
+          fontSize: "1em !important", // Example: if host sets font-size
+          backgroundImage: "none !important", // Example: if host sets background-image
+          height: "auto !important", // Example: if host sets height
+          padding: "10px 12px !important", // Adjust value and add !important if needed
+          boxSizing: "border-box !important", // Example: if host sets box-sizing
+          backgroundColor: `${(theme.vars || theme).palette.background.default} !important`, // Adjust value and add !important if needed
+          borderColor: `${(theme.vars || theme).palette.divider} !important`, // Example: if host sets border-color directly
+          color: `${(theme.vars || theme).palette.text.primary} !important`, // Adjust value and add !important if needed
 
+          ...theme.applyStyles("dark", {
+            backgroundColor: `${(theme.vars || theme).palette.background.paper} !important`, // Or grey[800]
+            color: `${(theme.vars || theme).palette.common.white} !important`,
+            // Add dark mode specific overrides for other properties here too if needed
+          }),
+
+          // --- Placeholder styles nested for highest specificity (0,2,1) ---
+          "&::placeholder": {
+            opacity: "0.7 !important",
+            color: `${gray[500]} !important`,
             ...theme.applyStyles("dark", {
-              backgroundColor: `${(theme.vars || theme).palette.background.paper} !important`, // Or grey[800]
-              color: `${(theme.vars || theme).palette.common.white} !important`,
-              // Add dark mode specific overrides for other properties here too if needed
+              color: `${gray[400]} !important`,
             }),
-
-            // --- Placeholder styles nested for highest specificity (0,2,1) ---
-            "&::placeholder": {
-              opacity: "0.7 !important",
-              color: `${gray[500]} !important`,
-              ...theme.applyStyles("dark", {
-                color: `${gray[400]} !important`,
-              }),
-            },
-            // --- End nested placeholder ---
+          },
+          // --- End nested placeholder ---
         },
         // --- End Specificity Boosts ---
 
@@ -508,36 +508,36 @@ export const inputsCustomizations: Components<Theme> = {
         // Specificity for each part is 0,2,0 - higher than host's 0,1,1.
         // Add !important ONLY to properties where inspection showed the host rule won AND used !important.
         [INPUT_TYPE_SELECTOR]: {
-            // Override properties listed in the host rule that you want to change.
-            // Add !important if necessary based on your browser inspection.
-            fontFamily: "inherit !important", // Example
-            border: "none !important", // Example
-            borderRadius: "0px !important", // Example
-            fontWeight: "normal !important", // Example
-            fontSize: "1em !important", // Example
-            backgroundImage: "none !important", // Example
-            height: "auto !important", // Example
-            padding: "10px 12px !important", // Adjust value and add !important if needed
-            boxSizing: "border-box !important", // Example
-            backgroundColor: `${(theme.vars || theme).palette.background.default} !important`, // Adjust value and add !important if needed
-            borderColor: `${(theme.vars || theme).palette.divider} !important`, // Example
-            color: `${(theme.vars || theme).palette.text.primary} !important`, // Adjust value and add !important if needed
+          // Override properties listed in the host rule that you want to change.
+          // Add !important if necessary based on your browser inspection.
+          fontFamily: "inherit !important", // Example
+          border: "none !important", // Example
+          borderRadius: "0px !important", // Example
+          fontWeight: "normal !important", // Example
+          fontSize: "1em !important", // Example
+          backgroundImage: "none !important", // Example
+          height: "auto !important", // Example
+          padding: "10px 12px !important", // Adjust value and add !important if needed
+          boxSizing: "border-box !important", // Example
+          backgroundColor: `${(theme.vars || theme).palette.background.default} !important`, // Adjust value and add !important if needed
+          borderColor: `${(theme.vars || theme).palette.divider} !important`, // Example
+          color: `${(theme.vars || theme).palette.text.primary} !important`, // Adjust value and add !important if needed
 
+          ...theme.applyStyles("dark", {
+            backgroundColor: `${(theme.vars || theme).palette.background.paper} !important`, // Or grey[800]
+            color: `${(theme.vars || theme).palette.common.white} !important`,
+            // Add dark mode specific overrides for other properties here too if needed
+          }),
+
+          // --- Placeholder styles nested for highest specificity (0,2,1) ---
+          "&::placeholder": {
+            opacity: "0.7 !important",
+            color: `${gray[500]} !important`,
             ...theme.applyStyles("dark", {
-              backgroundColor: `${(theme.vars || theme).palette.background.paper} !important`, // Or grey[800]
-              color: `${(theme.vars || theme).palette.common.white} !important`,
-              // Add dark mode specific overrides for other properties here too if needed
+              color: `${gray[400]} !important`,
             }),
-
-            // --- Placeholder styles nested for highest specificity (0,2,1) ---
-            "&::placeholder": {
-              opacity: "0.7 !important",
-              color: `${gray[500]} !important`,
-              ...theme.applyStyles("dark", {
-                color: `${gray[400]} !important`,
-              }),
-            },
-            // --- End nested placeholder ---
+          },
+          // --- End nested placeholder ---
         },
         // --- End Specificity Boosts ---
 

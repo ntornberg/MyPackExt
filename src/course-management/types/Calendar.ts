@@ -6,4 +6,3 @@ export interface ScheduleEvent {
   days: { day: string; isOverlapping: boolean }[];
   color: string;
 }
-

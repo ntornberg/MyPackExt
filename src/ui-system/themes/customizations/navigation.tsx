@@ -201,24 +201,39 @@ export const navigationCustomizations: Components<Theme> = {
         borderColor: "transparent",
         ":hover": {
           color: (theme.vars || theme).palette.text.primary,
-          backgroundColor: alpha((theme.vars || theme).palette.primary.main, 0.08),
+          backgroundColor: alpha(
+            (theme.vars || theme).palette.primary.main,
+            0.08,
+          ),
           borderColor: alpha((theme.vars || theme).palette.primary.main, 0.18),
         },
         [`&.${tabClasses.selected}`]: {
           color: (theme.vars || theme).palette.text.primary,
-          backgroundColor: alpha((theme.vars || theme).palette.primary.main, 0.12),
+          backgroundColor: alpha(
+            (theme.vars || theme).palette.primary.main,
+            0.12,
+          ),
           borderColor: alpha((theme.vars || theme).palette.primary.main, 0.28),
         },
         ...theme.applyStyles("dark", {
           ":hover": {
             color: (theme.vars || theme).palette.text.primary,
-            backgroundColor: alpha((theme.vars || theme).palette.primary.main, 0.18),
+            backgroundColor: alpha(
+              (theme.vars || theme).palette.primary.main,
+              0.18,
+            ),
             borderColor: alpha((theme.vars || theme).palette.primary.main, 0.4),
           },
           [`&.${tabClasses.selected}`]: {
             color: "#fff",
-            backgroundColor: alpha((theme.vars || theme).palette.primary.main, 0.24),
-            borderColor: alpha((theme.vars || theme).palette.primary.main, 0.45),
+            backgroundColor: alpha(
+              (theme.vars || theme).palette.primary.main,
+              0.24,
+            ),
+            borderColor: alpha(
+              (theme.vars || theme).palette.primary.main,
+              0.45,
+            ),
           },
         }),
       }),

@@ -1,4 +1,8 @@
-import { getGenericCache, isCacheEntryExpired, type CacheEntry } from "./CourseRetrieval.js";
+import {
+  getGenericCache,
+  isCacheEntryExpired,
+  type CacheEntry,
+} from "./CourseRetrieval.js";
 
 function assert(condition: unknown, message: string): void {
   if (!condition) {
@@ -72,9 +76,18 @@ async function runTests(): Promise<void> {
 
     try {
       const result = await getGenericCache(cacheCategory, hash);
-      assert(result === null, "getGenericCache should return null when override expiration has passed");
-      assert(setCalls.length === 1, "getGenericCache should clean up expired entries from storage");
-      assert(storageState[cacheCategory][hash] === undefined, "expired entry should be deleted from cache category");
+      assert(
+        result === null,
+        "getGenericCache should return null when override expiration has passed",
+      );
+      assert(
+        setCalls.length === 1,
+        "getGenericCache should clean up expired entries from storage",
+      );
+      assert(
+        storageState[cacheCategory][hash] === undefined,
+        "expired entry should be deleted from cache category",
+      );
     } finally {
       Date.now = originalNow;
       delete (globalThis as unknown as { chrome?: unknown }).chrome;
