@@ -8,30 +8,28 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
+import { logEvent } from "../../analytics/ga4";
 import CourseSearch from "../../course-management/components/SearchTabs/CourseSearch";
 import GEPSearch from "../../course-management/components/SearchTabs/GEPSearch";
 import PlanSearch from "../../course-management/components/SearchTabs/PlanSearch";
 import {
   CourseSearchDataInitialState,
-  PlanSearchDataInitialState,
-} from "../../course-management/components/TabDataStore/TabData";
-import {
   GEPDataInitialState,
+  PlanSearchDataInitialState,
   type CourseSearchData,
-  type PlanSearchData,
   type GEPData,
+  type PlanSearchData,
+  type TabUpdater,
 } from "../../course-management/components/TabDataStore/TabData";
 import { customDataTableStyles } from "../styles/dataTableStyles";
 import AppTheme from "../themes/AppTheme";
-
-type TabUpdater<T> = (keyOrPatch: keyof T | Partial<T>, value?: any) => void;
 
 const MemoizedCourseSearchTab = React.memo(
   ({
     setCourseSearchTabData,
     courseSearchData,
   }: {
-    setCourseSearchTabData: (key: keyof CourseSearchData, value: any) => void;
+    setCourseSearchTabData: TabUpdater<CourseSearchData>;
     courseSearchData: CourseSearchData;
   }) => (
     <CourseSearch
@@ -123,7 +121,10 @@ function ThemeModeToggle() {
   const nextMode = isDark ? "light" : "dark";
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-pp-mode", isDark ? "dark" : "light");
+    document.documentElement.setAttribute(
+      "data-pp-mode",
+      isDark ? "dark" : "light",
+    );
   }, [isDark]);
 
   return (
@@ -157,7 +158,6 @@ export default function SlideOutDrawer() {
   );
   const [gepSearchData, setGepSearchData] = useState(GEPDataInitialState);
 
-  // Create stable references for all setter functions
   const setCourseSearchTabData: TabUpdater<CourseSearchData> = useCallback(
     (keyOrPatch, value) => {
       setCourseSearchData((prev) =>
@@ -197,15 +197,17 @@ export default function SlideOutDrawer() {
     [],
   );
 
-  const setGepSearchTabData: TabUpdater<GEPData> = useCallback((keyOrPatch, value) => {
-    setGepSearchData((prev) =>
-      typeof keyOrPatch === "object"
-        ? { ...prev, ...keyOrPatch }
-        : { ...prev, [keyOrPatch]: value },
-    );
-  }, []);
+  const setGepSearchTabData: TabUpdater<GEPData> = useCallback(
+    (keyOrPatch, value) => {
+      setGepSearchData((prev) =>
+        typeof keyOrPatch === "object"
+          ? { ...prev, ...keyOrPatch }
+          : { ...prev, [keyOrPatch]: value },
+      );
+    },
+    [],
+  );
 
-  // Memoize all other handlers
   const handleTabChange = useCallback(
     (_: React.SyntheticEvent, newValue: string) => {
       setSelectedTab(newValue);
@@ -215,13 +217,15 @@ export default function SlideOutDrawer() {
 
   const handleDrawerOpen = useCallback(() => {
     setDrawerOpen(true);
+    void logEvent("drawer_opened", {
+      source: "toolbar",
+    });
   }, []);
 
   const handleDrawerClose = useCallback(() => {
     setDrawerOpen(false);
   }, []);
 
-  // Memoize the tab content to prevent re-renders when switching tabs
   const tabContent = useMemo(
     () => ({
       courseSearch: (
@@ -292,7 +296,14 @@ export default function SlideOutDrawer() {
                 flexShrink: 0,
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  mb: 1,
+                }}
+              >
                 <Typography variant="h6">Pack Planner</Typography>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Button
@@ -313,7 +324,10 @@ export default function SlideOutDrawer() {
               >
                 Contact: nicktornberg12@gmail.com
               </Typography>
-              <TabList onChange={handleTabChange} aria-label="Planner search tabs">
+              <TabList
+                onChange={handleTabChange}
+                aria-label="Planner search tabs"
+              >
                 <Tab value="0" label="Course Search" />
                 <Tab value="1" label="GEP Search" />
                 <Tab value="2" label="Major Search" />

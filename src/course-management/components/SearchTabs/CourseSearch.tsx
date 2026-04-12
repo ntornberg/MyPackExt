@@ -25,6 +25,7 @@ import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/Te
 import { CircularProgressWithLabel } from "../../../ui-system/components/shared/CircularProgressWithLabel.tsx";
 import { fetchSingleCourseData } from "../../services/api/DialogMenuSearch/dataService";
 import { sortSections } from "../../types/DataGridCourse";
+import { logEvent } from "../../../analytics/ga4";
 import { CourseInfoCell } from "../DataGridCells/CourseInfoCell";
 import { CourseTimeCell } from "../DataGridCells/CourseTimeCell";
 import { GradeDistributionCell } from "../DataGridCells/GradeDistributionCell";
@@ -32,7 +33,8 @@ import { InfoCell } from "../DataGridCells/InfoCell";
 import { RateMyProfessorCell } from "../DataGridCells/RateMyProfessorCell";
 import { StatusAndSlotsCell } from "../DataGridCells/StatusAndSlotsCell";
 import { ToCartButtonCell } from "../DataGridCells/ToCartButtonCell";
-import type { CourseSearchData } from "../TabDataStore/TabData";
+import type { CourseSearchData, TabUpdater } from "../TabDataStore/TabData";
+import { searchButtonSx } from "./searchStyles";
 
 // Define the department course type
 interface DeptCourse {
@@ -40,53 +42,24 @@ interface DeptCourse {
   course_title: string;
 }
 
-const searchButtonSx = {
-  px: 2.5,
-  minWidth: 112,
-  height: 44,
-  alignSelf: "start",
-  mt: 0.5,
-  fontWeight: 600,
-  letterSpacing: 0.15,
-  backgroundColor: "#2a3f64",
-  backgroundImage: "none",
-  boxShadow: 3,
-  "&:hover": {
-    backgroundColor: "#243657",
-    boxShadow: 5,
-  },
-  "&:active": {
-    backgroundColor: "#1d2d49",
-  },
-  "@media (prefers-color-scheme: dark)": {
-    backgroundColor: "#3a5687",
-    "&:hover": {
-      backgroundColor: "#334d79",
-    },
-    "&:active": {
-      backgroundColor: "#2b4268",
-    },
-  },
-} as const;
-
 /**
  * Course Search tab allowing users to select term, subject, and course, then fetch sections.
  *
- * @param {{ setCourseSearchTabData: (key: keyof CourseSearchData, value: any) => void; courseSearchData: CourseSearchData }} props Tab state setter and current state
+ * @param props Tab state setter and current state
  * @returns {JSX.Element} Course Search tab UI
  */
 export default function CourseSearch({
   setCourseSearchTabData,
   courseSearchData,
 }: {
-  setCourseSearchTabData: (key: keyof CourseSearchData, value: any) => void;
+  setCourseSearchTabData: TabUpdater<CourseSearchData>;
   courseSearchData: CourseSearchData;
 }) {
-  // Local state for search lifecycle
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressLabel, setProgressLabel] = useState("");
   const [courseData, setCourseData] = useState<MergedCourseData | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
   const search = useCallback(
@@ -100,6 +73,7 @@ export default function CourseSearch({
         return null;
       }
 
+      setCourseData(null);
       setIsLoading(true);
       setProgress(10);
       setProgressLabel("Initializing search...");
@@ -141,6 +115,12 @@ export default function CourseSearch({
   );
 
   const courseSearch = async () => {
+    void logEvent("course_search_clicked", {
+      tab: "course_search",
+      term: courseSearchData.selectedTerm ?? "unknown",
+      subject: courseSearchData.searchSubject ?? "unknown",
+      catalog_num: courseSearchData.selectedCourseInfo?.catalogNum ?? "unknown",
+    });
     AppLogger.info("Course search clicked with:", {
       selectedTerm: courseSearchData.selectedTerm,
       searchSubject: courseSearchData.searchSubject,
@@ -152,6 +132,8 @@ export default function CourseSearch({
       courseSearchData.selectedCourseInfo &&
       courseSearchData.selectedTerm
     ) {
+      setHasSearched(true);
+      setExpandedRows(undefined);
       await search(
         courseSearchData.searchSubject,
         courseSearchData.selectedCourseInfo.catalogNum,
@@ -161,7 +143,6 @@ export default function CourseSearch({
     }
   };
 
-  // Effect to clear fields when dependencies change
   useEffect(() => {
     if (!courseSearchData.searchSubject) {
       setCourseSearchTabData("searchCourse", null);
@@ -169,7 +150,10 @@ export default function CourseSearch({
     }
   }, [courseSearchData.searchSubject]);
 
-  const handleCourseChange = (_: any, value: string | null) => {
+  const handleCourseChange = (
+    _: React.SyntheticEvent,
+    value: string | null,
+  ) => {
     setCourseSearchTabData("searchCourse", value);
 
     if (value && courseSearchData.searchSubject) {
@@ -190,9 +174,6 @@ export default function CourseSearch({
             courseCode as keyof typeof deptCourses
           ] as unknown as DeptCourse;
 
-          // Extract just the catalog number
-          // This handles cases with different subject codes
-          // Use a regex to extract the numeric portion (possibly with a letter suffix)
           const match = courseCode.match(/[0-9]+[A-Za-z]?$/);
           const catalogNum = match
             ? match[0]
@@ -244,7 +225,10 @@ export default function CourseSearch({
                   },
                 ];
               }
-              if (section.lecture && (!section.labs || section.labs.length === 0)) {
+              if (
+                section.lecture &&
+                (!section.labs || section.labs.length === 0)
+              ) {
                 return [
                   {
                     ...section,
@@ -254,7 +238,11 @@ export default function CourseSearch({
               }
               if (section.labs && section.labs.length > 0) {
                 return section.labs.reduce(
-                  (acc: (GroupedSections & { uniqueRowId: string })[], lab, labIndex) => {
+                  (
+                    acc: (GroupedSections & { uniqueRowId: string })[],
+                    lab,
+                    labIndex,
+                  ) => {
                     acc.push({
                       labs: null,
                       lecture: lab,
@@ -281,8 +269,13 @@ export default function CourseSearch({
     : courseSearchData.selectedCourseInfo?.catalogNum
       ? "Ready to search."
       : "Select a course to enable search.";
+  const emptyStateMessage = error
+    ? "Could not load results. Please try your search again."
+    : hasSearched
+      ? "No courses found for this search."
+      : "Select a term, subject, and course above to search.";
   const rowExpansionTemplate = (data: GroupedSections) => {
-    if (!data.labs) return null; // No labs to show
+    if (!data.labs) return null;
     return (
       <Box sx={{ width: "50%", display: "flex", flexDirection: "column" }}>
         <DataTable
@@ -517,11 +510,11 @@ export default function CourseSearch({
               gap: 2,
             }}
           >
-            <SearchIcon sx={{ fontSize: 56, color: "primary.main", opacity: 0.35 }} />
+            <SearchIcon
+              sx={{ fontSize: 56, color: "primary.main", opacity: 0.35 }}
+            />
             <Typography sx={{ color: "text.secondary", textAlign: "center" }}>
-              {courseData
-                ? "No sections found for this course"
-                : "Select a term, subject, and course above to search"}
+              {emptyStateMessage}
             </Typography>
           </Box>
         )}

@@ -1,6 +1,19 @@
 // Keeps track of search info when switching dialog tabs.
 import type { MergedCourseData } from "../../types/Section";
 import type { RequiredCourse } from "../../../degree-planning/types/Plans.ts";
+import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
+
+export type TabUpdater<T> = (
+  keyOrPatch: keyof T | Partial<T>,
+  value?: unknown,
+) => void;
+
+export const DEFAULT_TERM_NAME = "2026 Fall Term";
+
+const termOptions = Object.keys(TermIdByName);
+const DEFAULT_TERM = termOptions.includes(DEFAULT_TERM_NAME)
+  ? DEFAULT_TERM_NAME
+  : (termOptions[0] ?? "");
 
 export type CourseSearchData = {
   selectedTerm: string | null;
@@ -14,7 +27,7 @@ export type CourseSearchData = {
   };
 };
 export const CourseSearchDataInitialState: CourseSearchData = {
-  selectedTerm: "2026 Fall Term",
+  selectedTerm: DEFAULT_TERM,
   searchSubject: null,
   searchCourse: null,
   selectedCourseInfo: { code: null, catalogNum: null, title: null, id: "" },
@@ -37,7 +50,7 @@ export type PlanSearchData = {
 export const PlanSearchDataInitialState: PlanSearchData = {
   open: {},
   selectedMajor: null,
-  selectedTerm: "2026 Fall Term",
+  selectedTerm: DEFAULT_TERM,
   selectedMinor: null,
   selectedSubplan: null,
   searchMajor: null,
@@ -61,7 +74,7 @@ export type GEPData = {
   hideNoSections: boolean;
 };
 export const GEPDataInitialState: GEPData = {
-  selectedTerm: "2026 Fall Term",
+  selectedTerm: DEFAULT_TERM,
   searchSubject: "",
   isLoaded: true,
   progress: 0,

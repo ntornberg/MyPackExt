@@ -1,4 +1,7 @@
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from "../../../../../config/supabase.ts";
+import {
+  SUPABASE_ANON_KEY,
+  SUPABASE_URL,
+} from "../../../../../config/supabase.ts";
 import { AppLogger } from "../../../../../utils/logger";
 import type {
   Course,
@@ -141,8 +144,21 @@ export async function getCourseAndProfessorDetails(
       professorElement = profFallback;
     } else {
       // Create both elements from the same API response
-      gradeElement = createGradeCard(course, combinedData);
-      professorElement = createProfessorCard(course, combinedData);
+      if (combinedData.CourseData) {
+        gradeElement = createGradeCard(course, combinedData);
+      } else {
+        const gradeFallback = document.createElement("div");
+        gradeFallback.textContent = "No grade data available.";
+        gradeElement = gradeFallback;
+      }
+
+      if (combinedData.RateMyProfInfo) {
+        professorElement = createProfessorCard(course, combinedData);
+      } else {
+        const profFallback = document.createElement("div");
+        profFallback.textContent = "Professor not found.";
+        professorElement = profFallback;
+      }
     }
 
     return {

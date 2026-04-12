@@ -6,7 +6,8 @@ import type { ModifiedSection } from "../../types/Section";
  * Renders compact course time text for dedicated table column.
  */
 export const CourseTimeCell = (params: ModifiedSection) => {
-  const timeText = params.dayTime && params.dayTime.trim().length > 0 ? params.dayTime : "TBD";
+  const timeText =
+    params.dayTime && params.dayTime.trim().length > 0 ? params.dayTime : "TBD";
 
   return (
     <Typography

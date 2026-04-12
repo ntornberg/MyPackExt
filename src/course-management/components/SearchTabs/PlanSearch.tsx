@@ -1,5 +1,6 @@
 import {
   Autocomplete,
+  type AutocompleteRenderInputParams,
   Box,
   Button,
   TextField,
@@ -18,12 +19,7 @@ import {
 } from "primereact/datatable";
 import { useState, useMemo, memo } from "react";
 
-import type {
-  GroupedSections,
-  MergedCourseData,
-  ModifiedSection,
-} from "../../types/Section";
-import { AppLogger } from "../../../utils/logger";
+import { logEvent } from "../../../analytics/ga4";
 import { majorPlans } from "../../../degree-planning/DialogAutoCompleteKeys/PlanSearch/MajorPlans";
 import { minorPlans } from "../../../degree-planning/DialogAutoCompleteKeys/PlanSearch/MinorPlans";
 import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID";
@@ -34,8 +30,14 @@ import type {
   Subplan,
 } from "../../../degree-planning/types/Plans";
 import { CircularProgressWithLabel } from "../../../ui-system/components/shared/CircularProgressWithLabel";
+import { AppLogger } from "../../../utils/logger";
 import { fetchCourseSearchData } from "../../services/api/DialogMenuSearch/dataService";
 import { sortSections } from "../../types/DataGridCourse";
+import type {
+  GroupedSections,
+  MergedCourseData,
+  ModifiedSection,
+} from "../../types/Section";
 import { CourseInfoCell } from "../DataGridCells/CourseInfoCell";
 import { CourseTimeCell } from "../DataGridCells/CourseTimeCell";
 import { GradeDistributionCell } from "../DataGridCells/GradeDistributionCell";
@@ -43,38 +45,9 @@ import { InfoCell } from "../DataGridCells/InfoCell";
 import { RateMyProfessorCell } from "../DataGridCells/RateMyProfessorCell";
 import { StatusAndSlotsCell } from "../DataGridCells/StatusAndSlotsCell";
 import { ToCartButtonCell } from "../DataGridCells/ToCartButtonCell";
-import { type PlanSearchData } from "../TabDataStore/TabData";
+import { type PlanSearchData, type TabUpdater } from "../TabDataStore/TabData";
 
-type TabUpdater<T> = (keyOrPatch: keyof T | Partial<T>, value?: any) => void;
-
-const searchButtonSx = {
-  px: 2.5,
-  minWidth: 112,
-  height: 44,
-  alignSelf: "start",
-  mt: 0.5,
-  fontWeight: 600,
-  letterSpacing: 0.15,
-  backgroundColor: "#2a3f64",
-  backgroundImage: "none",
-  boxShadow: 3,
-  "&:hover": {
-    backgroundColor: "#243657",
-    boxShadow: 5,
-  },
-  "&:active": {
-    backgroundColor: "#1d2d49",
-  },
-  "@media (prefers-color-scheme: dark)": {
-    backgroundColor: "#3a5687",
-    "&:hover": {
-      backgroundColor: "#334d79",
-    },
-    "&:active": {
-      backgroundColor: "#2b4268",
-    },
-  },
-} as const;
+import { searchButtonSx } from "./searchStyles";
 
 const requirementTreeSx = {
   "& .MuiTreeItem-root": {
@@ -313,7 +286,7 @@ const CourseDisplay = memo(
 /**
  * Major/Minor Plan Search tab for fetching and displaying open sections for degree plan requirements.
  *
- * @param {{ setPlanSearchTabData: (key: keyof PlanSearchData, value: any) => void; planSearchData: PlanSearchData }} props Tab state setter and current state
+ * @param props Tab state setter and current state
  * @returns {JSX.Element} Plan Search tab UI
  */
 export default function PlanSearch({
@@ -339,6 +312,15 @@ export default function PlanSearch({
     );
 
   const planSearch = async () => {
+    logEvent("plan_search_clicked", {
+      tab: "plan_search",
+      term: planSearchData.selectedTerm ?? "unknown",
+      major: planSearchData.selectedMajor ?? "unknown",
+      minor: planSearchData.selectedMinor ?? "unknown",
+      subplan: planSearchData.selectedSubplan ?? "unknown",
+    }).catch(() => {
+      // Silently ignore analytics errors
+    });
     setPlanSearchTabData({
       progress: 10,
       progressLabel: "Initializing plan search...",
@@ -346,6 +328,7 @@ export default function PlanSearch({
       searchMinor: planSearchData.selectedMinor,
       searchSubplan: planSearchData.selectedSubplan,
       isLoaded: false,
+      openCourses: {},
     });
     AppLogger.info("Search clicked with:", {
       selectedMajor: planSearchData.selectedMajor,
@@ -522,11 +505,13 @@ export default function PlanSearch({
             if (!planSearchData.hideNoSections) {
               return true;
             }
-            const courseData = (planSearchData.openCourses as Record<
-              string,
-              MergedCourseData
-            >)?.[`${course.course_abr} ${course.catalog_num}`];
-            return !!courseData?.sections && Object.keys(courseData.sections).length > 0;
+            const courseData = (
+              planSearchData.openCourses as Record<string, MergedCourseData>
+            )?.[`${course.course_abr} ${course.catalog_num}`];
+            return (
+              !!courseData?.sections &&
+              Object.keys(courseData.sections).length > 0
+            );
           }),
         }))
         .filter(({ courses }) => courses.length > 0),
@@ -545,7 +530,11 @@ export default function PlanSearch({
     return (
       <SimpleTreeView sx={requirementTreeSx}>
         {requirementEntries.map(({ requirementKey, courses }) => (
-          <TreeItem key={requirementKey} itemId={requirementKey} label={requirementKey}>
+          <TreeItem
+            key={requirementKey}
+            itemId={requirementKey}
+            label={requirementKey}
+          >
             <Box
               sx={{
                 display: "flex",
@@ -556,7 +545,10 @@ export default function PlanSearch({
               }}
             >
               {courses.map((course: RequiredCourse, index: number) => (
-                <Box key={`${course.course_abr} ${course.catalog_num}`} sx={{ mb: 3 }}>
+                <Box
+                  key={`${course.course_abr} ${course.catalog_num}`}
+                  sx={{ mb: 3 }}
+                >
                   <Typography
                     variant="h6"
                     sx={{
@@ -629,7 +621,9 @@ export default function PlanSearch({
               id="term_selector"
               options={Object.keys(TermIdByName)}
               value={planSearchData.selectedTerm}
-              onChange={(_, value) => setPlanSearchTabData("selectedTerm", value)}
+              onChange={(_, value) =>
+                setPlanSearchTabData("selectedTerm", value)
+              }
               renderInput={(params) => <TextField {...params} label="Term" />}
             />
             <Autocomplete
@@ -657,7 +651,7 @@ export default function PlanSearch({
               onChange={(_, value) =>
                 setPlanSearchTabData("selectedMinor", value)
               }
-              renderInput={(params: any) => (
+              renderInput={(params: AutocompleteRenderInputParams) => (
                 <TextField {...params} label="Minor" />
               )}
             />
@@ -668,7 +662,7 @@ export default function PlanSearch({
               onChange={(_, value) =>
                 setPlanSearchTabData("selectedSubplan", value)
               }
-              renderInput={(params: any) => (
+              renderInput={(params: AutocompleteRenderInputParams) => (
                 <TextField {...params} label="Subplan" />
               )}
             />
@@ -714,7 +708,9 @@ export default function PlanSearch({
         </Box>
         {hasPlanSearchRun && requirementsList}
         {hasPlanSearchRun && !requirementsList && (
-          <Typography sx={{ p: 3, color: "text.secondary", textAlign: "center" }}>
+          <Typography
+            sx={{ p: 3, color: "text.secondary", textAlign: "center" }}
+          >
             No search results found for the selected plan and filters.
           </Typography>
         )}

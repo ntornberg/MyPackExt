@@ -29,6 +29,10 @@ export function createGradeCard(
   wrapper.style.verticalAlign = "top";
 
   const courseData = data.CourseData;
+  if (!courseData) {
+    wrapper.textContent = "No grade data available.";
+    return wrapper;
+  }
 
   // Extract and parse grade data
   const a = parseFloat(courseData.a_average ?? "0");

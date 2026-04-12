@@ -335,8 +335,7 @@ export async function batchFetchCoursesData(
   const openCoursesToFetchCount = Object.keys(openCoursesToFetch).length;
 
   if (openCoursesToFetchCount > 0) {
-    const fetchProgressMessage =
-      `Fetching open courses data for ${openCoursesToFetchCount} courses`;
+    const fetchProgressMessage = `Fetching open courses data for ${openCoursesToFetchCount} courses`;
 
     // Regression guard: this message should always reflect the actual record key count.
     if (courses.length > 1) {
@@ -376,7 +375,10 @@ export async function batchFetchCoursesData(
           } else {
             const filteredCourseData = openCoursesToFetch[`${courseData.code}`];
             if (!filteredCourseData) {
-              const nullCacheKey = buildNullCourseCacheKey(courseData.code, term);
+              const nullCacheKey = buildNullCourseCacheKey(
+                courseData.code,
+                term,
+              );
               const nullHashKey = await generateCacheKey(nullCacheKey);
               await setGenericCache(CACHE_KEYS.NULL_COURSES, {
                 [nullHashKey]: {

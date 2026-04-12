@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  batchFetchCoursesData,
-  fetchSingleCourseData,
-} from "./dataService";
+import { batchFetchCoursesData, fetchSingleCourseData } from "./dataService";
 
 const mockGenerateCacheKey = vi.fn(async (value: string) => `hash:${value}`);
 const mockGetGenericCache = vi.fn();
@@ -75,8 +72,12 @@ describe("dataService null-course cache keys", () => {
 
     await batchFetchCoursesData([course], term);
 
-    expect(mockGenerateCacheKey).toHaveBeenCalledWith("null-CSC 246 Spring 2025");
-    expect(mockGenerateCacheKey).toHaveBeenCalledWith("null-MTH 999 Spring 2025");
+    expect(mockGenerateCacheKey).toHaveBeenCalledWith(
+      "null-CSC 246 Spring 2025",
+    );
+    expect(mockGenerateCacheKey).toHaveBeenCalledWith(
+      "null-MTH 999 Spring 2025",
+    );
     expect(mockSetGenericCache).toHaveBeenCalledWith(
       "nullCourses",
       expect.objectContaining({

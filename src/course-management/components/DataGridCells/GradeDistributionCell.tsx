@@ -9,8 +9,8 @@ import {
 import { PieChart } from "@mui/x-charts/PieChart";
 import { useState } from "react";
 
-import type { ModifiedSection } from "../../types/Section";
 import type { GradeData } from "../../../types/api.ts";
+import type { ModifiedSection } from "../../types/Section";
 
 /**
  * Renders a button that opens a dialog with grade distribution pie chart for a section.
@@ -89,7 +89,11 @@ export const GradeDistributionCell = (params: ModifiedSection) => {
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>
           Grade Distribution for {course_name}
-          <Typography variant="subtitle2" color="text.secondary">
+          <Typography
+            component="div"
+            variant="subtitle2"
+            color="text.secondary"
+          >
             Instructor: {instructor_name}
           </Typography>
         </DialogTitle>

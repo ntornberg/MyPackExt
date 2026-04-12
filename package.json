@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:debug": "tsc -b && vite build --minify=false --sourcemap=inline",
+    "build:debug": "node scripts/build-config.js development && tsc -b && vite build --mode development --minify=false --sourcemap=inline",
     "build:prod": "node scripts/build-config.js production && tsc -b && vite build --mode production",
     "build:staging": "node scripts/build-config.js staging && tsc -b && vite build --mode staging",
     "build:analyze": "tsc -b && vite build --mode production --analyze",

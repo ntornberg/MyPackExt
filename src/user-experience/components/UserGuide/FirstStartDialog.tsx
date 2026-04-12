@@ -13,28 +13,40 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 
+import { logEvent } from "../../../analytics/ga4";
+
 const LS_KEY = "firstStartDismissed";
+
+type FirstStartDialogProps = {
+  suppressAutoOpen?: boolean;
+};
 
 /**
  * Displays a quick‑start guide the first time the user opens the extension.
  * A persistent "Don't show again" checkbox lets them skip the dialog next time.
- * //TODO: this needs to be redone this looks stupid
  */
-export default function FirstStartDialog() {
+export default function FirstStartDialog({
+  suppressAutoOpen = false,
+}: FirstStartDialogProps) {
   const [open, setOpen] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
-  /* On mount: check localStorage; if the user has dismissed before, don't open */
   useEffect(() => {
+    if (suppressAutoOpen) {
+      setOpen(false);
+      return;
+    }
     const dismissed = localStorage.getItem(LS_KEY) === "true";
     setOpen(!dismissed);
-  }, []);
+  }, [suppressAutoOpen]);
 
-  /* Handle close: persist the checkbox choice */
   const handleClose = () => {
     if (dontShowAgain) {
       localStorage.setItem(LS_KEY, "true");
     }
+    void logEvent("first_start_dismissed", {
+      dont_show_again: dontShowAgain,
+    });
     setOpen(false);
   };
 
@@ -43,42 +55,38 @@ export default function FirstStartDialog() {
       <DialogTitle>Extension Quick‑Start Guide</DialogTitle>
 
       <DialogContent sx={{ maxWidth: 600 }}>
-        {/* ===== COURSE SEARCH TAB ===== */}
         <SectionHeading text="Course Search tab" />
         <UnorderedList
           items={[
-            "Navigate to Planning & Enrollment → Enrollment Wizard, then click the new **Course Search** button in the page header.",
-            "Search by department and catalog number. Only sections that are **open** for registration are shown.",
+            "Open Planning & Enrollment -> Enrollment Wizard, then use the Course Search button in the page header.",
+            "Search by department and catalog number. Results only include sections that are currently open.",
             "Each section card displays the professor, their Rate‑My‑Professor score, and historical grade distributions.",
-            "Hover the info icon to view meeting time, location, and a mini‑calendar. Your current schedule appears in **red**; the prospective section in **green**. Overlaps are rendered semi‑transparent.",
-            "Click **Add to Cart** to queue the section for enrollment. (Status feedback coming soon.)",
+            "Use the info icon to view meeting time, location, and a mini-calendar. Your current schedule is shown in red, the candidate section in green, and overlaps are semi-transparent.",
+            "Use Add to Cart to queue a section for enrollment.",
           ]}
         />
 
-        {/* ===== PLAN SEARCH TAB ===== */}
         <SectionHeading text="Plan Search tab" />
         <UnorderedList
           items={[
             "Search for courses by major, minor, or major sub‑plan instead of typing catalog numbers.",
-            "Requirements are based on Registrar data (accuracy may vary). Click a requirement to see matching courses and their open sections in the familiar grid view.",
+            "Requirements are based on Registrar data. Open any requirement to see matching courses and their available sections.",
           ]}
         />
 
-        {/* ===== GEP SEARCH TAB ===== */}
         <SectionHeading text="GEP Search tab" />
         <UnorderedList
           items={[
             "Find classes that fulfill General Education Program requirements.",
-            "Interface mirrors the other tabs; UX polish is on the roadmap.",
+            "The interface follows the same flow as the other search tabs.",
           ]}
         />
 
-        {/* ===== GENERAL NOTES ===== */}
         <SectionHeading text="General notes" />
         <UnorderedList
           items={[
-            "The extension is still in active development and lightly tested.",
-            "Feedback and bug reports are very welcome!",
+            "The extension is still in active development.",
+            "Feedback and bug reports are useful and appreciated.",
           ]}
         />
       </DialogContent>
@@ -94,7 +102,7 @@ export default function FirstStartDialog() {
           label="Don't show again"
         />
         <Button variant="contained" onClick={handleClose} autoFocus>
-          Got it!
+          Close
         </Button>
       </DialogActions>
     </Dialog>

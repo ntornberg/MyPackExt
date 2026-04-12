@@ -1,5 +1,8 @@
 import type { GradeData, MatchedRateMyProf } from "../../types/api.ts";
-import type { CourseData, CourseSection } from "../../utils/course-search/parseRegistrarUtil";
+import type {
+  CourseData,
+  CourseSection,
+} from "../../utils/course-search/parseRegistrarUtil";
 
 export type ModifiedSection = CourseSection & {
   grade_distribution?: GradeData;
@@ -24,4 +27,3 @@ export type MergedCourseData = Omit<CourseData, "sections"> & {
   sections: Record<string, GroupedSections>;
   course_id?: string; // Store course_id at course level
 };
-

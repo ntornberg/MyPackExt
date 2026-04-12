@@ -2,7 +2,6 @@ import InfoIcon from "@mui/icons-material/Info";
 import { Box, Chip, IconButton, Tooltip, Typography } from "@mui/material";
 import { useMemo, useState } from "react";
 
-
 import type { ModifiedSection } from "../../types/Section";
 
 import { CalendarView } from "./CalendarView";
@@ -14,7 +13,7 @@ import { CalendarView } from "./CalendarView";
  * @returns {JSX.Element} Info cell element
  */
 export const CourseInfoCell = (params: ModifiedSection) => {
-  const { section, component, dayTime, location } = params;
+  const { section, component, dayTime, location, courseData } = params;
   const [tooltipOpen, setTooltipOpen] = useState(false);
 
   const tooltipContent = useMemo(
@@ -26,10 +25,12 @@ export const CourseInfoCell = (params: ModifiedSection) => {
         <Typography variant="body2">Type: {component}</Typography>
         <Typography variant="body2">Time: {dayTime}</Typography>
         <Typography variant="body2">Location: {location}</Typography>
-        {tooltipOpen ? <CalendarView {...params} /> : null}
+        {tooltipOpen ? (
+          <CalendarView dayTime={dayTime} courseData={courseData} />
+        ) : null}
       </Box>
     ),
-    [component, dayTime, location, params, section, tooltipOpen],
+    [component, courseData, dayTime, location, section, tooltipOpen],
   );
 
   return (
@@ -79,7 +80,12 @@ export const CourseInfoCell = (params: ModifiedSection) => {
         />
       )}
       {location?.includes("Online") && (
-        <Chip label="Online" size="small" color="primary" sx={{ height: 20, fontSize: "0.68rem" }} />
+        <Chip
+          label="Online"
+          size="small"
+          color="primary"
+          sx={{ height: 20, fontSize: "0.68rem" }}
+        />
       )}
     </Box>
   );

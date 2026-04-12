@@ -10,6 +10,7 @@ import {
   Button,
   TextField,
   Autocomplete,
+  type AutocompleteRenderInputParams,
 } from "@mui/material";
 import { Column } from "primereact/column";
 import {
@@ -31,6 +32,7 @@ import { SubjectMenuValues } from "../../../degree-planning/DialogAutoCompleteKe
 import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
 import type { RequiredCourse } from "../../../degree-planning/types/Plans";
 import { CircularProgressWithLabel } from "../../../ui-system/components/shared/CircularProgressWithLabel";
+import { logEvent } from "../../../analytics/ga4";
 import { fetchGEPCourseData } from "../../services/api/DialogMenuSearch/dataService";
 import { sortSections } from "../../types/DataGridCourse";
 import { CourseInfoCell } from "../DataGridCells/CourseInfoCell";
@@ -40,9 +42,8 @@ import { InfoCell } from "../DataGridCells/InfoCell";
 import { RateMyProfessorCell } from "../DataGridCells/RateMyProfessorCell";
 import { StatusAndSlotsCell } from "../DataGridCells/StatusAndSlotsCell";
 import { ToCartButtonCell } from "../DataGridCells/ToCartButtonCell";
-import { type GEPData } from "../TabDataStore/TabData";
-
-type TabUpdater<T> = (keyOrPatch: keyof T | Partial<T>, value?: any) => void;
+import { type GEPData, type TabUpdater } from "../TabDataStore/TabData";
+import { searchButtonSx } from "./searchStyles";
 
 interface AutocompletesProps {
   selectedTerm: string | null;
@@ -50,40 +51,9 @@ interface AutocompletesProps {
   setGepSearchTabData: TabUpdater<GEPData>;
 }
 
-// Memoize the term options to prevent recalculation
 const TERM_OPTIONS = Object.keys(TermIdByName);
 
-// Memoize the subject options to prevent recalculation
 const SUBJECT_OPTIONS = Object.keys(GEP_COURSES);
-
-const searchButtonSx = {
-  px: 2.5,
-  minWidth: 112,
-  height: 44,
-  alignSelf: "start",
-  mt: 0.5,
-  fontWeight: 600,
-  letterSpacing: 0.15,
-  backgroundColor: "#2a3f64",
-  backgroundImage: "none",
-  boxShadow: 3,
-  "&:hover": {
-    backgroundColor: "#243657",
-    boxShadow: 5,
-  },
-  "&:active": {
-    backgroundColor: "#1d2d49",
-  },
-  "@media (prefers-color-scheme: dark)": {
-    backgroundColor: "#3a5687",
-    "&:hover": {
-      backgroundColor: "#334d79",
-    },
-    "&:active": {
-      backgroundColor: "#2b4268",
-    },
-  },
-} as const;
 
 const MemoizedAutocompletes: React.FC<AutocompletesProps> = React.memo(
   ({ selectedTerm, searchSubject, setGepSearchTabData }) => {
@@ -116,14 +86,16 @@ const MemoizedAutocompletes: React.FC<AutocompletesProps> = React.memo(
           value={selectedTerm}
           defaultValue={TERM_OPTIONS[0]}
           onChange={handleTermChange}
-          renderInput={(params: any) => <TextField {...params} label="Term" />}
+          renderInput={(params: AutocompleteRenderInputParams) => (
+            <TextField {...params} label="Term" />
+          )}
         />
         <Autocomplete
           id="subject_selector"
           options={SUBJECT_OPTIONS}
           value={searchSubject}
           onChange={handleSubjectChange}
-          renderInput={(params: any) => (
+          renderInput={(params: AutocompleteRenderInputParams) => (
             <TextField {...params} label="GEP Subject" />
           )}
         />
@@ -292,14 +264,14 @@ const MemoizedDataTable = React.memo(
 export interface GroupedCourse {
   displayTitle: string;
   courses: RequiredCourse[];
-  courseAbr: string; // Keep track of the abbreviation for keys/state
+  courseAbr: string;
 }
 
 interface GEPTreeProps {
   groupedData: GroupedCourse[];
   expandedGroups: Record<string, boolean>;
   onToggleGroup: (courseAbr: string) => void;
-  courseData: Record<string, MergedCourseData> | {}; // For section details
+  courseData: Record<string, MergedCourseData> | {};
 }
 
 const CourseSections = React.memo(
@@ -320,7 +292,10 @@ const CourseSections = React.memo(
     }
 
     return (
-      <Typography variant="body2" sx={{ p: 2, color: "text.secondary", fontStyle: "italic" }}>
+      <Typography
+        variant="body2"
+        sx={{ p: 2, color: "text.secondary", fontStyle: "italic" }}
+      >
         No sections available
       </Typography>
     );
@@ -407,7 +382,7 @@ const GEPTree: React.FC<GEPTreeProps> = React.memo(
  * GEP Search tab for querying General Education Program courses by subject and term
  * and displaying available sections grouped by subject code.
  *
- * @param {{ setGepSearchTabData: (key: keyof GEPData, value: any) => void; gepSearchData: GEPData }} props Tab state setter and current state
+ * @param props Tab state setter and current state
  * @returns {JSX.Element} GEP Search tab UI
  */
 export default function GEPSearch({
@@ -434,12 +409,18 @@ export default function GEPSearch({
   const isSearchDisabled = !selectedTerm || !searchSubject;
 
   const courseSearch = useCallback(async () => {
-    // Reset expanded groups on new search
+    void logEvent("gep_search_clicked", {
+      tab: "gep_search",
+      term: selectedTerm ?? "unknown",
+      subject: searchSubject ?? "unknown",
+    });
     setExpandedGroups({});
     setGepSearchTabData({
       progress: 10,
       progressLabel: "Initializing GEP course search...",
       isLoaded: false,
+      courses: [],
+      courseData: {},
     });
     AppLogger.info("Course search clicked with:", {
       selectedTerm,
@@ -448,7 +429,8 @@ export default function GEPSearch({
 
     try {
       if (searchSubject && selectedTerm) {
-        const courseInfo = (GEP_COURSES as any)[searchSubject];
+        const courseInfo =
+          GEP_COURSES[searchSubject as keyof typeof GEP_COURSES];
         if (courseInfo) {
           const coursesResult = Object.entries(courseInfo).map(
             ([course_title, course_info_val]) => {
@@ -498,7 +480,6 @@ export default function GEPSearch({
     }
   }, [selectedTerm, searchSubject, setGepSearchTabData]);
 
-  // 1. Filter courses first (as before)
   const filteredCourses = useMemo(() => {
     if (!isLoaded || !courses || courses.length === 0) return [];
     if (!hideNoSections || !courseData) return courses;
@@ -515,7 +496,6 @@ export default function GEPSearch({
     });
   }, [courses, hideNoSections, courseData, isLoaded]);
 
-  // 2. Group the filtered courses by course_abr
   const groupedAndFilteredCourses = useMemo(() => {
     if (!filteredCourses || filteredCourses.length === 0) return [];
 
@@ -526,13 +506,12 @@ export default function GEPSearch({
       if (!groups[abr]) {
         groups[abr] = {
           courseAbr: abr,
-          displayTitle: SubjectMenuValues[abr] || `${abr} - Unknown Subject`, // Fallback title
+          displayTitle: SubjectMenuValues[abr] || `${abr} - Unknown Subject`,
           courses: [],
         };
       }
       groups[abr].courses.push(course);
     });
-    // Sort groups by displayTitle or courseAbr
     return Object.values(groups).sort((a, b) =>
       a.displayTitle.localeCompare(b.displayTitle),
     );
@@ -617,7 +596,10 @@ export default function GEPSearch({
         />
       )}
       {isLoaded && groupedAndFilteredCourses.length === 0 && (
-          <Typography variant="body1" sx={{ p: 4, textAlign: "center", color: "text.secondary" }}>
+        <Typography
+          variant="body1"
+          sx={{ p: 4, textAlign: "center", color: "text.secondary" }}
+        >
           No GEP courses found matching your criteria.{" "}
           {hideNoSections &&
             "Try unchecking 'Hide courses with no open sections'."}
