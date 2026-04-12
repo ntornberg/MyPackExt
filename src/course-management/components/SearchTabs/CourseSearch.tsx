@@ -23,6 +23,12 @@ import { AppLogger } from "../../../utils/logger";
 import { DEPT_COURSES } from "../../../degree-planning/DialogAutoCompleteKeys/CourseSearch/department_courses.typed";
 import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
 import { CircularProgressWithLabel } from "../../../ui-system/components/shared/CircularProgressWithLabel.tsx";
+import { PlannerWorkbenchLayout } from "../../../ui-system/components/workbench/PlannerWorkbenchLayout";
+import {
+  createSectionPreview,
+  getPreviewSectionId,
+  type PlannerSectionPreview,
+} from "../../../ui-system/components/workbench/workbenchTypes";
 import { fetchSingleCourseData } from "../../services/api/DialogMenuSearch/dataService";
 import { sortSections } from "../../types/DataGridCourse";
 import { logEvent } from "../../../analytics/ga4";
@@ -51,9 +57,15 @@ interface DeptCourse {
 export default function CourseSearch({
   setCourseSearchTabData,
   courseSearchData,
+  onPreviewSectionChange,
+  previewContent,
+  selectedPreviewId,
 }: {
   setCourseSearchTabData: TabUpdater<CourseSearchData>;
   courseSearchData: CourseSearchData;
+  onPreviewSectionChange: (preview: PlannerSectionPreview | null) => void;
+  previewContent: React.ReactNode;
+  selectedPreviewId: string | null;
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -134,6 +146,7 @@ export default function CourseSearch({
     ) {
       setHasSearched(true);
       setExpandedRows(undefined);
+      onPreviewSectionChange(null);
       await search(
         courseSearchData.searchSubject,
         courseSearchData.selectedCourseInfo.catalogNum,
@@ -147,8 +160,9 @@ export default function CourseSearch({
     if (!courseSearchData.searchSubject) {
       setCourseSearchTabData("searchCourse", null);
       setCourseSearchTabData("selectedCourseInfo", null);
+      onPreviewSectionChange(null);
     }
-  }, [courseSearchData.searchSubject]);
+  }, [courseSearchData.searchSubject, onPreviewSectionChange, setCourseSearchTabData]);
 
   const handleCourseChange = (
     _: React.SyntheticEvent,
@@ -274,6 +288,16 @@ export default function CourseSearch({
     : hasSearched
       ? "No courses found for this search."
       : "Select a term, subject, and course above to search.";
+  const handleRowPreview = useCallback(
+    (section: ModifiedSection | null | undefined) => {
+      if (!section) {
+        return;
+      }
+
+      onPreviewSectionChange(createSectionPreview("course_search", section));
+    },
+    [onPreviewSectionChange],
+  );
   const rowExpansionTemplate = (data: GroupedSections) => {
     if (!data.labs) return null;
     return (
@@ -283,6 +307,22 @@ export default function CourseSearch({
           paginator
           rows={10}
           rowsPerPageOptions={[10, 25, 50]}
+          onRowClick={(event) => {
+            const target = event.originalEvent.target;
+            if (
+              target instanceof HTMLElement &&
+              target.closest("button, a, input, [role='button'], .p-row-toggler")
+            ) {
+              return;
+            }
+
+            handleRowPreview(event.data as ModifiedSection);
+          }}
+          rowClassName={(rowData: ModifiedSection) =>
+            getPreviewSectionId(rowData) === selectedPreviewId
+              ? "pp-selected-row"
+              : ""
+          }
         >
           <Column
             field="id"
@@ -306,113 +346,146 @@ export default function CourseSearch({
       </Box>
     );
   };
-  return (
-    <Box sx={{ width: "100%", p: 2 }}>
+  const controlsPanel = (
+    <Box
+      sx={{
+        width: "100%",
+        p: 2,
+        border: "1px solid",
+        borderColor: "rgba(93, 122, 186, 0.16)",
+        backgroundColor: "rgba(22, 27, 34, 0.45)",
+        borderRadius: 2.5,
+        boxShadow: 1,
+      }}
+    >
       <Box
         sx={{
-          width: "100%",
-          p: 2,
-          borderBottom: "1px solid",
-          borderColor: "divider",
-          backgroundColor: "background.default",
-          borderRadius: 2,
-        }}
-      >
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-            gap: 2,
-            mb: 2,
-          }}
-        >
-          <Autocomplete
-            id="term_selector"
-            options={Object.keys(TermIdByName)}
-            value={courseSearchData.selectedTerm}
-            onChange={(_, value) =>
-              setCourseSearchTabData("selectedTerm", value)
-            }
-            renderInput={(params) => <TextField {...params} label="Term" />}
-          />
-          <Autocomplete
-            id="subject_selector"
-            options={Object.keys(DEPT_COURSES)}
-            value={courseSearchData.searchSubject}
-            onChange={(_, value) =>
-              setCourseSearchTabData("searchSubject", value)
-            }
-            renderInput={(params) => <TextField {...params} label="Subject" />}
-          />
-        </Box>
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1fr) auto" },
-            gap: 2,
-            alignItems: "start",
-          }}
-        >
-          <Autocomplete
-            id="course_selector"
-            options={courseOptions}
-            value={courseSearchData.searchCourse}
-            onChange={handleCourseChange}
-            noOptionsText={
-              courseSearchData.searchSubject
-                ? "No courses match this subject"
-                : "Pick a subject to see available courses"
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Course"
-                placeholder={
-                  courseSearchData.searchSubject
-                    ? "Type course code or title"
-                    : "Select subject first"
-                }
-                helperText={courseHelperText}
-              />
-            )}
-          />
-          <Button
-            color="secondary"
-            variant="contained"
-            size="medium"
-            sx={searchButtonSx}
-            onClick={courseSearch}
-            disabled={isSearchDisabled}
-          >
-            Search
-          </Button>
-        </Box>
-        {isLoading && (
-          <Box sx={{ mt: 2 }}>
-            <CircularProgressWithLabel value={progress} label={progressLabel} />
-          </Box>
-        )}
-        {error && (
-          <Typography color="error" sx={{ mt: 2 }}>
-            Error: {error.message}
-          </Typography>
-        )}
-      </Box>
-      <Box
-        sx={{
-          width: "100%",
           display: "flex",
           flexDirection: "column",
-          mt: 2,
+          gap: 0.5,
           mb: 2,
         }}
       >
+        <Box>
+          <Typography
+            variant="overline"
+            sx={{ color: "rgba(169, 191, 233, 0.7)", lineHeight: 1.2 }}
+          >
+            Course Search
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{ color: "rgba(189, 206, 238, 0.68)", mt: 0.25 }}
+          >
+            Pick a term, subject, and course to load section comparisons.
+          </Typography>
+        </Box>
+      </Box>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 1.5,
+        }}
+      >
+        <Autocomplete
+          id="term_selector"
+          options={Object.keys(TermIdByName)}
+          value={courseSearchData.selectedTerm}
+          onChange={(_, value) => setCourseSearchTabData("selectedTerm", value)}
+          renderInput={(params) => <TextField {...params} label="Term" />}
+        />
+        <Autocomplete
+          id="subject_selector"
+          options={Object.keys(DEPT_COURSES)}
+          value={courseSearchData.searchSubject}
+          onChange={(_, value) => setCourseSearchTabData("searchSubject", value)}
+          renderInput={(params) => <TextField {...params} label="Subject" />}
+        />
+        <Autocomplete
+          id="course_selector"
+          options={courseOptions}
+          value={courseSearchData.searchCourse}
+          onChange={handleCourseChange}
+          noOptionsText={
+            courseSearchData.searchSubject
+              ? "No courses match this subject"
+              : "Pick a subject to see available courses"
+          }
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Course"
+              placeholder={
+                courseSearchData.searchSubject
+                  ? "Type course code or title"
+                  : "Select subject first"
+              }
+              helperText={courseHelperText}
+            />
+          )}
+        />
+        <Button
+          color="secondary"
+          variant="contained"
+          size="medium"
+          sx={{ ...searchButtonSx, width: "100%", mt: 0 }}
+          onClick={courseSearch}
+          disabled={isSearchDisabled}
+        >
+          Search
+        </Button>
+      </Box>
+      {isLoading && (
+        <Box sx={{ mt: 1.5 }}>
+          <CircularProgressWithLabel value={progress} label={progressLabel} />
+        </Box>
+      )}
+      {error && (
+        <Typography color="error" sx={{ mt: 2 }}>
+          Error: {error.message}
+        </Typography>
+      )}
+    </Box>
+  );
+
+  const resultsPanel = (
+    <Box sx={{ width: "100%", minWidth: 0 }}>
+      <Box
+        sx={{
+          p: 2,
+          border: "1px solid",
+          borderColor: "rgba(93, 122, 186, 0.16)",
+          backgroundColor: "rgba(22, 27, 34, 0.28)",
+          borderRadius: 2.5,
+          boxShadow: 1,
+          minHeight: "100%",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 2,
+            mb: 1.5,
+          }}
+        >
+          <Box>
+            <Typography variant="overline" sx={{ color: "text.secondary" }}>
+              Comparison Workspace
+            </Typography>
+            <Typography variant="h6">Sections</Typography>
+          </Box>
+        </Box>
+
         {courseData?.sections && Object.keys(courseData.sections).length > 0 ? (
           <Box
             sx={{
               width: "100%",
               display: "flex",
               flexDirection: "column",
+              minWidth: 0,
             }}
           >
             <DataTable
@@ -425,6 +498,25 @@ export default function CourseSearch({
               rows={100}
               className="custom-datatable"
               rowsPerPageOptions={[10, 25, 50]}
+              onRowClick={(event) => {
+                const target = event.originalEvent.target;
+                if (
+                  target instanceof HTMLElement &&
+                  target.closest(
+                    "button, a, input, [role='button'], .p-row-toggler",
+                  )
+                ) {
+                  return;
+                }
+
+                handleRowPreview(event.data?.lecture as ModifiedSection | null);
+              }}
+              rowClassName={(rowData: GroupedSections) =>
+                rowData.lecture &&
+                getPreviewSectionId(rowData.lecture) === selectedPreviewId
+                  ? "pp-selected-row"
+                  : ""
+              }
             >
               <Column
                 expander={(row) => row.labs && row.labs.length > 0}
@@ -473,7 +565,6 @@ export default function CourseSearch({
                     : row.lecture?.instructor_name
                 }
               />
-
               <Column
                 field="professor_rating"
                 header="Rating"
@@ -520,5 +611,13 @@ export default function CourseSearch({
         )}
       </Box>
     </Box>
+  );
+
+  return (
+    <PlannerWorkbenchLayout
+      controls={controlsPanel}
+      results={resultsPanel}
+      preview={previewContent}
+    />
   );
 }
