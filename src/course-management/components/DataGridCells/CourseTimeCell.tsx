@@ -1,5 +1,3 @@
-import { Typography } from "@mui/material";
-
 import type { ModifiedSection } from "../../types/Section";
 
 /**
@@ -10,21 +8,11 @@ export const CourseTimeCell = (params: ModifiedSection) => {
     params.dayTime && params.dayTime.trim().length > 0 ? params.dayTime : "TBD";
 
   return (
-    <Typography
-      variant="caption"
-      sx={{
-        display: "inline-block",
-        maxWidth: 180,
-        color: "text.secondary",
-        fontSize: "0.72rem",
-        whiteSpace: "nowrap",
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        verticalAlign: "middle",
-      }}
+    <span
+      className="inline-block max-w-[180px] overflow-hidden text-ellipsis whitespace-nowrap align-middle text-[0.72rem] text-muted-foreground"
       title={timeText}
     >
       {timeText}
-    </Typography>
+    </span>
   );
 };

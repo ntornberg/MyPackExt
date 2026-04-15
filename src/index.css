@@ -1,11 +1,11 @@
-@import "tailwindcss";
 @layer theme, base, components, utilities;
 @import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
-@custom-variant dark (&:is(.dark *));
+/* Shadow extension: theme lives on the host via `data-mpp-theme`; `.dark` covers staging/MUI. */
+@custom-variant dark (&:is(.dark *, #extension-overlay-root[data-mpp-theme="dark"] *));
 
 @theme inline {
   --font-sans:
@@ -76,6 +76,34 @@
 }
 
 #extension-overlay-root {
+  /* Shadow :host boundary: drop inherited font/color/typography from the page; tokens below re-apply our UI. */
+  all: initial;
+  display: block;
+  box-sizing: border-box;
+  /* Isolate from PeopleSoft / host page typography so rem-based Tailwind matches staging. */
+  isolation: isolate;
+  /*
+   * CSS containment: `style` prevents our custom properties from leaking outward to
+   * PeopleSoft elements; `layout` signals self-contained layout to the browser.
+   * Note: `all: initial` above resets inherited standard properties but does NOT reset
+   * CSS custom properties — those always inherit. The explicit var declarations below
+   * override any host-page custom properties that would otherwise flow in.
+   */
+  contain: style layout;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Inherited layout/typography: host page can set these on body; re-assert so shadow subtree stays stable. */
+  text-align: start;
+  visibility: visible;
+  cursor: auto;
+  white-space: normal;
+  word-break: normal;
+  font-feature-settings: normal;
+  font-variant-numeric: normal;
+  /* Tailwind v4 theme base (theme.css); without this, var(--spacing) inherits from the page and breaks p-/m- utilities. */
+  --spacing: 0.25rem;
   --radius: 1rem;
   --background: #f7f9fc;
   --foreground: #0f172a;
@@ -92,33 +120,61 @@
   --accent: rgb(219 234 254 / 0.92);
   --accent-foreground: #1e3a8a;
   --destructive: #dc2626;
-  --border: rgb(148 163 184 / 0.26);
-  --input: rgb(255 255 255 / 0.88);
+  /* Stronger than default shadcn: faint borders vanished on extension cards / tabs / inputs. */
+  --border: rgb(100 116 139 / 0.38);
+  --input: rgb(255 255 255 / 0.92);
   --ring: rgb(37 99 235 / 0.35);
+  --chart-1: #2563eb;
+  --chart-2: #38bdf8;
+  --chart-3: #8b5cf6;
+  --chart-4: #f97316;
+  --chart-5: #14b8a6;
+  --sidebar: rgb(255 255 255 / 0.92);
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #f8fafc;
+  --sidebar-accent: rgb(219 234 254 / 0.92);
+  --sidebar-accent-foreground: #1e3a8a;
+  --sidebar-border: rgb(100 116 139 / 0.34);
+  --sidebar-ring: rgb(37 99 235 / 0.35);
   color-scheme: light;
   font-family: var(--font-sans);
+  color: var(--foreground);
 }
 
 @media (prefers-color-scheme: dark) {
   #extension-overlay-root {
-    --background: #091121;
-    --foreground: #eef4ff;
-    --card: rgb(9 17 33 / 0.94);
-    --card-foreground: #eef4ff;
-    --popover: rgb(7 15 29 / 0.97);
-    --popover-foreground: #eef4ff;
-    --primary: #4f8cff;
-    --primary-foreground: #eff6ff;
-    --secondary: rgb(15 28 52 / 0.9);
-    --secondary-foreground: #e2e8f0;
-    --muted: rgb(11 21 40 / 0.8);
-    --muted-foreground: #94a3b8;
-    --accent: rgb(18 41 82 / 0.95);
-    --accent-foreground: #dbeafe;
+    --background: #080f1a;
+    --foreground: #f1f5ff;
+    --card: rgb(11 18 32 / 0.96);
+    --card-foreground: #f1f5ff;
+    --popover: rgb(8 14 26 / 0.98);
+    --popover-foreground: #f1f5ff;
+    --primary: #5b93ff;
+    --primary-foreground: #f8fafc;
+    --secondary: rgb(18 32 56 / 0.92);
+    --secondary-foreground: #e8eefc;
+    --muted: rgb(14 24 44 / 0.85);
+    --muted-foreground: #a8b8d8;
+    --accent: rgb(22 48 92 / 0.95);
+    --accent-foreground: #e8f0ff;
     --destructive: #f87171;
-    --border: rgb(148 163 184 / 0.18);
-    --input: rgb(8 18 34 / 0.88);
-    --ring: rgb(79 140 255 / 0.45);
+    --border: rgb(154 184 228 / 0.42);
+    --input: rgb(10 20 38 / 0.92);
+    --ring: rgb(91 147 255 / 0.5);
+    --chart-1: #4f8cff;
+    --chart-2: #22d3ee;
+    --chart-3: #a78bfa;
+    --chart-4: #fb7185;
+    --chart-5: #2dd4bf;
+    --sidebar: rgb(7 15 29 / 0.97);
+    --sidebar-foreground: #eef4ff;
+    --sidebar-primary: #4f8cff;
+    --sidebar-primary-foreground: #eff6ff;
+    --sidebar-accent: rgb(18 41 82 / 0.95);
+    --sidebar-accent-foreground: #dbeafe;
+    --sidebar-border: rgb(154 184 228 / 0.32);
+    --sidebar-ring: rgb(79 140 255 / 0.45);
     color-scheme: dark;
   }
 }
@@ -139,39 +195,125 @@
   --accent: rgb(219 234 254 / 0.92);
   --accent-foreground: #1e3a8a;
   --destructive: #dc2626;
-  --border: rgb(148 163 184 / 0.26);
-  --input: rgb(255 255 255 / 0.88);
+  --border: rgb(100 116 139 / 0.38);
+  --input: rgb(255 255 255 / 0.92);
   --ring: rgb(37 99 235 / 0.35);
+  --chart-1: #2563eb;
+  --chart-2: #38bdf8;
+  --chart-3: #8b5cf6;
+  --chart-4: #f97316;
+  --chart-5: #14b8a6;
+  --sidebar: rgb(255 255 255 / 0.92);
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #f8fafc;
+  --sidebar-accent: rgb(219 234 254 / 0.92);
+  --sidebar-accent-foreground: #1e3a8a;
+  --sidebar-border: rgb(100 116 139 / 0.34);
+  --sidebar-ring: rgb(37 99 235 / 0.35);
   color-scheme: light;
 }
 
 #extension-overlay-root[data-mpp-theme="dark"] {
-  --background: #091121;
-  --foreground: #eef4ff;
-  --card: rgb(9 17 33 / 0.94);
-  --card-foreground: #eef4ff;
-  --popover: rgb(7 15 29 / 0.97);
-  --popover-foreground: #eef4ff;
-  --primary: #4f8cff;
-  --primary-foreground: #eff6ff;
-  --secondary: rgb(15 28 52 / 0.9);
-  --secondary-foreground: #e2e8f0;
-  --muted: rgb(11 21 40 / 0.8);
-  --muted-foreground: #94a3b8;
-  --accent: rgb(18 41 82 / 0.95);
-  --accent-foreground: #dbeafe;
+  --background: #080f1a;
+  --foreground: #f1f5ff;
+  --card: rgb(11 18 32 / 0.96);
+  --card-foreground: #f1f5ff;
+  --popover: rgb(8 14 26 / 0.98);
+  --popover-foreground: #f1f5ff;
+  --primary: #5b93ff;
+  --primary-foreground: #f8fafc;
+  --secondary: rgb(18 32 56 / 0.92);
+  --secondary-foreground: #e8eefc;
+  --muted: rgb(14 24 44 / 0.85);
+  --muted-foreground: #a8b8d8;
+  --accent: rgb(22 48 92 / 0.95);
+  --accent-foreground: #e8f0ff;
   --destructive: #f87171;
-  --border: rgb(148 163 184 / 0.18);
-  --input: rgb(8 18 34 / 0.88);
-  --ring: rgb(79 140 255 / 0.45);
+  --border: rgb(154 184 228 / 0.42);
+  --input: rgb(10 20 38 / 0.92);
+  --ring: rgb(91 147 255 / 0.5);
+  --chart-1: #4f8cff;
+  --chart-2: #22d3ee;
+  --chart-3: #a78bfa;
+  --chart-4: #fb7185;
+  --chart-5: #2dd4bf;
+  --sidebar: rgb(7 15 29 / 0.97);
+  --sidebar-foreground: #eef4ff;
+  --sidebar-primary: #4f8cff;
+  --sidebar-primary-foreground: #eff6ff;
+  --sidebar-accent: rgb(18 41 82 / 0.95);
+  --sidebar-accent-foreground: #dbeafe;
+  --sidebar-border: rgb(154 184 228 / 0.32);
+  --sidebar-ring: rgb(79 140 255 / 0.45);
   color-scheme: dark;
 }
 
-#extension-overlay-root,
-#extension-overlay-root *,
-#extension-overlay-root *::before,
-#extension-overlay-root *::after {
+/* :where() keeps specificity at 0 so Tailwind utilities (e.g. ring-*) can override these. */
+:where(#extension-overlay-root),
+:where(#extension-overlay-root) *,
+:where(#extension-overlay-root) *::before,
+:where(#extension-overlay-root) *::after {
   box-sizing: border-box;
+}
+
+/*
+ * Shadow DOM: Tailwind v4 composite shadow/ring variable reset.
+ *
+ * Tailwind's shadow-* and ring-* utilities compose a single box-shadow value
+ * from a stack of CSS variables (--tw-shadow, --tw-ring-shadow, etc.).
+ * Tailwind's preflight normally initialises these variables in the light DOM
+ * <head>. Because Shadow DOM is isolated, those initialisations never reach
+ * our shadow tree — any undefined variable in the stack makes the browser
+ * treat the entire box-shadow property as invalid and fall back to `none`.
+ *
+ * This block manually re-does what preflight does, scoped to :host so it is
+ * carried in the inlined CSS injected by extensionCssForShadowRoot().
+ * `:host` is rewritten from `#extension-overlay-root` by that same function.
+ *
+ * Only variables that use the "hard" composite pattern are included:
+ *   box-shadow: var(--tw-x), var(--tw-y)          — no fallback → all-or-nothing
+ *   border-spacing: var(--tw-x) var(--tw-y)        — same pattern
+ * Filter/backdrop-filter utilities use `var(--tw-x,)` (trailing-comma fallback),
+ * so undefined values silently drop out rather than invalidating the property.
+ * Tailwind v4 opacity variables (--tw-bg-opacity, --tw-text-opacity, etc.) do
+ * not exist — v4 uses color-mix() and inline alpha instead.
+ *
+ * Variable list sourced from Tailwind v4 source (chunk-F4544Y4M.mjs):
+ *   box-shadow stack = var(--tw-inset-shadow), var(--tw-inset-ring-shadow),
+ *                      var(--tw-ring-offset-shadow), var(--tw-ring-shadow),
+ *                      var(--tw-shadow)
+ */
+:where(#extension-overlay-root) *,
+:where(#extension-overlay-root) *::before,
+:where(#extension-overlay-root) *::after {
+  /* Preflight lives in the same bundle but keep edges valid if cascade differs in shadow. */
+  border-style: solid;
+  /*
+   * Tailwind v4 `border-*` width utilities emit `border-style: var(--tw-border-style)`.
+   * In a shadow root that variable is otherwise unset, so borders collapse to `none`
+   * while `border-color` still applies (invisible edges). Chrome DevTools MCP confirmed
+   * empty `--tw-border-style` on `[data-slot=input-group]` inside the extension shadow.
+   */
+  --tw-border-style: solid;
+  /* Shadow / ring composite stack */
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-color: initial;
+  --tw-shadow-alpha: 100%;
+  --tw-inset-shadow: 0 0 #0000;
+  --tw-inset-shadow-color: initial;
+  --tw-inset-shadow-alpha: 100%;
+  --tw-ring-color: initial;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-inset-ring-color: initial;
+  --tw-inset-ring-shadow: 0 0 #0000;
+  --tw-ring-inset: initial;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-offset-shadow: 0 0 #0000;
+  /* border-spacing composite (same hard pattern, no fallback) */
+  --tw-border-spacing-x: 0;
+  --tw-border-spacing-y: 0;
 }
 
 #extension-overlay-root button:not(:disabled),
@@ -184,152 +326,12 @@
   color: var(--foreground);
 }
 
-@layer utilities {
-  #extension-overlay-root {
-    @tailwind utilities;
-  }
+/* Native <details> plan requirement groups (PlanSearch): rotate chevron when open. */
+#extension-overlay-root .plan-req-disclosure[open] > summary .plan-req-chevron {
+  transform: rotate(90deg);
 }
 
-:root {
-  --background:
-    oklch(1 0 0);
-  --foreground:
-    oklch(0.145 0 0);
-  --card:
-    oklch(1 0 0);
-  --card-foreground:
-    oklch(0.145 0 0);
-  --popover:
-    oklch(1 0 0);
-  --popover-foreground:
-    oklch(0.145 0 0);
-  --primary:
-    oklch(0.205 0 0);
-  --primary-foreground:
-    oklch(0.985 0 0);
-  --secondary:
-    oklch(0.97 0 0);
-  --secondary-foreground:
-    oklch(0.205 0 0);
-  --muted:
-    oklch(0.97 0 0);
-  --muted-foreground:
-    oklch(0.556 0 0);
-  --accent:
-    oklch(0.97 0 0);
-  --accent-foreground:
-    oklch(0.205 0 0);
-  --destructive:
-    oklch(0.577 0.245 27.325);
-  --border:
-    oklch(0.922 0 0);
-  --input:
-    oklch(0.922 0 0);
-  --ring:
-    oklch(0.708 0 0);
-  --chart-1:
-    oklch(0.87 0 0);
-  --chart-2:
-    oklch(0.556 0 0);
-  --chart-3:
-    oklch(0.439 0 0);
-  --chart-4:
-    oklch(0.371 0 0);
-  --chart-5:
-    oklch(0.269 0 0);
-  --radius:
-    0.625rem;
-  --sidebar:
-    oklch(0.985 0 0);
-  --sidebar-foreground:
-    oklch(0.145 0 0);
-  --sidebar-primary:
-    oklch(0.205 0 0);
-  --sidebar-primary-foreground:
-    oklch(0.985 0 0);
-  --sidebar-accent:
-    oklch(0.97 0 0);
-  --sidebar-accent-foreground:
-    oklch(0.205 0 0);
-  --sidebar-border:
-    oklch(0.922 0 0);
-  --sidebar-ring:
-    oklch(0.708 0 0);
-}
-
-.dark {
-  --background:
-    oklch(0.145 0 0);
-  --foreground:
-    oklch(0.985 0 0);
-  --card:
-    oklch(0.205 0 0);
-  --card-foreground:
-    oklch(0.985 0 0);
-  --popover:
-    oklch(0.205 0 0);
-  --popover-foreground:
-    oklch(0.985 0 0);
-  --primary:
-    oklch(0.922 0 0);
-  --primary-foreground:
-    oklch(0.205 0 0);
-  --secondary:
-    oklch(0.269 0 0);
-  --secondary-foreground:
-    oklch(0.985 0 0);
-  --muted:
-    oklch(0.269 0 0);
-  --muted-foreground:
-    oklch(0.708 0 0);
-  --accent:
-    oklch(0.269 0 0);
-  --accent-foreground:
-    oklch(0.985 0 0);
-  --destructive:
-    oklch(0.704 0.191 22.216);
-  --border:
-    oklch(1 0 0 / 10%);
-  --input:
-    oklch(1 0 0 / 15%);
-  --ring:
-    oklch(0.556 0 0);
-  --chart-1:
-    oklch(0.87 0 0);
-  --chart-2:
-    oklch(0.556 0 0);
-  --chart-3:
-    oklch(0.439 0 0);
-  --chart-4:
-    oklch(0.371 0 0);
-  --chart-5:
-    oklch(0.269 0 0);
-  --sidebar:
-    oklch(0.205 0 0);
-  --sidebar-foreground:
-    oklch(0.985 0 0);
-  --sidebar-primary:
-    oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground:
-    oklch(0.985 0 0);
-  --sidebar-accent:
-    oklch(0.269 0 0);
-  --sidebar-accent-foreground:
-    oklch(0.985 0 0);
-  --sidebar-border:
-    oklch(1 0 0 / 10%);
-  --sidebar-ring:
-    oklch(0.556 0 0);
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
-  }
-}
+/* Extension: sheet is injected into ShadowRoot (`:host`). Utilities are unlayered
+   so they can compete with Emotion/MUI; `attachExtensionShadowTailwindStyleOrderObserver`
+   keeps this stylesheet last in the shadow root for correct cascade order. */
+@tailwind utilities;

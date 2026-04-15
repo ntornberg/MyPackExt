@@ -25,15 +25,18 @@ export type CourseSearchData = {
     title: string | null;
     id: string;
   };
+  instructorFilter: string | null;
+  scheduleFitOnly: boolean;
 };
 export const CourseSearchDataInitialState: CourseSearchData = {
   selectedTerm: DEFAULT_TERM,
   searchSubject: null,
   searchCourse: null,
   selectedCourseInfo: { code: null, catalogNum: null, title: null, id: "" },
+  instructorFilter: null,
+  scheduleFitOnly: false,
 };
 export type PlanSearchData = {
-  open: Record<string, boolean>;
   selectedMajor: string | null;
   selectedTerm: string | null;
   selectedMinor: string | null;
@@ -46,9 +49,10 @@ export type PlanSearchData = {
   progress: number | 0;
   progressLabel: string | null;
   hideNoSections: boolean | undefined;
+  instructorFilter: string | null;
+  scheduleFitOnly: boolean;
 };
 export const PlanSearchDataInitialState: PlanSearchData = {
-  open: {},
   selectedMajor: null,
   selectedTerm: DEFAULT_TERM,
   selectedMinor: null,
@@ -61,6 +65,8 @@ export const PlanSearchDataInitialState: PlanSearchData = {
   progress: 0,
   progressLabel: "",
   hideNoSections: true,
+  instructorFilter: null,
+  scheduleFitOnly: false,
 };
 
 export type GEPData = {
@@ -72,6 +78,8 @@ export type GEPData = {
   courseData: Record<string, MergedCourseData> | {};
   courses: RequiredCourse[];
   hideNoSections: boolean;
+  instructorFilter: string | null;
+  scheduleFitOnly: boolean;
 };
 export const GEPDataInitialState: GEPData = {
   selectedTerm: DEFAULT_TERM,
@@ -82,4 +90,6 @@ export const GEPDataInitialState: GEPData = {
   courseData: {},
   courses: [],
   hideNoSections: true,
+  instructorFilter: null,
+  scheduleFitOnly: false,
 };

@@ -1,10 +1,6 @@
-import { Box, CircularProgress, Typography } from "@mui/material";
-
 /**
  * Circular progress indicator with optional status label underneath.
- *
- * @param {{ value: number; label?: string }} props Progress value and optional label
- * @returns {JSX.Element} Circular progress with label
+ * Pure SVG — no MUI dependency.
  */
 export function CircularProgressWithLabel({
   value,
@@ -13,44 +9,47 @@ export function CircularProgressWithLabel({
   value: number;
   label?: string;
 }) {
+  const radius = 18;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (value / 100) * circumference;
+
   return (
-    <Box
-      sx={{
-        position: "relative",
-        display: "inline-flex",
-        flexDirection: "column",
-        alignItems: "center",
-      }}
-    >
-      <Box sx={{ position: "relative", display: "inline-flex" }}>
-        <CircularProgress variant="determinate" value={value} />
-        <Box
-          sx={{
-            top: 0,
-            left: 0,
-            bottom: 0,
-            right: 0,
-            position: "absolute",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Typography variant="caption" component="div" color="text.secondary">
-            {`${Math.round(value)}%`}
-          </Typography>
-        </Box>
-      </Box>
+    <div className="inline-flex flex-col items-center gap-2">
+      <div className="relative inline-flex items-center justify-center">
+        <svg width={44} height={44} className="-rotate-90">
+          {/* Track */}
+          <circle
+            cx={22}
+            cy={22}
+            r={radius}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={4}
+            className="text-border"
+          />
+          {/* Progress */}
+          <circle
+            cx={22}
+            cy={22}
+            r={radius}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={4}
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            className="text-primary transition-[stroke-dashoffset] duration-300 ease-linear"
+          />
+        </svg>
+        <span className="absolute text-[0.6rem] font-semibold tabular-nums text-muted-foreground">
+          {`${Math.round(value)}%`}
+        </span>
+      </div>
       {label && (
-        <Typography
-          variant="caption"
-          component="div"
-          color="text.secondary"
-          sx={{ mt: 1, textAlign: "center", maxWidth: "200px" }}
-        >
+        <p className="max-w-[200px] text-center text-xs text-muted-foreground">
           {label}
-        </Typography>
+        </p>
       )}
-    </Box>
+    </div>
   );
 }

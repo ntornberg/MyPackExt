@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:planner-staging": "vite --mode staging --open /planner-staging.html",
     "build": "tsc -b && vite build",
     "build:debug": "node scripts/build-config.js development && tsc -b && vite build --mode development --minify=false --sourcemap=inline",
     "build:prod": "node scripts/build-config.js production && tsc -b && vite build --mode production",
@@ -21,6 +22,7 @@
     "package": "node -e \"const fs = require('fs'); const path = require('path'); const archiver = require('archiver'); const output = fs.createWriteStream('dist.zip'); const archive = archiver('zip'); output.on('close', () => console.log('Package created: dist.zip')); archive.on('error', (err) => { throw err; }); archive.pipe(output); archive.directory('dist/', false); archive.finalize();\""
   },
   "dependencies": {
+    "@base-ui/react": "^1.3.0",
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",

@@ -1,9 +1,7 @@
-import createCache from "@emotion/cache";
-import { CacheProvider } from "@emotion/react";
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 
-import "../index.css";
+import extensionCssRaw from "../index.css?inline";
 import { initializeAnalytics, logEvent } from "../analytics/ga4";
 import {
   debouncedScrapePlanner,
@@ -13,7 +11,13 @@ import { setupListener } from "../degree-planning/services/siteResponseStorage.t
 import SlideOutDrawer from "../ui-system/components/MainPopupCard.tsx";
 import FirstStartDialog from "../user-experience/components/UserGuide/FirstStartDialog.tsx";
 import WhatsNewDialog from "../user-experience/components/UserGuide/WhatsNewDialog.tsx";
-import { ensureOverlayContainer, waitForScheduleTable } from "../utils/dom";
+import {
+  attachExtensionShadowTailwindStyleOrderObserver,
+  ensureOverlayContainer,
+  extensionCssForShadowRoot,
+  rewriteCssAssetUrlsForExtension,
+  waitForScheduleTable,
+} from "../utils/dom";
 import { AppLogger } from "../utils/logger";
 
 declare global {
@@ -36,8 +40,6 @@ if (
     logEvent("extension_content_script_loaded");
   });
 }
-
-export const myEmotionCache = createCache({ key: "mypack-css" });
 
 function RootOverlayDialogs() {
   const [allowFirstStartAutoOpen, setAllowFirstStartAutoOpen] = useState(false);
@@ -160,15 +162,21 @@ document.addEventListener("DOMContentLoaded", () => {
     AppLogger.info("Initializing MyPack Drawer");
 
     const scheduleElement = await waitForScheduleTable();
-    const overlayElement = ensureOverlayContainer();
+    const shadowCss = extensionCssForShadowRoot(
+      rewriteCssAssetUrlsForExtension(extensionCssRaw),
+    );
+    const overlayElement = ensureOverlayContainer(shadowCss);
+    const shadowRoot = document
+      .getElementById("extension-overlay-root")
+      ?.shadowRoot;
+    if (!shadowRoot) {
+      throw new Error("Extension overlay shadow root was not created.");
+    }
+    attachExtensionShadowTailwindStyleOrderObserver(shadowRoot);
     const root = createRoot(overlayElement);
     scrapeScheduleTable(scheduleElement);
 
-    root.render(
-      <CacheProvider value={myEmotionCache}>
-        <RootOverlayDialogs />
-      </CacheProvider>,
-    );
+    root.render(<RootOverlayDialogs />);
     const initialIframe = document.querySelector<HTMLIFrameElement>(
       '[id$="divPSPAGECONTAINER"] iframe',
     );

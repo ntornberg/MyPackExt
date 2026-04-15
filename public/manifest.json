@@ -34,8 +34,8 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["realFetchHook.js"],
+      "resources": ["realFetchHook.js", "assets/*"],
       "matches": ["<all_urls>"]
     }
-    ]
+  ]
 }

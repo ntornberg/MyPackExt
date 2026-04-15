@@ -17,6 +17,12 @@ export const getPreviewSectionId = (section: ModifiedSection): string =>
     section.component,
     section.dayTime,
     section.location,
+    ...(section.linkedMeetings?.flatMap((m) => [
+      m.dayTime,
+      m.location,
+      m.component,
+      m.classNumber ?? "",
+    ]) ?? []),
   ]
     .filter(Boolean)
     .join("::");

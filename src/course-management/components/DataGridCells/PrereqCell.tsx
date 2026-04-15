@@ -1,5 +1,12 @@
-import WarningIcon from "@mui/icons-material/Warning";
-import { IconButton, Tooltip } from "@mui/material";
+import { TriangleAlertIcon } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import type { ModifiedSection } from "../../types/Section";
 
@@ -12,10 +19,15 @@ import type { ModifiedSection } from "../../types/Section";
 export const PrereqCell = (params: ModifiedSection) => {
   const { requisites } = params;
   return (
-    <Tooltip title={requisites}>
-      <IconButton>
-        <WarningIcon color="warning" />
-      </IconButton>
-    </Tooltip>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="size-8">
+            <TriangleAlertIcon className="size-4 text-amber-500" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{requisites}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };

@@ -20,14 +20,16 @@ export const customDataTableStyles = `
   }
 
   html[data-pp-mode="dark"] .custom-datatable,
-  html[data-pp-mode="dark"] .custom-datatable.p-datatable {
+  html[data-pp-mode="dark"] .custom-datatable.p-datatable,
+  :host([data-mpp-theme="dark"]) .custom-datatable,
+  :host([data-mpp-theme="dark"]) .custom-datatable.p-datatable {
     --table-bg: linear-gradient(180deg, rgba(13, 20, 34, 0.96), rgba(10, 16, 28, 0.98));
     --table-row-bg: rgba(19, 28, 45, 0.92);
     --table-row-border: rgba(95, 128, 201, 0.18);
     --table-head-bg: transparent;
     --table-border: rgba(88, 116, 178, 0.2);
     --table-text: #edf3ff;
-    --table-muted: rgba(189, 206, 238, 0.72);
+    --table-muted: rgba(200, 214, 245, 0.82);
     --table-accent: rgba(69, 134, 255, 0.14);
     --table-selected: rgba(69, 134, 255, 0.2);
     box-shadow: inset 0 1px 0 rgba(108, 140, 201, 0.08),

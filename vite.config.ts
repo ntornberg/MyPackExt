@@ -16,15 +16,20 @@ export default defineConfig(({ mode }) => {
   const isDevelopment = mode === "development" || (!isProduction && !isStaging);
   const enableDebugLogs =
     (process && process.env && process.env.VITE_ENABLE_DEBUG_LOGS) === "true";
+  const plugins = [
+    tailwindcss(),
+    react(),
+    ...(isStaging
+      ? []
+      : [
+          crx({
+            manifest: manifestJson as ManifestV3Export,
+          }),
+        ]),
+  ];
 
   return {
-    plugins: [
-      tailwindcss(),
-      react(),
-      crx({
-        manifest: manifestJson as ManifestV3Export,
-      }),
-    ],
+    plugins,
     build: {
       outDir: "dist",
       sourcemap: isDevelopment ? "inline" : isStaging ? true : false,

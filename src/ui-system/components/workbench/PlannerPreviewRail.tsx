@@ -1,49 +1,32 @@
-import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined";
-import EventBusyOutlinedIcon from "@mui/icons-material/EventBusyOutlined";
-import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
-import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
-import {
-  Box,
-  Chip,
-  Divider,
-  Paper,
-  Stack,
-  Typography,
-} from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import { getCacheCategory } from "../../../course-management/cache/CourseRetrieval";
+import { CalendarView } from "../../../course-management/components/DataGridCells/CalendarView";
 import {
-  CalendarView,
-  loadScheduleEvents,
-} from "../../../course-management/components/DataGridCells/CalendarView";
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
+import {
+  type ScheduleEvent,
+  CALENDAR_COLOR_CART_CLASS,
+  CALENDAR_COLOR_ENROLLED_CLASS,
+  CALENDAR_COLOR_PINNED_SECTION,
+  CALENDAR_CONFLICT_BLOCK_SHELL,
+  calendarBlockShellStyle,
+} from "../../../course-management/types/Calendar";
 import type { PlannerSectionPreview } from "./workbenchTypes";
 
 type PlannerPreviewRailProps = {
   selectedPreview: PlannerSectionPreview | null;
   isOpen: boolean;
+  /** Staging: mock calendar events instead of extension cache. */
+  stagingOptions?: {
+    calendarEvents: ScheduleEvent[];
+  };
 };
-
-type PlannerContextSnapshot = {
-  scheduleCourses: number;
-  cartCourses: number;
-  plannedCourses: number;
-  weeklyMeetings: number;
-};
-
-const emptyContextSnapshot: PlannerContextSnapshot = {
-  scheduleCourses: 0,
-  cartCourses: 0,
-  plannedCourses: 0,
-  weeklyMeetings: 0,
-};
-
-const tabLabelById = {
-  course_search: "Course Search",
-  gep_search: "GEP Search",
-  plan_search: "Major Search",
-} as const;
 
 const normalizeRichText = (value: string | null | undefined): string | null => {
   if (!value) {
@@ -54,60 +37,12 @@ const normalizeRichText = (value: string | null | undefined): string | null => {
   return normalized || null;
 };
 
-const getContextCount = (
-  entries: Record<string, unknown> | null | undefined,
-): number => Object.keys(entries ?? {}).length;
-
 export function PlannerPreviewRail({
   selectedPreview,
-  isOpen,
+  isOpen: _isOpen,
+  stagingOptions,
 }: PlannerPreviewRailProps) {
-  const [contextSnapshot, setContextSnapshot] = useState(emptyContextSnapshot);
-
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    let isMounted = true;
-
-    const loadContextSnapshot = async () => {
-      try {
-        const [scheduleTable, cartTable, planTable, scheduleEvents] =
-          await Promise.all([
-            getCacheCategory("scheduleTableData"),
-            getCacheCategory("shopCartTableData"),
-            getCacheCategory("planTermTableData"),
-            loadScheduleEvents(),
-          ]);
-
-        if (!isMounted) {
-          return;
-        }
-
-        setContextSnapshot({
-          scheduleCourses: getContextCount(scheduleTable),
-          cartCourses: getContextCount(cartTable),
-          plannedCourses: getContextCount(planTable),
-          weeklyMeetings: scheduleEvents.length,
-        });
-      } catch (error) {
-        console.error("Failed to load planner preview context:", error);
-      }
-    };
-
-    void loadContextSnapshot();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isOpen, selectedPreview?.id]);
-
   const selectedSection = selectedPreview?.section;
-  const selectedInstructors = useMemo(() => {
-    const instructors = selectedSection?.instructor_name ?? [];
-    return instructors.length > 0 ? instructors.join(", ") : "Staff";
-  }, [selectedSection?.instructor_name]);
 
   const selectedNotes = useMemo(
     () => normalizeRichText(selectedSection?.notes),
@@ -119,249 +54,126 @@ export function PlannerPreviewRail({
   );
 
   return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: 2,
-        borderRadius: 4,
-        bgcolor: "rgba(9, 15, 27, 0.96)",
-        borderColor: "rgba(94, 123, 187, 0.18)",
-        boxShadow:
-          "inset 0 1px 0 rgba(136, 164, 224, 0.08), 0 18px 44px rgba(0, 0, 0, 0.28)",
-        color: "#edf3ff",
-      }}
+    <Card
+      className={cn(
+        "overflow-visible border-2 border-border bg-card text-card-foreground shadow-md ring-1 ring-border/50 dark:ring-white/12",
+        "dark:bg-gradient-to-b dark:from-[rgb(9,15,27)] dark:to-[rgb(10,17,30)] dark:shadow-[inset_0_1px_0_rgba(136,164,224,0.08),0_18px_44px_rgba(0,0,0,0.28)]",
+      )}
     >
-      <Stack spacing={2}>
-        <Box>
-          <Typography
-            variant="overline"
-            sx={{ color: "rgba(169, 191, 233, 0.72)", letterSpacing: "0.08em" }}
-          >
-            Command Center
-          </Typography>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-            {selectedPreview ? "Selected Section" : "Current MyPack Context"}
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{
-              color: "rgba(189, 206, 238, 0.68)",
-              mt: 0.5,
-              display: "block",
-            }}
-          >
-            {selectedPreview
-              ? "Pinned details stay visible while you compare rows."
-              : "Choose a section row to keep a preview pinned while you browse."}
-          </Typography>
-        </Box>
-
+      <CardHeader className="gap-2 border-b border-border/60 bg-muted/20 dark:bg-transparent">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+          Preview
+        </div>
+        <CardTitle className="text-base font-semibold">
+          {selectedPreview ? "Selected Section" : "Current MyPack Context"}
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          {selectedPreview
+            ? "Schedule, class notes, and prerequisites for the pinned section (grades and instructor stay on each row card)."
+            : stagingOptions
+              ? "Select a row to pin schedule context, notes, and prerequisites here."
+              : "Choose a section row to pin schedule, notes, and prerequisites while you browse."}
+        </p>
+      </CardHeader>
+      <CardContent className="flex min-w-0 flex-col gap-4 p-3 sm:p-4">
         {selectedPreview ? (
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 1,
-              borderRadius: 3,
-              bgcolor: "rgba(17, 26, 43, 0.95)",
-              borderColor: "rgba(94, 123, 187, 0.18)",
-            }}
+          <div className="min-w-0 rounded-xl border border-border bg-background/55 p-3 sm:p-4">
+            <div className="w-full max-w-full min-w-0 overflow-x-auto overflow-y-hidden rounded-xl border border-border bg-background/40 p-1.5 [-webkit-overflow-scrolling:touch]">
+              <CalendarView
+                plannerPreview
+                dayTime={selectedSection?.dayTime}
+                courseData={selectedSection?.courseData}
+                linkedMeetings={selectedSection?.linkedMeetings}
+                staticBackgroundEvents={stagingOptions?.calendarEvents}
+              />
+            </div>
+            <ScheduleCalendarLegend className="mt-2 px-0.5" />
+
+            {selectedNotes ? (
+              <div className="mt-4 flex flex-col gap-1 rounded-lg border border-border/60 bg-background/45 p-3">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Class notes
+                </div>
+                <p className="text-sm text-foreground">{selectedNotes}</p>
+              </div>
+            ) : null}
+
+            {selectedRequisites ? (
+              <div className="mt-3 flex flex-col gap-1 rounded-lg border border-border/60 bg-background/45 p-3">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Prerequisites
+                </div>
+                <p className="text-sm text-foreground">{selectedRequisites}</p>
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <div>
+              <div className="text-sm font-semibold">Schedule Preview</div>
+              <p className="text-sm text-muted-foreground">
+                {stagingOptions
+                  ? "Sample schedule for this preview."
+                  : "Live context from your current schedule."}
+              </p>
+            </div>
+            <div className="w-full max-w-full min-w-0 overflow-x-auto overflow-y-hidden rounded-2xl border border-border bg-background/40 p-1.5 [-webkit-overflow-scrolling:touch]">
+              <CalendarView
+                plannerPreview
+                dayTime={selectedSection?.dayTime}
+                courseData={selectedSection?.courseData}
+                linkedMeetings={selectedSection?.linkedMeetings}
+                staticBackgroundEvents={stagingOptions?.calendarEvents}
+              />
+            </div>
+            <ScheduleCalendarLegend className="mt-2 px-0.5" />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ScheduleCalendarLegend({ className }: { className?: string }) {
+  const items = [
+    { label: "Enrolled" as const, color: CALENDAR_COLOR_ENROLLED_CLASS },
+    { label: "Cart" as const, color: CALENDAR_COLOR_CART_CLASS },
+    { label: "Adding" as const, color: CALENDAR_COLOR_PINNED_SECTION },
+    { label: "Conflict" as const },
+  ] as const;
+
+  return (
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/50 pt-2",
+        className,
+      )}
+      role="list"
+      aria-label="Schedule block colors"
+    >
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        Legend
+      </span>
+      {items.map((item) => {
+        const shell =
+          item.label === "Conflict"
+            ? CALENDAR_CONFLICT_BLOCK_SHELL
+            : calendarBlockShellStyle(item.color);
+        return (
+          <span
+            key={item.label}
+            role="listitem"
+            className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground"
           >
-            <Stack spacing={1.25}>
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                <Chip
-                  size="small"
-                  color="primary"
-                  label={tabLabelById[selectedPreview.tab]}
-                  sx={{ fontWeight: 700 }}
-                />
-                {selectedSection?.component ? (
-                  <Chip
-                    size="small"
-                    variant="outlined"
-                    label={selectedSection.component}
-                  />
-                ) : null}
-                {selectedSection?.availability ? (
-                  <Chip
-                    size="small"
-                    variant="outlined"
-                    label={selectedSection.availability}
-                  />
-                ) : null}
-              </Box>
-
-              <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                  {selectedPreview.courseCode}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{ color: "rgba(189, 206, 238, 0.7)" }}
-                >
-                  {selectedPreview.courseTitle}
-                </Typography>
-              </Box>
-
-              <Stack spacing={0.75}>
-                <Typography variant="body2">
-                  Section {selectedSection?.section || "Unknown"} • Class{" "}
-                  {selectedSection?.classNumber || "Unknown"}
-                </Typography>
-                <Typography variant="body2">{selectedInstructors}</Typography>
-                <Typography variant="body2">
-                  {selectedSection?.dayTime || "Meeting time unavailable"}
-                </Typography>
-                <Typography variant="body2">
-                  {selectedSection?.location || "Location unavailable"}
-                </Typography>
-                {selectedSection?.enrollment ? (
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "rgba(189, 206, 238, 0.66)" }}
-                  >
-                    Enrollment: {selectedSection.enrollment}
-                  </Typography>
-                ) : null}
-              </Stack>
-
-              {selectedNotes ? (
-                <Box>
-                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                    Notes
-                  </Typography>
-                  <Typography variant="body2">{selectedNotes}</Typography>
-                </Box>
-              ) : null}
-
-              {selectedRequisites ? (
-                <Box>
-                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                    Requisites
-                  </Typography>
-                  <Typography variant="body2">{selectedRequisites}</Typography>
-                </Box>
-              ) : null}
-            </Stack>
-          </Paper>
-        ) : null}
-
-        <Box>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-            Schedule Preview
-          </Typography>
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 0.5,
-              borderRadius: 3,
-              bgcolor: "rgba(13, 21, 35, 0.94)",
-              borderColor: "rgba(94, 123, 187, 0.18)",
-              overflow: "hidden",
-            }}
-          >
-            <CalendarView
-              dayTime={selectedSection?.dayTime}
-              courseData={selectedSection?.courseData}
+            <span
+              className="size-2.5 shrink-0 rounded-sm shadow-sm"
+              style={shell}
+              aria-hidden
             />
-          </Paper>
-        </Box>
-
-        <Divider />
-
-        <Box>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>
-            MyPack Snapshot
-          </Typography>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-              gap: 1,
-            }}
-          >
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 1.1,
-                borderRadius: 2.5,
-                bgcolor: "rgba(17, 26, 43, 0.94)",
-                borderColor: "rgba(94, 123, 187, 0.18)",
-              }}
-            >
-              <Stack spacing={0.5}>
-                <SchoolOutlinedIcon fontSize="small" color="primary" />
-                <Typography variant="h6">{contextSnapshot.scheduleCourses}</Typography>
-                <Typography
-                  variant="caption"
-                  sx={{ color: "rgba(189, 206, 238, 0.68)" }}
-                >
-                  Enrolled courses
-                </Typography>
-              </Stack>
-            </Paper>
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 1.1,
-                borderRadius: 2.5,
-                bgcolor: "rgba(17, 26, 43, 0.94)",
-                borderColor: "rgba(94, 123, 187, 0.18)",
-              }}
-            >
-              <Stack spacing={0.5}>
-                <MenuBookOutlinedIcon fontSize="small" color="primary" />
-                <Typography variant="h6">{contextSnapshot.cartCourses}</Typography>
-                <Typography
-                  variant="caption"
-                  sx={{ color: "rgba(189, 206, 238, 0.68)" }}
-                >
-                  Cart courses
-                </Typography>
-              </Stack>
-            </Paper>
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 1.1,
-                borderRadius: 2.5,
-                bgcolor: "rgba(17, 26, 43, 0.94)",
-                borderColor: "rgba(94, 123, 187, 0.18)",
-              }}
-            >
-              <Stack spacing={0.5}>
-                <AccessTimeOutlinedIcon fontSize="small" color="primary" />
-                <Typography variant="h6">{contextSnapshot.weeklyMeetings}</Typography>
-                <Typography
-                  variant="caption"
-                  sx={{ color: "rgba(189, 206, 238, 0.68)" }}
-                >
-                  Weekly meetings
-                </Typography>
-              </Stack>
-            </Paper>
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 1.1,
-                borderRadius: 2.5,
-                bgcolor: "rgba(17, 26, 43, 0.94)",
-                borderColor: "rgba(94, 123, 187, 0.18)",
-              }}
-            >
-              <Stack spacing={0.5}>
-                <EventBusyOutlinedIcon fontSize="small" color="primary" />
-                <Typography variant="h6">{contextSnapshot.plannedCourses}</Typography>
-                <Typography
-                  variant="caption"
-                  sx={{ color: "rgba(189, 206, 238, 0.68)" }}
-                >
-                  Planned courses
-                </Typography>
-              </Stack>
-            </Paper>
-          </Box>
-        </Box>
-      </Stack>
-    </Paper>
+            {item.label}
+          </span>
+        );
+      })}
+    </div>
   );
 }

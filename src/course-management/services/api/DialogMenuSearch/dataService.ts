@@ -1,5 +1,4 @@
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "../../../../config/supabase";
-import { groupSections } from "../../../../utils/course-search/groupSections";
 import type { MergedCourseData } from "../../../types/Section";
 import { mergeData } from "../../../../utils/course-search/mergeDataUtil";
 import type { CourseData } from "../../../../utils/course-search/parseRegistrarUtil";
@@ -35,6 +34,25 @@ const CACHE_KEYS = {
 
 function buildNullCourseCacheKey(courseKey: string, term: string): string {
   return `null-${courseKey} ${term}`;
+}
+
+/** Same path as mergeData so lecture rows get `linkedMeetings` (labs/rec only get that in mergeData). */
+function mergeCourseDataWithoutGradeBatch(
+  courseKey: string,
+  courseData: CourseData,
+  course: RequiredCourse,
+): MergedCourseData {
+  const emptyBatch: BatchDataRequestResponse = { courses: [], profs: [] };
+  const merged = mergeData(
+    { [courseKey]: courseData },
+    emptyBatch,
+    { [courseKey]: course },
+  );
+  const result = merged[courseKey];
+  if (!result) {
+    throw new Error(`mergeData missing course key: ${courseKey}`);
+  }
+  return result;
 }
 
 /**
@@ -158,14 +176,11 @@ export async function fetchSingleCourseData(
       instructor_name: section.instructor_name[0],
     }));
 
-  // If no sections with professors, return just the course data
+  // If no sections with professors, still run mergeData so `linkedMeetings` is set on lectures
+  // (e.g. CH 101 "Staff" rows have empty instructor_name[] but many Rec rows per Lec).
   if (courseSectionsWithProfs.length === 0) {
     onProgress?.(100, `Completed processing ${courseKey} (no instructor data)`);
-    const mergedCourse: MergedCourseData = {
-      ...courseData,
-      sections: groupSections(courseData.sections),
-    };
-    return mergedCourse;
+    return mergeCourseDataWithoutGradeBatch(courseKey, courseData, course);
   }
 
   // Generate hash for grade/professor cache lookup
@@ -224,14 +239,7 @@ export async function fetchSingleCourseData(
     } catch (error) {
       AppLogger.error("Error fetching grade/professor data:", error);
       onProgress?.(85, `Error fetching grade/professor data: ${error}`);
-      // Return course data without grade/professor info if fetch fails
-
-      const mergedCourse: MergedCourseData = {
-        ...courseData,
-        sections: groupSections(courseData.sections),
-      };
-
-      return mergedCourse;
+      return mergeCourseDataWithoutGradeBatch(courseKey, courseData, course);
     }
   }
 

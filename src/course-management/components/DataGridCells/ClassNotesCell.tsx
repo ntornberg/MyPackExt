@@ -1,5 +1,12 @@
-import InfoIcon from "@mui/icons-material/Info";
-import { IconButton, Tooltip } from "@mui/material";
+import { InfoIcon } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import type { ModifiedSection } from "../../types/Section";
 
@@ -12,10 +19,15 @@ import type { ModifiedSection } from "../../types/Section";
 export const ClassNotesCell = (params: ModifiedSection) => {
   const { notes } = params;
   return (
-    <Tooltip title={notes}>
-      <IconButton>
-        <InfoIcon />
-      </IconButton>
-    </Tooltip>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="icon" className="size-8">
+            <InfoIcon className="size-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{notes}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };

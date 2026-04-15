@@ -1,19 +1,16 @@
-import MailOutlineRoundedIcon from "@mui/icons-material/MailOutlineRounded";
-import NewReleasesRoundedIcon from "@mui/icons-material/NewReleasesRounded";
-import {
-  Box,
-  Button,
-  Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
-  Link,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { MailIcon, SparklesIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 
 import { logEvent } from "../../../analytics/ga4";
 import { whatsNewByVersion } from "../../content/whatsNewByVersion";
@@ -38,9 +35,8 @@ export default function WhatsNewDialog({ onResolved }: WhatsNewDialogProps) {
       return "";
     }
   }, []);
-  const release = currentVersion
-    ? whatsNewByVersion[currentVersion]
-    : undefined;
+
+  const release = currentVersion ? whatsNewByVersion[currentVersion] : undefined;
   const resolvedRef = useRef(false);
 
   const resolve = useCallback(() => {
@@ -54,13 +50,11 @@ export default function WhatsNewDialog({ onResolved }: WhatsNewDialogProps) {
       resolve();
       return;
     }
-
     const seenVersion = localStorage.getItem(LS_KEY);
     if (seenVersion === currentVersion) {
       resolve();
       return;
     }
-
     setOpen(true);
   }, [currentVersion, release, resolve]);
 
@@ -69,121 +63,73 @@ export default function WhatsNewDialog({ onResolved }: WhatsNewDialogProps) {
       localStorage.setItem(LS_KEY, currentVersion);
     }
     setOpen(false);
-    void logEvent("whats_new_dismissed", {
-      version: currentVersion,
-    });
+    void logEvent("whats_new_dismissed", { version: currentVersion });
     resolve();
   }, [currentVersion, resolve]);
 
   if (!release) return null;
 
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      maxWidth="md"
-      fullWidth
-      slotProps={{
-        paper: {
-          sx: {
-            borderRadius: 3,
-            border: "1px solid",
-            borderColor: "divider",
-            boxShadow: 8,
-          },
-        },
-      }}
-    >
-      <DialogTitle sx={{ p: 0 }}>
-        <Box
-          sx={{
-            px: 3,
-            py: 2.25,
-            borderBottom: "1px solid",
-            borderColor: "divider",
-            backgroundColor: "background.paper",
-          }}
-        >
-          <Stack
-            direction="row"
-            alignItems="flex-start"
-            justifyContent="space-between"
-            spacing={2}
-          >
-            <Stack spacing={0.75}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <NewReleasesRoundedIcon color="primary" fontSize="small" />
-                <Typography variant="overline" sx={{ letterSpacing: 0.8 }}>
-                  What's New
-                </Typography>
-              </Stack>
-              <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                {release.title}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {release.subtitle}
-              </Typography>
-            </Stack>
-            <Chip
-              size="small"
-              label={`v${currentVersion}`}
-              sx={{ fontWeight: 600 }}
-            />
-          </Stack>
-        </Box>
-      </DialogTitle>
-
-      <DialogContent sx={{ px: 3, py: 2 }}>
-        <Stack spacing={2}>
-          {release.sections.map((section, index) => (
-            <Box key={section.title}>
-              <Typography
-                variant="subtitle2"
-                sx={{ mb: 0.75, fontWeight: 700 }}
-              >
-                {section.title}
-              </Typography>
-              <Stack component="ul" sx={{ pl: 2.5, mb: 0, mt: 0, gap: 0.75 }}>
-                {section.items.map((item) => (
-                  <Typography
-                    component="li"
-                    variant="body2"
-                    color="text.secondary"
-                    key={item}
-                  >
-                    {item}
-                  </Typography>
-                ))}
-              </Stack>
-              {index < release.sections.length - 1 ? (
-                <Divider sx={{ mt: 1.75 }} />
-              ) : null}
-            </Box>
-          ))}
-        </Stack>
-      </DialogContent>
-
-      <DialogActions
-        sx={{ px: 3, pb: 2.5, pt: 0.5, justifyContent: "space-between" }}
+    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
+      <DialogContent
+        showCloseButton={false}
+        className="max-w-lg gap-0 overflow-hidden p-0"
       >
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ display: "flex", alignItems: "center", gap: 0.75 }}
-        >
-          <MailOutlineRoundedIcon sx={{ fontSize: 16 }} />
-          <Link
+        {/* Header */}
+        <div className="border-b border-border bg-muted/40 px-5 py-4">
+          <DialogHeader className="gap-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary/80">
+                <SparklesIcon className="size-3.5" />
+                What's New
+              </div>
+              <Badge variant="secondary" className="font-mono text-[0.65rem]">
+                v{currentVersion}
+              </Badge>
+            </div>
+            <DialogTitle className="text-xl font-bold">{release.title}</DialogTitle>
+            <p className="text-sm text-muted-foreground">{release.subtitle}</p>
+          </DialogHeader>
+        </div>
+
+        {/* Body */}
+        <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
+          <div className="flex flex-col gap-4">
+            {release.sections.map((section, index) => (
+              <div key={section.title}>
+                <h3 className="mb-2 text-sm font-bold">{section.title}</h3>
+                <ul className="flex flex-col gap-1.5 pl-4">
+                  {section.items.map((item) => (
+                    <li
+                      key={item}
+                      className="list-disc text-sm text-muted-foreground"
+                    >
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                {index < release.sections.length - 1 && (
+                  <Separator className="mt-4" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <DialogFooter className="flex-row items-center justify-between rounded-none border-t border-border bg-muted/40 px-5 py-3">
+          <a
             href={`mailto:${CONTACT_EMAIL}?subject=MyPack%20Plus%20Question`}
-            underline="hover"
-            color="inherit"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
           >
+            <MailIcon className="size-3.5" />
             {CONTACT_EMAIL}
-          </Link>
-        </Typography>
-        <Button variant="contained" onClick={handleClose}>
-          Close
-        </Button>
-      </DialogActions>
+          </a>
+          <Button size="sm" onClick={handleClose}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   );
 }
