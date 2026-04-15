@@ -464,12 +464,27 @@ function estimateSize(str: string): number {
 }
 
 /**
- * Creates a hash from an object's values.
- * @param {Record<string, any>} item - The object to use for the hash.
+ * Generates a cache key from a string.
+ * Uses the string itself for short items or a lightweight fast hash for long strings.
+ * @param {string} item - The string to use for the key.
  * @returns {Promise<string>} - The generated unique key.
  */
 export async function generateCacheKey(item: string): Promise<string> {
-  return hashString(item);
+  // Replace spaces with underscores just to make keys a bit cleaner in storage
+  const sanitized = item.replace(/\s+/g, "_");
+  
+  // If the key is relatively short (up to 64 chars), use it directly 
+  // to avoid hashing overhead entirely
+  if (sanitized.length <= 64) {
+    return sanitized;
+  }
+  
+  // For longer strings, use a fast, lightweight DJB2 hash instead of crypto
+  let hash = 5381;
+  for (let i = 0; i < sanitized.length; i++) {
+    hash = (hash * 33) ^ sanitized.charCodeAt(i);
+  }
+  return "hash_" + (hash >>> 0).toString(16);
 }
 
 /**
@@ -661,18 +676,4 @@ export async function clearCache(): Promise<void> {
   return clearGenericCache("courseList");
 }
 
-// Should have chosen a lighter hash function
-/**
- * Creates a hash from a string.
- * @param {string} message - The string to hash.
- * @returns {Promise<string>} - The hashed string.
- */
-async function hashString(message: string): Promise<string> {
-  const msgBuffer = new TextEncoder().encode(message); // Convert string to bytes
-  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer); // Hash it
-  const hashArray = Array.from(new Uint8Array(hashBuffer)); // Convert buffer to byte array
-  const hashHex = hashArray
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join(""); // Bytes to hex string
-  return hashHex;
-}
+

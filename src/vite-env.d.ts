@@ -1,6 +1,11 @@
 /// <reference types="chrome" />
 /// <reference types="vite/client" />
 
+declare module "*.css?inline" {
+  const css: string;
+  export default css;
+}
+
 interface ImportMetaEnv {
   readonly VITE_ENABLE_ANALYTICS: string;
   readonly VITE_GA_MEASUREMENT_ID: string;

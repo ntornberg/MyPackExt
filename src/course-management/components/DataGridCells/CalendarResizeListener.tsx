@@ -1,7 +1,12 @@
-import { Box, Paper, Typography } from "@mui/material";
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import { cn } from "@/lib/utils";
 
 import type { ScheduleEvent } from "../../types/Calendar";
+import {
+  CALENDAR_CONFLICT_BLOCK_SHELL,
+  calendarBlockShellStyle,
+} from "../../types/Calendar";
 
 /**
  * Converts a 12-hour time string (e.g., "3:30 PM") to minutes since midnight.
@@ -95,81 +100,38 @@ export default function CreateCalendar({
   );
   const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri"];
   const events = eventData;
-
-  /* size of the body (6 AM–10 PM) */
   const [bodyRef, body] = useSize<HTMLDivElement>();
 
   return (
-    <Box
-      sx={{
-        height: 360,
-        width: "100%",
-        minHeight: 360,
-        maxWidth: "1400px",
-        margin: "0 auto",
-        display: "grid",
-        gridTemplateColumns: {
-          xs: "44px repeat(5, 1fr)",
-          sm: "56px repeat(5, 1fr)",
-        },
-        gridTemplateRows: {
-          xs: "36px 1fr",
-          sm: "44px 1fr",
-        },
-        overflow: "hidden",
-        p: 1,
-        borderRadius: 3,
-        background:
-          "linear-gradient(180deg, rgba(7, 13, 24, 0.96), rgba(11, 18, 31, 0.98))",
-        border: "1px solid rgba(89, 117, 177, 0.16)",
-        boxShadow: "inset 0 1px 0 rgba(125, 160, 232, 0.08)",
-      }}
+    <div
+      className="mx-auto grid h-[400px] min-h-[400px] w-full max-w-[1400px] grid-cols-[48px_repeat(5,minmax(52px,1fr))] grid-rows-[40px_1fr] overflow-hidden rounded-2xl border border-border bg-gradient-to-b from-background via-muted/15 to-muted/35 shadow-sm dark:bg-[linear-gradient(165deg,rgba(6,12,22,0.98)_0%,rgba(10,18,32,0.99)_45%,rgba(8,14,26,1)_100%)] dark:shadow-none sm:grid-cols-[60px_repeat(5,minmax(56px,1fr))] sm:grid-rows-[48px_1fr]"
     >
-      <Box
-        sx={{
-          gridColumn: 1,
-          gridRow: 1,
-          borderRight: "1px solid rgba(111, 136, 188, 0.12)",
-          borderBottom: "1px solid rgba(111, 136, 188, 0.12)",
-          bgcolor: "rgba(255, 255, 255, 0.02)",
-        }}
+      <div
+        className="border-b border-r border-border bg-muted/50 dark:border-white/10 dark:bg-white/[0.06]"
+        style={{ gridColumn: 1, gridRow: 1 }}
       />
 
-      {weekdays.map((d, i) => (
-        <Typography
-          key={d}
-          align="center"
-          sx={{
-            gridColumn: i + 2,
-            px: { xs: 0.5, sm: 1, md: 2 },
+      {weekdays.map((day, index) => (
+        <div
+          key={day}
+          className={cn(
+            "flex items-center justify-center border-b border-border bg-muted/40 px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground sm:px-2 sm:text-xs",
+            "dark:border-white/10 dark:bg-gradient-to-b dark:from-white/[0.08] dark:to-white/[0.02]",
+            index < 4 && "border-r border-border dark:border-white/[0.08]",
+          )}
+          style={{
+            gridColumn: index + 2,
             gridRow: 1,
-            fontWeight: 600,
-            color: "rgba(229, 238, 255, 0.92)",
-            fontSize: { xs: "11px", sm: "12px", md: "12px" },
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            bgcolor: "rgba(255, 255, 255, 0.02)",
-            borderBottom: "1px solid rgba(111, 136, 188, 0.12)",
-            borderRight:
-              i < 4 ? "1px solid rgba(111, 136, 188, 0.12)" : "none",
           }}
         >
-          <Box sx={{ display: { xs: "block", sm: "none" } }}>{d.charAt(0)}</Box>
-          <Box sx={{ display: { xs: "none", sm: "block" } }}>{d}</Box>
-        </Typography>
+          <span className="sm:hidden">{day.charAt(0)}</span>
+          <span className="hidden sm:inline">{day}</span>
+        </div>
       ))}
 
-      <Box
-        sx={{
-          gridColumn: 1,
-          gridRow: 2,
-          position: "relative",
-          borderRight: "1px solid rgba(111, 136, 188, 0.12)",
-          bgcolor: "rgba(255, 255, 255, 0.01)",
-        }}
+      <div
+        className="relative border-r border-border bg-muted/30 dark:border-white/10 dark:bg-black/20"
+        style={{ gridColumn: 1, gridRow: 2 }}
       >
         {hours.map((h) => {
           const top =
@@ -178,35 +140,23 @@ export default function CreateCalendar({
                 (h * 60 - windowStart * 60)
               : 0;
           return (
-            <Typography
+            <span
               key={h}
-              sx={{
-                position: "absolute",
-                top: top - 8,
-                left: { xs: 1, sm: 2, md: 4 },
-                fontSize: { xs: "8px", sm: "9px", md: "10px" },
-                color: "rgba(160, 182, 223, 0.72)",
-                userSelect: "none",
-              }}
+              className="pointer-events-none absolute left-1 select-none text-[9px] tabular-nums text-muted-foreground sm:left-2 sm:text-[10px] md:left-3 md:text-[11px]"
+              style={{ top: top - 8 }}
             >
               {window.innerWidth < 600
                 ? `${((h + 11) % 12) + 1}${h < 12 ? "a" : "p"}`
                 : `${((h + 11) % 12) + 1}${h < 12 ? "AM" : "PM"}`}
-            </Typography>
+            </span>
           );
         })}
-      </Box>
+      </div>
 
-      <Box
+      <div
         ref={bodyRef}
-        sx={{
-          gridColumn: "2 / span 5",
-          gridRow: 2,
-          position: "relative",
-          display: "grid",
-          gridTemplateColumns: "repeat(5, 1fr)",
-          bgcolor: "rgba(8, 14, 24, 0.78)",
-        }}
+        className="relative grid grid-cols-5 bg-gradient-to-b from-muted/20 to-muted/45 dark:bg-[linear-gradient(180deg,rgba(12,20,36,0.5)_0%,rgba(8,14,26,0.85)_100%)]"
+        style={{ gridColumn: "2 / span 5", gridRow: 2 }}
       >
         {hours.map((h) => {
           if (h === windowStart) return null;
@@ -216,29 +166,21 @@ export default function CreateCalendar({
                 (h * 60 - windowStart * 60)
               : 0;
           return (
-            <Box
+            <div
               key={h}
-              sx={{
-                position: "absolute",
-                top,
-                left: 0,
-                right: 0,
-                borderTop: "1px solid rgba(111, 136, 188, 0.1)",
-                zIndex: 1,
-              }}
+              className="absolute inset-x-0 border-t border-border/60 dark:border-white/[0.06]"
+              style={{ top }}
             />
           );
         })}
 
         {weekdays.map((day, colIdx) => (
-          <Box
+          <div
             key={day}
-            sx={{
-              color: "rgba(236, 243, 255, 0.95)",
-              position: "relative",
-              borderRight:
-                colIdx < 4 ? "1px solid rgba(111, 136, 188, 0.1)" : "none",
-            }}
+            className={cn(
+              "relative text-foreground/95",
+              colIdx < 4 && "border-r border-border/60 dark:border-white/[0.06]",
+            )}
           >
             {body.h > 0 &&
               events
@@ -251,51 +193,33 @@ export default function CreateCalendar({
                     windowStart,
                     windowEnd,
                   );
+                  const isOverlap = ev.days.some(
+                    (d) => d.isOverlapping && d.day === day,
+                  );
                   return (
-                    <Paper
+                    <div
                       key={`${ev.id}-${day}`}
-                      elevation={2}
-                      sx={{
-                        position: "absolute",
+                      className="absolute flex min-h-[18px] items-center overflow-hidden rounded-lg px-1.5 py-0.5 text-[8px] leading-snug font-semibold tracking-tight text-white sm:min-h-5 sm:px-2 sm:py-1 sm:text-[9px] md:text-[10px]"
+                      style={{
                         top: topPx,
-                        left: { xs: 2, sm: 4 },
-                        right: { xs: 2, sm: 4 },
-                        height: heightPx,
-                        bgcolor: ev.days.some(
-                          (d) => d.isOverlapping && d.day === day,
-                        )
-                          ? "#f9735b"
-                          : "#4c86ff",
-                        opacity: ev.days.some(
-                          (d) => d.isOverlapping && d.day === day,
-                        )
-                          ? 0.88
-                          : 0.96,
-                        color: "#fff",
-                        px: { xs: 0.5, sm: 0.75 },
-                        py: { xs: 0.25, sm: 0.5 },
-                        fontSize: { xs: "7px", sm: "8px", md: "8px" },
-                        fontWeight: 700,
-                        borderRadius: 999,
-                        overflow: "hidden",
-                        display: "flex",
-                        alignItems: "center",
-                        minHeight: { xs: "16px", sm: "18px", md: "20px" },
-                        zIndex: 2,
-                        lineHeight: 1.2,
-                        border: "1px solid rgba(255, 255, 255, 0.14)",
-                        boxShadow: "0 8px 18px rgba(0, 0, 0, 0.25)",
+                        left: window.innerWidth < 640 ? 3 : 5,
+                        right: window.innerWidth < 640 ? 3 : 5,
+                        height: Math.max(heightPx, 18),
+                        zIndex: isOverlap ? 3 : 2,
+                        ...(isOverlap
+                          ? CALENDAR_CONFLICT_BLOCK_SHELL
+                          : calendarBlockShellStyle(ev.color)),
                       }}
                     >
                       {ev.subj.length > 15 && window.innerWidth < 600
                         ? `${ev.subj.split(" ")[0]} ${ev.subj.split(" ")[1]}...`
                         : ev.subj}
-                    </Paper>
+                    </div>
                   );
                 })}
-          </Box>
+          </div>
         ))}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }

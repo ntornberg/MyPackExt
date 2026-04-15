@@ -87,49 +87,234 @@ export function waitForScheduleTable(): Promise<Element> {
     });
   });
 }
+const SHADOW_THEME_STYLE_ATTR = "data-mpp-shadow-theme";
+const HOST_RESET_STYLE_ID = "mpp-extension-overlay-host-reset";
+
 /**
- * Ensures an overlay root and a slide-out drawer container exist in the top document.
- * Creates and styles them if missing and returns the drawer container element.
- *
- * @returns {HTMLDivElement} The drawer container element used as React root for the UI overlay
+ * PeopleSoft sets typography on `body` / wrappers; the shadow host inherits that
+ * computed style and passes font-size / line-height / family into the shadow tree.
+ * This unlayered document rule resets the **host element only** so in-shadow
+ * Tailwind tokens (`rem`, `font-sans`) match staging. It does not pierce shadow
+ * (selectors cannot); it only fixes inheritance at the boundary.
  */
-export function ensureOverlayContainer(): HTMLDivElement {
-  let overlayRootElement = document.getElementById("extension-overlay-root");
+function ensureExtensionOverlayHostReset(): void {
+  if (typeof document === "undefined") {
+    return;
+  }
+  if (document.getElementById(HOST_RESET_STYLE_ID)) {
+    return;
+  }
+  const el = document.createElement("style");
+  el.id = HOST_RESET_STYLE_ID;
+  el.textContent = `
+#extension-overlay-root {
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  font-family: "Geist Variable", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  text-align: left !important;
+  -webkit-font-smoothing: antialiased;
+}
+`.trim();
+  document.head.appendChild(el);
+}
 
-  if (!overlayRootElement) {
-    overlayRootElement = document.createElement("div");
-    overlayRootElement.id = "extension-overlay-root";
+/**
+ * Rewrites compiled overlay CSS for use inside `ShadowRoot`: theme blocks target
+ * `:host` instead of `#extension-overlay-root`.
+ */
+export function extensionCssForShadowRoot(compiledCss: string): string {
+  let css = compiledCss;
+  // Longer selectors first — naive `#id` → `:host` would produce invalid `:host[data-…]`.
+  css = css.replace(
+    /#extension-overlay-root\[data-mpp-theme="light"\]/g,
+    ':host([data-mpp-theme="light"])',
+  );
+  css = css.replace(
+    /#extension-overlay-root\[data-mpp-theme="dark"\]/g,
+    ':host([data-mpp-theme="dark"])',
+  );
+  css = css.replace(/#extension-overlay-root/g, ":host");
+  return css;
+}
 
-    const drawerContainer = document.createElement("div");
-    drawerContainer.id = "slide-out-drawer-container";
-    overlayRootElement.appendChild(drawerContainer);
-
-    // Style the overlay container
-    overlayRootElement.style.position = "fixed";
-    overlayRootElement.style.top = "0";
-    overlayRootElement.style.left = "0";
-    overlayRootElement.style.width = "100%";
-    overlayRootElement.style.height = "100%";
-    overlayRootElement.style.zIndex = "1000";
-    overlayRootElement.style.pointerEvents = "none";
-
-    // Style the drawer container
-    drawerContainer.style.position = "absolute";
-    drawerContainer.style.top = "0";
-    drawerContainer.style.right = "0px";
-    drawerContainer.style.width = "300px";
-    drawerContainer.style.height = "100%";
-    drawerContainer.style.transition = "right 0.3s ease-in-out";
-    drawerContainer.style.zIndex = "1001";
-
-    // Append to DOM
-    document.body.appendChild(overlayRootElement);
+/**
+ * Inlined Vite CSS uses `url(/assets/...)` which resolves against the MyPack page
+ * origin (404). Rewrite to `chrome-extension://…/assets/…` so @font-face and
+ * images load from the extension package.
+ */
+export function rewriteCssAssetUrlsForExtension(css: string): string {
+  if (
+    typeof chrome === "undefined" ||
+    typeof chrome.runtime?.getURL !== "function"
+  ) {
+    return css;
   }
 
-  return document.getElementById(
-    "slide-out-drawer-container",
-  ) as HTMLDivElement;
+  return css.replace(
+    /url\(\s*(["']?)([^"')]+)\1\s*\)/gi,
+    (match, _quote: string, rawPath: string) => {
+      const path = rawPath.trim();
+      if (
+        path.startsWith("data:") ||
+        path.startsWith("chrome-extension:") ||
+        path.startsWith("blob:") ||
+        path.startsWith("http://") ||
+        path.startsWith("https://") ||
+        path.startsWith("#")
+      ) {
+        return match;
+      }
+      const normalized = path.replace(/^\.\//, "").replace(/^\//, "");
+      if (!normalized.startsWith("assets/")) {
+        return match;
+      }
+      return `url("${chrome.runtime.getURL(normalized)}")`;
+    },
+  );
 }
+
+function applySlideOutDrawerChrome(drawer: HTMLDivElement) {
+  drawer.style.position = "absolute";
+  drawer.style.top = "0";
+  drawer.style.right = "0px";
+  drawer.style.width = "300px";
+  drawer.style.height = "100%";
+  drawer.style.transition = "right 0.3s ease-in-out";
+  drawer.style.zIndex = "1001";
+}
+
+/**
+ * Radix portals and theme tokens: prefer `#extension-portal-root` inside the
+ * overlay shadow tree when present; otherwise the light-DOM host (staging).
+ */
+export function getExtensionOverlayPortalContainer(): HTMLElement | undefined {
+  if (typeof document === "undefined") {
+    return undefined;
+  }
+  const host = document.getElementById("extension-overlay-root");
+  if (!host) {
+    return undefined;
+  }
+  const shadow = host.shadowRoot;
+  if (shadow) {
+    return shadow.getElementById("extension-portal-root") ?? host;
+  }
+  return host;
+}
+
+/**
+ * Creates `#extension-overlay-root` on the document, attaches an open shadow root,
+ * injects extension CSS, and returns `#slide-out-drawer-container` inside the shadow
+ * tree for `createRoot`. Host page CSS cannot pierce the shadow boundary, so
+ * Tailwind + ordering (see `attachExtensionShadowTailwindStyleOrderObserver`) so
+ * in-shadow UI is not overridden by unlayered Emotion/MUI or host-page rules.
+ */
+export function ensureOverlayContainer(shadowCss: string): HTMLDivElement {
+  ensureExtensionOverlayHostReset();
+
+  let host = document.getElementById("extension-overlay-root");
+
+  if (!host) {
+    host = document.createElement("div");
+    host.id = "extension-overlay-root";
+    host.style.position = "fixed";
+    host.style.top = "0";
+    host.style.left = "0";
+    host.style.width = "100%";
+    host.style.height = "100%";
+    host.style.zIndex = "1000";
+    host.style.pointerEvents = "none";
+    document.body.appendChild(host);
+  }
+
+  let shadow = host.shadowRoot;
+
+  if (!shadow) {
+    shadow = host.attachShadow({ mode: "open" });
+
+    const styleEl = document.createElement("style");
+    styleEl.setAttribute(SHADOW_THEME_STYLE_ATTR, "");
+    styleEl.textContent = shadowCss;
+    shadow.appendChild(styleEl);
+
+    let drawer = host.querySelector<HTMLDivElement>(
+      "#slide-out-drawer-container",
+    );
+    if (!drawer) {
+      drawer = document.createElement("div");
+      drawer.id = "slide-out-drawer-container";
+      drawer.className = "mypack-shell";
+    }
+    applySlideOutDrawerChrome(drawer);
+    shadow.appendChild(drawer);
+
+    const portalRoot = document.createElement("div");
+    portalRoot.id = "extension-portal-root";
+    portalRoot.className = "mypack-shell";
+    portalRoot.style.pointerEvents = "auto";
+    shadow.appendChild(portalRoot);
+  } else {
+    const styleEl =
+      shadow.querySelector<HTMLStyleElement>(
+        `style[${SHADOW_THEME_STYLE_ATTR}]`,
+      ) ?? (() => {
+        const el = document.createElement("style");
+        el.setAttribute(SHADOW_THEME_STYLE_ATTR, "");
+        shadow.insertBefore(el, shadow.firstChild);
+        return el;
+      })();
+    styleEl.textContent = shadowCss;
+
+    if (!shadow.getElementById("extension-portal-root")) {
+      const portalRoot = document.createElement("div");
+      portalRoot.id = "extension-portal-root";
+      portalRoot.className = "mypack-shell";
+      portalRoot.style.pointerEvents = "auto";
+      shadow.appendChild(portalRoot);
+    }
+  }
+
+  const drawer = shadow.getElementById(
+    "slide-out-drawer-container",
+  ) as HTMLDivElement | null;
+  if (!drawer) {
+    throw new Error(
+      "ensureOverlayContainer: slide-out-drawer-container missing inside shadow root.",
+    );
+  }
+  return drawer;
+}
+
+/**
+ * Emotion/MUI inject `<style>` nodes into the shadow root. If any sheet is inserted
+ * after our compiled Tailwind `<style>`, unlayered rules can win at equal
+ * specificity. Keep the Tailwind sheet as the last child of the shadow root so it
+ * wins in the cascade; re-apply when new children are added.
+ */
+export function attachExtensionShadowTailwindStyleOrderObserver(
+  shadowRoot: ShadowRoot,
+): () => void {
+  const moveTailwindStyleLast = () => {
+    const el = shadowRoot.querySelector<HTMLStyleElement>(
+      `style[${SHADOW_THEME_STYLE_ATTR}]`,
+    );
+    if (!el) {
+      return;
+    }
+    if (shadowRoot.lastElementChild === el) {
+      return;
+    }
+    shadowRoot.appendChild(el);
+  };
+
+  moveTailwindStyleLast();
+  const observer = new MutationObserver(moveTailwindStyleLast);
+  observer.observe(shadowRoot, { childList: true });
+  return () => observer.disconnect();
+}
+
 /**
  * Waits for the planner/cart table ('#classSearchTable') within the enroll wizard container in an iframe.
  *

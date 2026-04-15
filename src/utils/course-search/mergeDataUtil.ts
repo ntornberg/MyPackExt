@@ -91,6 +91,19 @@ export function mergeData(
       modifiedSections[section.id] = modifiedSection;
     }
     const groupedSections = groupSections(course.sections, modifiedSections);
+    for (const group of Object.values(groupedSections)) {
+      const { lecture, labs } = group;
+      const cleanLabs = (labs ?? []).filter(Boolean) as ModifiedSection[];
+      if (lecture && cleanLabs.length > 0) {
+        lecture.linkedMeetings = cleanLabs.map((lab) => ({
+          dayTime: lab.dayTime,
+          location: lab.location,
+          component: lab.component,
+          classNumber: lab.classNumber,
+          section: lab.section,
+        }));
+      }
+    }
     mergedCourse.sections = groupedSections;
     mergedData[cacheKey] = mergedCourse;
   }

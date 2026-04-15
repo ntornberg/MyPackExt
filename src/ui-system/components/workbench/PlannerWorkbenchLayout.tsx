@@ -1,4 +1,3 @@
-import { Box } from "@mui/material";
 import type { ReactNode } from "react";
 
 type PlannerWorkbenchLayoutProps = {
@@ -13,35 +12,14 @@ export function PlannerWorkbenchLayout({
   preview,
 }: PlannerWorkbenchLayoutProps) {
   return (
-    <Box
-      sx={{
-        width: "100%",
-        p: { xs: 1, md: 2 },
-        display: "grid",
-        gap: 2,
-        alignItems: "start",
-        gridTemplateColumns: {
-          xs: "1fr",
-          xl: "16rem minmax(0, 1fr) 24rem",
-        },
-        gridTemplateAreas: {
-          xs: '"controls" "results" "preview"',
-          xl: '"controls results preview"',
-        },
-      }}
-    >
-      <Box sx={{ minWidth: 0, gridArea: "controls" }}>{controls}</Box>
-      <Box sx={{ minWidth: 0, gridArea: "results" }}>{results}</Box>
-      <Box
-        sx={{
-          minWidth: 0,
-          gridArea: "preview",
-          position: { xl: "sticky" },
-          top: { xl: 0 },
-        }}
-      >
-        {preview}
-      </Box>
-    </Box>
+    <div className="@container min-w-0 w-full">
+      <div className="grid w-full gap-4 p-3 @min-[960px]:grid-cols-[18rem_minmax(0,1fr)_minmax(35rem,40rem)] @min-[960px]:items-start @min-[960px]:p-4">
+        <div className="min-w-0">{controls}</div>
+        <div className="min-w-0">{results}</div>
+        <div className="min-w-0 @min-[960px]:sticky @min-[960px]:top-0">
+          {preview}
+        </div>
+      </div>
+    </div>
   );
 }

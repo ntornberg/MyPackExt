@@ -1,4 +1,4 @@
-import { Box, Chip } from "@mui/material";
+import { Badge } from "@/components/ui/badge";
 
 import type { ModifiedSection } from "../../types/Section";
 
@@ -25,6 +25,13 @@ function getEnrollmentColor(enrollment: string | undefined): string {
   }
 }
 
+const STATUS_CLASSES: Record<string, string> = {
+  Open: "bg-green-700 text-white hover:bg-green-700",
+  Closed: "bg-red-700 text-white hover:bg-red-700",
+  Waitlist: "bg-amber-600 text-white hover:bg-amber-600",
+  Reserved: "bg-sky-700 text-white hover:bg-sky-700",
+};
+
 /**
  * Shows availability status, enrollment tally, and section id as chips.
  *
@@ -34,47 +41,29 @@ function getEnrollmentColor(enrollment: string | undefined): string {
 export const StatusAndSlotsCell = (params: ModifiedSection) => {
   const { availability, enrollment, section } = params;
 
-  let statusColor = "success";
-  if (availability === "Open") {
-    statusColor = "success";
-  } else if (availability === "Closed") {
-    statusColor = "error";
-  } else if (availability === "Waitlist") {
-    statusColor = "warning";
-  } else if (availability === "Reserved") {
-    statusColor = "info";
-  }
+  const statusClass =
+    STATUS_CLASSES[availability ?? ""] ??
+    "bg-muted text-muted-foreground hover:bg-muted";
 
   const chipColor = getEnrollmentColor(enrollment);
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-      <Chip
-        label={availability}
-        color={statusColor as any}
-        size="small"
-        sx={{ fontSize: { xs: "0.7rem", sm: "0.75rem", md: "0.8rem" } }}
-      />
-      <Chip
-        label={enrollment}
-        size="small"
-        sx={{
-          backgroundColor: chipColor,
-          color: "#fff",
-          fontWeight: 600,
-          fontSize: { xs: "0.7rem", sm: "0.75rem", md: "0.8rem" },
-        }}
-      />
-      <Chip
-        label={section}
-        size="small"
-        sx={{
-          backgroundColor: "action.hover",
-          color: "text.primary",
-          fontWeight: 600,
-          fontSize: { xs: "0.7rem", sm: "0.75rem", md: "0.8rem" },
-        }}
-      />
-    </Box>
+    <div className="flex items-center gap-2">
+      <Badge className={`text-[0.7rem] sm:text-[0.75rem] md:text-[0.8rem] ${statusClass}`}>
+        {availability}
+      </Badge>
+      <Badge
+        className="font-semibold text-[0.7rem] text-white sm:text-[0.75rem] md:text-[0.8rem]"
+        style={{ backgroundColor: chipColor }}
+      >
+        {enrollment}
+      </Badge>
+      <Badge
+        variant="secondary"
+        className="font-semibold text-[0.7rem] sm:text-[0.75rem] md:text-[0.8rem]"
+      >
+        {section}
+      </Badge>
+    </div>
   );
 };

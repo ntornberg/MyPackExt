@@ -1,13 +1,13 @@
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  Typography,
-} from "@mui/material";
 import { PieChart } from "@mui/x-charts/PieChart";
 import { useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import type { GradeData } from "../../../types/api.ts";
 import type { ModifiedSection } from "../../types/Section";
@@ -25,28 +25,11 @@ export const GradeDistributionCell = (params: ModifiedSection) => {
 
   if (!gradeData) {
     return (
-      <Typography
-        variant="caption"
-        sx={{
-          color: "text.secondary",
-          fontStyle: "italic",
-          whiteSpace: "nowrap",
-          lineHeight: 1.1,
-          display: "inline-block",
-        }}
-      >
+      <span className="inline-block whitespace-nowrap text-[0.72rem] leading-[1.1] italic text-muted-foreground">
         No grade info
-      </Typography>
+      </span>
     );
   }
-
-  const handleOpen = () => {
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-  };
 
   const {
     a_average,
@@ -71,34 +54,24 @@ export const GradeDistributionCell = (params: ModifiedSection) => {
   return (
     <>
       <Button
-        variant="outlined"
-        size="small"
-        onClick={handleOpen}
-        sx={{
-          textTransform: "none",
-          whiteSpace: "nowrap",
-          lineHeight: 1.05,
-          minWidth: 96,
-          px: 1.25,
-          py: 0.35,
-        }}
+        variant="outline"
+        size="sm"
+        onClick={() => setOpen(true)}
+        className="min-w-[96px] whitespace-nowrap px-[1.25] py-[0.35] text-xs leading-[1.05]"
       >
         View Grades
       </Button>
 
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          Grade Distribution for {course_name}
-          <Typography
-            component="div"
-            variant="subtitle2"
-            color="text.secondary"
-          >
-            Instructor: {instructor_name}
-          </Typography>
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ width: "100%", height: 300 }}>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Grade Distribution for {course_name}</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Instructor: {instructor_name}
+            </p>
+          </DialogHeader>
+
+          <div className="h-[300px] w-full">
             <PieChart
               series={[
                 {
@@ -115,27 +88,21 @@ export const GradeDistributionCell = (params: ModifiedSection) => {
                 },
               }}
             />
-          </Box>
+          </div>
 
-          <Box sx={{ mt: 2 }}>
-            <Typography variant="subtitle1" align="center">
-              Grade Breakdown
-            </Typography>
-            <Box
-              sx={{ display: "flex", justifyContent: "space-around", mt: 1 }}
-            >
+          <div className="mt-2">
+            <p className="text-center text-sm font-medium">Grade Breakdown</p>
+            <div className="mt-1 flex justify-around">
               {pieData.map((grade) => (
-                <Box key={grade.id} sx={{ textAlign: "center" }}>
-                  <Typography sx={{ color: grade.color, fontWeight: "bold" }}>
+                <div key={grade.id} className="text-center">
+                  <p className="font-bold" style={{ color: grade.color }}>
                     {grade.label}
-                  </Typography>
-                  <Typography variant="body2">
-                    {grade.value.toFixed(1)}%
-                  </Typography>
-                </Box>
+                  </p>
+                  <p className="text-sm">{grade.value.toFixed(1)}%</p>
+                </div>
               ))}
-            </Box>
-          </Box>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>

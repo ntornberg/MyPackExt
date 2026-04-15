@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { CALENDAR_COLOR_PINNED_SECTION } from "../../types/Calendar";
 import { parseDayTimeEvent } from "./parseScheduleDayTime";
 
 describe("parseDayTimeEvent", () => {
@@ -10,7 +11,7 @@ describe("parseDayTimeEvent", () => {
       subj: "CSC",
       start: "1:00 PM",
       end: "2:15 PM",
-      color: "#2ECC71",
+      color: CALENDAR_COLOR_PINNED_SECTION,
     });
     expect(parsed?.days).toEqual([
       { day: "Mon", isOverlapping: false },
@@ -31,5 +32,13 @@ describe("parseDayTimeEvent", () => {
   it("returns null for malformed day/time values", () => {
     expect(parseDayTimeEvent("M W 1:00 - 2:00 PM", "BIO")).toBeNull();
     expect(parseDayTimeEvent(undefined, "BIO")).toBeNull();
+  });
+
+  it("parses compact MW and TuTh registrar-style prefixes", () => {
+    const mw = parseDayTimeEvent("MW 12:00 PM - 1:15 PM", "CSC 316");
+    expect(mw?.days.map((d) => d.day)).toEqual(["Mon", "Wed"]);
+
+    const tuth = parseDayTimeEvent("TuTh 1:30 PM - 2:45 PM", "MA 305");
+    expect(tuth?.days.map((d) => d.day)).toEqual(["Tue", "Thu"]);
   });
 });
