@@ -1,4 +1,8 @@
-import { MoonStarIcon, SunMediumIcon } from "lucide-react";
+import {
+  GraduationCapIcon,
+  MoonStarIcon,
+  SunMediumIcon,
+} from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -309,18 +313,21 @@ export default function SlideOutDrawer() {
   );
 
   return (
-    <div className="mypack-shell p-4">
+    <div className="mypack-shell">
       <style>{customDataTableStyles}</style>
 
       <Button
+        type="button"
         onClick={handleDrawerOpen}
-        className="min-w-32 rounded-xl bg-primary px-4 py-2 font-semibold tracking-[0.01em] text-primary-foreground shadow-sm hover:bg-primary/90"
+        size="sm"
+        aria-label="Open Pack Planner"
+        className="h-9 gap-1.5 rounded-full px-3.5 text-[13px] font-semibold tracking-[0.01em] text-primary-foreground shadow-[0_6px_14px_rgba(61,124,255,0.28)] hover:brightness-[1.05]"
         style={{
           backgroundImage: "linear-gradient(180deg, #5d95ff 0%, #3f79ff 100%)",
-          boxShadow: "0 14px 28px rgba(61, 124, 255, 0.3)",
         }}
       >
-        Course Search
+        <GraduationCapIcon className="size-4" strokeWidth={2.25} />
+        Pack Planner
       </Button>
 
       <Dialog

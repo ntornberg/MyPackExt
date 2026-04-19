@@ -53,7 +53,26 @@ async function openDatabase(): Promise<IDBDatabase> {
       try {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
+        // Guard against indexedDB.open() never firing (blocked connection,
+        // browser bugs, etc). Without this the promise hangs forever and
+        // every caller memoizing the result (e.g. CalendarView) stays stuck.
+        const openTimeout = setTimeout(() => {
+          AppLogger.error(
+            `[CACHE DB ERROR] Timed out opening IndexedDB after 3s`,
+          );
+          reject(new Error("IndexedDB open timed out"));
+        }, 3000);
+
+        request.onblocked = () => {
+          AppLogger.error(
+            `[CACHE DB ERROR] IndexedDB open blocked by another connection`,
+          );
+          clearTimeout(openTimeout);
+          reject(new Error("IndexedDB open blocked"));
+        };
+
         request.onerror = (_) => {
+          clearTimeout(openTimeout);
           const error =
             request.error || new Error("Unknown error opening database");
           AppLogger.error(
@@ -72,6 +91,7 @@ async function openDatabase(): Promise<IDBDatabase> {
         };
 
         request.onsuccess = (_) => {
+          clearTimeout(openTimeout);
           const db = request.result;
           AppLogger.info(
             `[CACHE DB SUCCESS] Successfully opened database: ${DB_NAME}`,
@@ -215,6 +235,11 @@ export async function getCacheCategory(
           const keys = getAllKeysRequest.result;
           const result: Record<string, CacheEntry> = {};
           let processed = 0;
+          const finish = () => {
+            if (processed === keys.length) {
+              resolve(Object.keys(result).length > 0 ? result : null);
+            }
+          };
 
           // If no keys, resolve immediately
           if (keys.length === 0) {
@@ -239,12 +264,19 @@ export async function getCacheCategory(
                   };
                 }
                 processed++;
-                if (processed === keys.length) {
-                  resolve(Object.keys(result).length > 0 ? result : null);
-                }
+                finish();
+              };
+              getRequest.onerror = () => {
+                AppLogger.error(
+                  `[CACHE ERROR] Failed to get entry from IndexedDB:`,
+                  getRequest.error,
+                );
+                processed++;
+                finish();
               };
             } else {
               processed++;
+              finish();
             }
           }
         };

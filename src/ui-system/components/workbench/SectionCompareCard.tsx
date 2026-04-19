@@ -247,6 +247,7 @@ export function SectionCompareCard({
         <span className="min-w-0 font-medium text-foreground">{instructor}</span>
         <RmpStarsWithScore
           avgRating={section.professor_rating?.avgRating ?? null}
+          rating={section.professor_rating ?? null}
           starClassName="size-3.5"
         />
       </div>

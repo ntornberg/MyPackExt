@@ -241,13 +241,18 @@ export const loadScheduleEvents = async (): Promise<ScheduleEvent[]> => {
   }
 
   cachedScheduleEventsPromise = (async () => {
-    const courses = await getCacheCategory("scheduleTableData");
-    cachedScheduleEvents = buildEventsFromTableEntries(
-      courses,
-      CALENDAR_COLOR_ENROLLED_CLASS,
-      1,
-    );
-    return cachedScheduleEvents;
+    try {
+      const courses = await getCacheCategory("scheduleTableData");
+      cachedScheduleEvents = buildEventsFromTableEntries(
+        courses,
+        CALENDAR_COLOR_ENROLLED_CLASS,
+        1,
+      );
+      return cachedScheduleEvents;
+    } catch {
+      cachedScheduleEventsPromise = null;
+      return [];
+    }
   })();
 
   return cachedScheduleEventsPromise;
@@ -262,13 +267,18 @@ export const loadCartScheduleEvents = async (): Promise<ScheduleEvent[]> => {
   }
 
   cachedCartEventsPromise = (async () => {
-    const courses = await getCacheCategory("shopCartTableData");
-    cachedCartEvents = buildEventsFromTableEntries(
-      courses,
-      CALENDAR_COLOR_CART_CLASS,
-      10_000,
-    );
-    return cachedCartEvents;
+    try {
+      const courses = await getCacheCategory("shopCartTableData");
+      cachedCartEvents = buildEventsFromTableEntries(
+        courses,
+        CALENDAR_COLOR_CART_CLASS,
+        10_000,
+      );
+      return cachedCartEvents;
+    } catch {
+      cachedCartEventsPromise = null;
+      return [];
+    }
   })();
 
   return cachedCartEventsPromise;
@@ -313,6 +323,21 @@ export const CalendarView = (params: CalendarViewProps) => {
 
     let mounted = true;
 
+    // Safety net: never let the calendar hang on "Loading schedule..." forever.
+    // If the cache reads below take >4s, fall back to rendering the pinned
+    // section only with no background events.
+    const safetyTimeout = window.setTimeout(() => {
+      if (!mounted) return;
+      const merged = mergePinnedDayTimeWithEvents(
+        dayTime,
+        courseData?.code,
+        [],
+        linkedMeetings,
+      );
+      setEventData(markOverlaps(merged));
+      setIsLoading(false);
+    }, 4000);
+
     const fetchData = async () => {
       try {
         const [cartEvents, scheduleEvents] = await Promise.all([
@@ -335,12 +360,14 @@ export const CalendarView = (params: CalendarViewProps) => {
         if (mounted) {
           setIsLoading(false);
         }
+        window.clearTimeout(safetyTimeout);
       }
     };
 
     void fetchData();
     return () => {
       mounted = false;
+      window.clearTimeout(safetyTimeout);
     };
   }, [dayTime, courseData?.code, staticBackgroundEvents, linkedMeetingsKey]);
 

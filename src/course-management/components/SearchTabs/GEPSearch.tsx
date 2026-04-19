@@ -49,7 +49,34 @@ interface AutocompletesProps {
 
 const TERM_OPTIONS = Object.keys(TermIdByName);
 
-const SUBJECT_OPTIONS = Object.keys(GEP_COURSES);
+type GepSubjectCode = keyof typeof GEP_COURSES;
+
+const GEP_SUBJECTS: { code: GepSubjectCode; label: string }[] = [
+  { code: "FAD", label: "Foundations of American Democracy" },
+  { code: "GLOBAL", label: "Global Knowledge" },
+  { code: "HES", label: "Health and Exercise Studies" },
+  { code: "HUM", label: "Humanities" },
+  { code: "INTERDISC", label: "Interdisciplinary Perspectives" },
+  { code: "MATH", label: "Mathematical Sciences" },
+  { code: "NATSCI", label: "Natural Sciences" },
+  { code: "SOCSCI", label: "Social Sciences" },
+  { code: "USDIV", label: "U.S. Diversity" },
+  { code: "USDEI", label: "U.S. Diversity, Equity, and Inclusion" },
+  { code: "VPA", label: "Visual and Performing Arts" },
+];
+
+const SUBJECT_OPTIONS = GEP_SUBJECTS.map((subject) => subject.label);
+
+function findGepSubject(value: string | null) {
+  if (!value) {
+    return null;
+  }
+  return (
+    GEP_SUBJECTS.find(
+      (subject) => subject.code === value || subject.label === value,
+    ) ?? null
+  );
+}
 
 const MemoizedAutocompletes: React.FC<AutocompletesProps> = React.memo(
   ({ selectedTerm, searchSubject, setGepSearchTabData, portalContainer }) => {
@@ -72,7 +99,7 @@ const MemoizedAutocompletes: React.FC<AutocompletesProps> = React.memo(
           <FieldLabel htmlFor="subject_selector">GEP Subject</FieldLabel>
           <PlannerFilterCombobox
             items={SUBJECT_OPTIONS}
-            value={searchSubject}
+            value={findGepSubject(searchSubject)?.label ?? searchSubject}
             onValueChange={(value) =>
               setGepSearchTabData("searchSubject", value)
             }
@@ -261,7 +288,10 @@ export default function GEPSearch({
     instructorFilter,
     scheduleFitOnly,
   } = gepSearchData;
-  const isSearchDisabled = !selectedTerm || !searchSubject;
+  const selectedSubject = findGepSubject(searchSubject);
+  const selectedSubjectCode = selectedSubject?.code ?? null;
+  const selectedSubjectLabel = selectedSubject?.label ?? searchSubject;
+  const isSearchDisabled = !selectedTerm || !selectedSubjectCode;
   const portalContainer = useOverlayPortalContainer();
   const scheduleBackground = useScheduleBackgroundEvents();
 
@@ -290,7 +320,8 @@ export default function GEPSearch({
     void logEvent("gep_search_clicked", {
       tab: "gep_search",
       term: selectedTerm ?? "unknown",
-      subject: searchSubject ?? "unknown",
+      subject: selectedSubjectLabel ?? "unknown",
+      subject_code: selectedSubjectCode ?? "unknown",
     });
     setExpandedGroups({});
     onPreviewSectionChange(null);
@@ -303,13 +334,13 @@ export default function GEPSearch({
     });
     AppLogger.info("Course search clicked with:", {
       selectedTerm,
-      searchSubject,
+      searchSubject: selectedSubjectLabel,
+      searchSubjectCode: selectedSubjectCode,
     });
 
     try {
-      if (searchSubject && selectedTerm) {
-        const courseInfo =
-          GEP_COURSES[searchSubject as keyof typeof GEP_COURSES];
+      if (selectedSubjectCode && selectedTerm) {
+        const courseInfo = GEP_COURSES[selectedSubjectCode];
         if (courseInfo) {
           const coursesResult = Object.entries(courseInfo).map(
             ([course_title, course_info_val]) => {
@@ -330,7 +361,7 @@ export default function GEPSearch({
 
           setGepSearchTabData({
             courses: coursesResult,
-            progressLabel: `Processing ${coursesResult.length} GEP courses for ${searchSubject}`,
+            progressLabel: `Processing ${coursesResult.length} GEP courses for ${selectedSubjectLabel ?? selectedSubjectCode}`,
           });
 
           const courseDataResult = await fetchGEPCourseData(
@@ -359,7 +390,8 @@ export default function GEPSearch({
     }
   }, [
     onPreviewSectionChange,
-    searchSubject,
+    selectedSubjectCode,
+    selectedSubjectLabel,
     selectedTerm,
     setGepSearchTabData,
   ]);
@@ -482,7 +514,7 @@ export default function GEPSearch({
           <Button
             onClick={courseSearch}
             disabled={isSearchDisabled}
-            className="w-full font-semibold"
+            className="w-full origin-center font-semibold motion-safe:duration-150 motion-safe:ease-out motion-safe:hover:scale-[1.01] motion-safe:active:scale-[1.04] active:!translate-y-0"
           >
             Search
           </Button>
@@ -500,7 +532,7 @@ export default function GEPSearch({
           </Field>
         </div>
         {!isLoaded ? (
-          <div className="mt-4 flex justify-center">
+          <div className="mt-4 flex w-full justify-center">
             <CircularProgressWithLabel
               value={progress}
               label={progressLabel || ""}

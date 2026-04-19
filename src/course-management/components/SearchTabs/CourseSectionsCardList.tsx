@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import {
+  PaginationControls,
+  usePagination,
+} from "../../../ui-system/components/shared/PaginationControls";
 import { SectionCompareCard } from "../../../ui-system/components/workbench/SectionCompareCard";
 import { SectionCompareList } from "../../../ui-system/components/workbench/SectionCompareList";
 import {
@@ -103,6 +107,17 @@ export function CourseSectionsCardList({
     labClassByRowId,
     scheduleBackground,
   ]);
+  const paginationResetKey = [
+    rowKeyPrefix,
+    instructorFilter ?? "",
+    scheduleFitOnly ? "1" : "0",
+  ].join("|");
+  const {
+    page,
+    pageCount,
+    setPage,
+    slice: paginatedRows,
+  } = usePagination(filteredRows, 10, paginationResetKey);
 
   const handleRowPreview = useCallback(
     (group: GroupedRow, labClassOverride?: string | null) => {
@@ -124,41 +139,48 @@ export function CourseSectionsCardList({
   );
 
   return (
-    <SectionCompareList
-      isEmpty={filteredRows.length === 0}
-      emptyMessage="No sections match the current filters for this course."
-    >
-      {filteredRows.map((row) => {
-        const lec = row.lecture;
-        if (!lec) {
-          return null;
-        }
-        const labs = (row.labs ?? []).filter(Boolean) as ModifiedSection[];
-        const multiLab = labs.length > 1;
-        const pick =
-          labClassByRowId[row.uniqueRowId] ?? defaultLabClassForGroup(row);
-        const selectedId = previewIdForGroupedRow(row, pick);
+    <div className="flex flex-col gap-3">
+      <SectionCompareList
+        isEmpty={filteredRows.length === 0}
+        emptyMessage="No sections match the current filters for this course."
+      >
+        {paginatedRows.map((row) => {
+          const lec = row.lecture;
+          if (!lec) {
+            return null;
+          }
+          const labs = (row.labs ?? []).filter(Boolean) as ModifiedSection[];
+          const multiLab = labs.length > 1;
+          const pick =
+            labClassByRowId[row.uniqueRowId] ?? defaultLabClassForGroup(row);
+          const selectedId = previewIdForGroupedRow(row, pick);
 
-        return (
-          <SectionCompareCard
-            key={row.uniqueRowId}
-            section={lec}
-            isSelected={selectedId === selectedPreviewId}
-            onSelect={() => handleRowPreview(row)}
-            selectedLabClassNumber={
-              multiLab && pick !== undefined ? pick : undefined
-            }
-            onLabClassChange={(classNbr) => {
-              setLabClassByRowId((prev) => ({
-                ...prev,
-                [row.uniqueRowId]: classNbr,
-              }));
-              handleRowPreview(row, classNbr);
-            }}
-            addToCartSlot={<ToCartGroupedSectionCell {...row} />}
-          />
-        );
-      })}
-    </SectionCompareList>
+          return (
+            <SectionCompareCard
+              key={row.uniqueRowId}
+              section={lec}
+              isSelected={selectedId === selectedPreviewId}
+              onSelect={() => handleRowPreview(row)}
+              selectedLabClassNumber={
+                multiLab && pick !== undefined ? pick : undefined
+              }
+              onLabClassChange={(classNbr) => {
+                setLabClassByRowId((prev) => ({
+                  ...prev,
+                  [row.uniqueRowId]: classNbr,
+                }));
+                handleRowPreview(row, classNbr);
+              }}
+              addToCartSlot={<ToCartGroupedSectionCell {...row} />}
+            />
+          );
+        })}
+      </SectionCompareList>
+      <PaginationControls
+        page={page}
+        pageCount={pageCount}
+        onPageChange={setPage}
+      />
+    </div>
   );
 }

@@ -41,11 +41,14 @@ export function ensureExtensionCell(
   cell.className = "mypack-extension-cell";
   cell.colSpan = row.cells.length;
   Object.assign(cell.style, {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))",
-    gap: ".75rem",
-    padding: 0,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "stretch",
+    justifyContent: "flex-start",
+    gap: ".5rem",
+    padding: ".25rem",
     whiteSpace: "normal",
+    verticalAlign: "top",
   });
 
   row.appendChild(cell);
@@ -176,13 +179,19 @@ export function rewriteCssAssetUrlsForExtension(css: string): string {
 }
 
 function applySlideOutDrawerChrome(drawer: HTMLDivElement) {
-  drawer.style.position = "absolute";
-  drawer.style.top = "0";
-  drawer.style.right = "0px";
-  drawer.style.width = "300px";
-  drawer.style.height = "100%";
-  drawer.style.transition = "right 0.3s ease-in-out";
+  // Compact, non-intrusive launcher pinned to the bottom-right corner of the
+  // viewport. Previously this was a full-height 300px-wide column that covered
+  // the right edge of the MyPack UI.
+  drawer.style.position = "fixed";
+  drawer.style.bottom = "20px";
+  drawer.style.right = "20px";
+  drawer.style.top = "auto";
+  drawer.style.left = "auto";
+  drawer.style.width = "auto";
+  drawer.style.height = "auto";
+  drawer.style.transition = "opacity 0.2s ease, transform 0.2s ease";
   drawer.style.zIndex = "1001";
+  drawer.style.pointerEvents = "auto";
 }
 
 /**

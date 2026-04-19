@@ -97,19 +97,25 @@ function extractPlannerCourseInfo(classDetailRow: Element): Course {
 }
 
 /**
- * Adds a descriptive cell to the planner header row with course and instructor info.
+ * Adds a descriptive cell to the planner header row with course and instructor
+ * info. Tagged with `mypack-course-info-cell` so the master hide toggle can
+ * collapse it alongside the extension data cell.
  *
  * @param courseHeaderRow The header row preceding the class details row
  * @param course Parsed course info
  */
 function addCourseInfoCell(courseHeaderRow: Element | null, course: Course) {
   if (!courseHeaderRow) return;
-  const headerCell = document.createElement("td");
+  const doc = courseHeaderRow.ownerDocument ?? document;
+  const headerCell = doc.createElement("td");
+  headerCell.className = "mypack-course-info-cell";
   if (!course.instructor) {
-    headerCell.innerText = "No course information available.";
+    headerCell.textContent = "No course information available.";
   } else {
     const [last, first] = course.instructor.split(",");
-    headerCell.innerText = `Course information for ${course.abr} with ${first ? first.trim() : ""} ${last ? last.trim() : ""}`;
+    headerCell.textContent = `Course information for ${course.abr} with ${
+      first ? first.trim() : ""
+    } ${last ? last.trim() : ""}`.replace(/\s+/g, " ");
   }
   courseHeaderRow.appendChild(headerCell);
 }
@@ -214,6 +220,154 @@ export async function scrapePlanner(
 
 // --- Style Helpers ---
 
+const EXT_HIDDEN_CLASS = "mypack-ext-hidden";
+const EXT_HIDDEN_STORAGE_KEY = "mypack.extensionInfoHidden";
+const EXT_TOGGLE_ID = "mypack-extension-master-toggle";
+
+/**
+ * Inline overrides we apply so the MyPack dialog sizes to its content (including
+ * the extension column) instead of jQuery UI's fixed inline width. Using
+ * `fit-content` lets the dialog naturally shrink when the extension cell is
+ * hidden, and the `max-width` cap keeps it from growing past the viewport.
+ *
+ * Each entry is `[cssProperty, value, priority]` so we can apply `!important`
+ * — jQuery UI also writes inline styles on these elements and without the
+ * priority flag our values lose the cascade.
+ */
+type InlineStyleEntry = [string, string, "important" | ""];
+
+const DIALOG_WIDE_PARENT_STYLES: InlineStyleEntry[] = [
+  ["width", "fit-content", "important"],
+  ["max-width", "min(1100px, 95vw)", "important"],
+  ["min-width", "0", "important"],
+  ["left", "50%", "important"],
+  ["transform", "translateX(-50%)", "important"],
+  ["overflow-x", "visible", ""],
+  ["position", "relative", ""],
+];
+
+const DIALOG_WIDE_INNER_STYLES: InlineStyleEntry[] = [
+  ["width", "fit-content", "important"],
+  ["max-width", "min(1100px, 95vw)", "important"],
+  ["min-width", "0", "important"],
+  ["left", "50%", "important"],
+  ["transform", "translateX(-50%)", "important"],
+  ["overflow-x", "visible", ""],
+];
+
+const DIALOG_WIDTH_PROPERTY_KEYS = [
+  "width",
+  "max-width",
+  "min-width",
+  "left",
+  "transform",
+  "overflow-x",
+  "position",
+];
+
+function readExtensionInfoHiddenPreference(): boolean {
+  try {
+    return window.localStorage.getItem(EXT_HIDDEN_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeExtensionInfoHiddenPreference(hidden: boolean): void {
+  try {
+    window.localStorage.setItem(EXT_HIDDEN_STORAGE_KEY, hidden ? "1" : "0");
+  } catch {
+    // Storage can be denied (private browsing, quota); failing soft is fine.
+  }
+}
+
+function clearStyleKeys(el: HTMLElement, keys: string[]): void {
+  for (const key of keys) {
+    el.style.removeProperty(key);
+  }
+}
+
+function applyInlineStyles(
+  el: HTMLElement,
+  entries: InlineStyleEntry[],
+): void {
+  for (const [prop, value, priority] of entries) {
+    el.style.setProperty(prop, value, priority);
+  }
+}
+
+function applyDialogWidthPreference(
+  hidden: boolean,
+  dialogParent: HTMLElement | null,
+  dialogInner: HTMLElement | null,
+): void {
+  if (dialogParent) {
+    if (hidden) {
+      clearStyleKeys(dialogParent, DIALOG_WIDTH_PROPERTY_KEYS);
+    } else {
+      applyInlineStyles(dialogParent, DIALOG_WIDE_PARENT_STYLES);
+    }
+  }
+  if (dialogInner) {
+    if (hidden) {
+      clearStyleKeys(dialogInner, DIALOG_WIDTH_PROPERTY_KEYS);
+    } else {
+      applyInlineStyles(dialogInner, DIALOG_WIDE_INNER_STYLES);
+    }
+  }
+}
+
+function setMasterToggleAppearance(
+  button: HTMLButtonElement,
+  hidden: boolean,
+): void {
+  button.setAttribute("aria-pressed", hidden ? "true" : "false");
+  const label = hidden
+    ? "Show extension info panel"
+    : "Hide extension info panel";
+  button.setAttribute("aria-label", label);
+  button.title = label;
+  button.textContent = hidden ? "Show course info" : "Hide course info";
+}
+
+function ensureMasterToggle(
+  iframeDoc: Document,
+  dialogParent: HTMLElement | null,
+  dialogInner: HTMLElement | null,
+): void {
+  if (!dialogInner) return;
+  let button = iframeDoc.getElementById(
+    EXT_TOGGLE_ID,
+  ) as HTMLButtonElement | null;
+  if (!button) {
+    button = iframeDoc.createElement("button");
+    button.id = EXT_TOGGLE_ID;
+    button.type = "button";
+    button.className = "mypack-ext-master-toggle";
+    // Insert at the top of the dialog body so the toggle is visible without
+    // scrolling, and so sticky positioning keeps it pinned while scrolling.
+    if (dialogInner.firstChild) {
+      dialogInner.insertBefore(button, dialogInner.firstChild);
+    } else {
+      dialogInner.appendChild(button);
+    }
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const wasHidden =
+        iframeDoc.documentElement.classList.contains(EXT_HIDDEN_CLASS);
+      const next = !wasHidden;
+      iframeDoc.documentElement.classList.toggle(EXT_HIDDEN_CLASS, next);
+      writeExtensionInfoHiddenPreference(next);
+      applyDialogWidthPreference(next, dialogParent, dialogInner);
+      setMasterToggleAppearance(button as HTMLButtonElement, next);
+    });
+  }
+  const initiallyHidden =
+    iframeDoc.documentElement.classList.contains(EXT_HIDDEN_CLASS);
+  setMasterToggleAppearance(button, initiallyHidden);
+}
+
 /**
  * Applies CSS to target iframes so extension content displays with proper layout and visibility.
  * Ensures dialog containers are flexed and button panes stick to bottom.
@@ -243,18 +397,39 @@ export async function applyIframeStyles(
       left: 50% !important;
       transform: translateX(-50%);
       max-height: 85vh !important;
-      width: 90vw !important;
-      max-width: 1400px !important;
+      width: fit-content !important;
+      max-width: min(1100px, 95vw) !important;
+      min-width: 0 !important;
       overflow: auto;
+    }
+    /*
+     * jQuery UI's title bar uses white-space: nowrap, so a long offering title
+     * forces the whole dialog to be at least that wide — which is why dead
+     * space reappears when course info is hidden. Let the title wrap so the
+     * dialog can fit-content down to the actual table + extension cell width.
+     */
+    .ui-dialog.cust-ui-dialog .ui-dialog-titlebar {
+      min-width: 0 !important;
+      max-width: 100% !important;
+    }
+    .ui-dialog.cust-ui-dialog .ui-dialog-title {
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: clip !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
     }
     td.mypack-extension-cell{
     position: relative;
-    overflow: hidden;
-    display: grid;
-    grid-template-columns: repeat(auto-fill,minmax(260px,1fr));
-    gap: .75rem;
-    padding: 0;
-    width: 100%;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .375rem;
+    padding: .25rem;
+    width: 260px;
+    max-width: 260px;
+    vertical-align: top;
     box-sizing: border-box;
   }
      #classSearchTable{
@@ -267,7 +442,50 @@ td.mypack-extension-cell {
   overflow: visible !important;
 }
 .mypack-extension-cell > * {
+  flex: 0 0 auto !important;
   min-height: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  box-sizing: border-box;
+}
+td.mypack-course-info-cell {
+  white-space: normal;
+}
+html.${EXT_HIDDEN_CLASS} td.mypack-extension-cell,
+html.${EXT_HIDDEN_CLASS} td.mypack-course-info-cell {
+  display: none !important;
+}
+.mypack-ext-master-toggle {
+  position: sticky;
+  top: 4px;
+  float: right;
+  clear: both;
+  z-index: 5;
+  margin: 4px 8px 4px 8px;
+  appearance: none;
+  border: 1px solid rgba(79, 70, 229, 0.45);
+  background: #eef2ff;
+  color: #312e81;
+  font: 600 11px/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+.mypack-ext-master-toggle:hover {
+  background: #e0e7ff;
+  border-color: rgba(79, 70, 229, 0.7);
+}
+.mypack-ext-master-toggle[aria-pressed="true"] {
+  background: #fee2e2;
+  border-color: rgba(220, 38, 38, 0.55);
+  color: #7f1d1d;
+}
+.mypack-ext-master-toggle:focus-visible {
+  outline: 2px solid rgba(79, 70, 229, 0.65);
+  outline-offset: 1px;
 }
   .ui-dialog-buttonpane {
   position: static !important;
@@ -278,24 +496,25 @@ td.mypack-extension-cell {
 }
   `;
     iframeDoc.head.appendChild(style);
-    if (dialog_parent) {
-      Object.assign((dialog_parent as HTMLElement).style, {
-        width: "90vw",
-        maxWidth: "1400px",
-        left: "50%",
-        transform: "translateX(-50%)",
-        overflowX: "visible",
-        position: "relative",
-      });
-    }
+
+    // Sync the hidden-state class to the persisted preference before
+    // applying width overrides, so the dialog either stays at its original
+    // width or snaps to the wide layout as appropriate.
+    const hidden = readExtensionInfoHiddenPreference();
+    iframeDoc.documentElement.classList.toggle(EXT_HIDDEN_CLASS, hidden);
+
+    applyDialogWidthPreference(
+      hidden,
+      (dialog_parent as HTMLElement) ?? null,
+      (dialog_inner as HTMLElement) ?? null,
+    );
+    ensureMasterToggle(
+      iframeDoc,
+      (dialog_parent as HTMLElement) ?? null,
+      (dialog_inner as HTMLElement) ?? null,
+    );
+
     if (dialog_inner) {
-      Object.assign((dialog_inner as HTMLElement).style, {
-        width: "90vw",
-        maxWidth: "1400px",
-        left: "50%",
-        transform: "translateX(-50%)",
-        overflowX: "visible",
-      });
       await applyFlexDialogLayout(
         dialog_parent as HTMLElement,
         dialog_inner as HTMLElement,

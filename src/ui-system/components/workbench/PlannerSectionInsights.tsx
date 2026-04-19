@@ -1,8 +1,9 @@
 import { useMemo, useSyncExternalStore } from "react";
-import { StarIcon } from "lucide-react";
+import { InfoIcon, StarIcon } from "lucide-react";
 
 import type { GradeData, MatchedRateMyProf } from "../../../types/api";
 import { cn } from "@/lib/utils";
+import { buildRateMyProfessorUrl } from "@/utils/rateMyProfessor";
 
 /** Matches `StatusAndSlotsCell` seat chip heat so staging and preview rail stay consistent. */
 export function seatTallyHeatBackground(enrollment: string | undefined): string {
@@ -40,6 +41,7 @@ const GRADE_DISTRIBUTION_COLORS = [
   "#ea580c",
   "#b91c1c",
 ] as const;
+const RMP_LINK_TOOLTIP = "Click for link to Rate My Professor";
 
 /** Letter-grade shares (0–100) derived from API averages; total may be 0. */
 export function gradeDistributionPercents(
@@ -224,13 +226,50 @@ function StarRow({
   );
 }
 
+function ProfessorNameLink({
+  name,
+  profileUrl,
+  className,
+}: {
+  name: string;
+  profileUrl: string;
+  className?: string;
+}) {
+  return (
+    <a
+      href={profileUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn("inline-flex items-center gap-1 underline-offset-2 hover:underline", className)}
+      title={RMP_LINK_TOOLTIP}
+      aria-label={RMP_LINK_TOOLTIP}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        window.open(profileUrl, "_blank", "noopener,noreferrer");
+      }}
+    >
+      <span className="truncate">{name}</span>
+      <span
+        aria-hidden
+        title={RMP_LINK_TOOLTIP}
+        className="inline-flex size-3 shrink-0 items-center justify-center rounded-full border border-muted-foreground/40 text-muted-foreground/85"
+      >
+        <InfoIcon className="size-2" />
+      </span>
+    </a>
+  );
+}
+
 /** Lucide star row + numeric score for section list rows (staging, compact layouts). */
 export function RmpStarsWithScore({
   avgRating,
+  rating,
   starClassName = "size-3.5",
   className,
 }: {
   avgRating: number | null | undefined;
+  rating?: MatchedRateMyProf | null;
   starClassName?: string;
   className?: string;
 }) {
@@ -240,7 +279,9 @@ export function RmpStarsWithScore({
     );
   }
 
-  return (
+  const profileUrl = rating ? buildRateMyProfessorUrl(rating) : null;
+
+  const content = (
     <div
       className={cn(
         "inline-flex max-w-full flex-wrap items-center gap-1.5 align-middle",
@@ -255,6 +296,24 @@ export function RmpStarsWithScore({
       <span className="whitespace-nowrap text-xs text-muted-foreground">/ 5</span>
     </div>
   );
+
+  if (!profileUrl) {
+    return content;
+  }
+
+  return (
+    <a
+      href={profileUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex rounded-sm underline-offset-2 hover:underline"
+      title={RMP_LINK_TOOLTIP}
+      aria-label={RMP_LINK_TOOLTIP}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {content}
+    </a>
+  );
 }
 
 export function ProfessorRatingSummary({
@@ -268,6 +327,8 @@ export function ProfessorRatingSummary({
 }) {
   const value = rating.avgRating;
   const hasNumeric = value != null && !Number.isNaN(value);
+  const profileUrl = buildRateMyProfessorUrl(rating);
+  const professorName = rating.master_name?.trim() || "Staff";
 
   if (variant === "compact") {
     return (
@@ -286,9 +347,15 @@ export function ProfessorRatingSummary({
         ) : (
           <p className="text-xs text-muted-foreground">No Rate My Professor data for this section.</p>
         )}
-        <p className="truncate text-sm font-semibold text-foreground">
-          {rating.master_name?.trim() || "Staff"}
-        </p>
+        {profileUrl ? (
+          <ProfessorNameLink
+            name={professorName}
+            profileUrl={profileUrl}
+            className="max-w-full truncate text-sm font-semibold text-foreground"
+          />
+        ) : (
+          <p className="truncate text-sm font-semibold text-foreground">{professorName}</p>
+        )}
         {rating.department ? (
           <p className="truncate text-[11px] text-muted-foreground">{rating.department}</p>
         ) : null}
@@ -317,7 +384,15 @@ export function ProfessorRatingSummary({
         <span className="text-xs text-muted-foreground">/ 5.0</span>
       </div>
       {rating.master_name ? (
-        <p className="text-xs text-muted-foreground">{rating.master_name}</p>
+        profileUrl ? (
+          <ProfessorNameLink
+            name={rating.master_name}
+            profileUrl={profileUrl}
+            className="text-xs text-muted-foreground"
+          />
+        ) : (
+          <p className="text-xs text-muted-foreground">{rating.master_name}</p>
+        )
       ) : null}
       {rating.department ? (
         <p className="text-[11px] text-muted-foreground/90">{rating.department}</p>

@@ -14,7 +14,7 @@ export function CircularProgressWithLabel({
   const offset = circumference - (value / 100) * circumference;
 
   return (
-    <div className="inline-flex flex-col items-center gap-2">
+    <div className="flex w-full flex-col items-center justify-center gap-2 text-center">
       <div className="relative inline-flex items-center justify-center">
         <svg width={44} height={44} className="-rotate-90">
           {/* Track */}
@@ -46,7 +46,7 @@ export function CircularProgressWithLabel({
         </span>
       </div>
       {label && (
-        <p className="max-w-[200px] text-center text-xs text-muted-foreground">
+        <p className="max-w-[200px] text-xs text-muted-foreground">
           {label}
         </p>
       )}

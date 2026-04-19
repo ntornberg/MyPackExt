@@ -538,7 +538,7 @@ export default function PlanSearch({
           <Button
             onClick={planSearch}
             disabled={isSearchDisabled}
-            className="w-full font-semibold"
+            className="w-full origin-center font-semibold motion-safe:duration-150 motion-safe:ease-out motion-safe:hover:scale-[1.01] motion-safe:active:scale-[1.04] active:!translate-y-0"
           >
             Search
           </Button>
@@ -556,7 +556,7 @@ export default function PlanSearch({
           </Field>
         </FieldGroup>
         {!planSearchData.isLoaded ? (
-          <div className="mt-4">
+          <div className="mt-4 flex w-full justify-center">
             <CircularProgressWithLabel
               value={planSearchData.progress}
               label={planSearchData.progressLabel || ""}
