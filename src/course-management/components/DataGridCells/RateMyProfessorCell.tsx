@@ -1,6 +1,7 @@
 import { StarIcon } from "lucide-react";
 
 import type { ModifiedSection } from "../../types/Section";
+import { buildRateMyProfessorUrl } from "@/utils/rateMyProfessor";
 
 function StarRating({ value, max = 5 }: { value: number; max?: number }) {
   return (
@@ -43,8 +44,9 @@ export const RateMyProfessorCell = (params: ModifiedSection) => {
   }
 
   const rating = professor_rating.avgRating;
+  const profileUrl = buildRateMyProfessorUrl(professor_rating);
 
-  return (
+  const content = (
     <div className="flex min-h-[28px] flex-wrap items-center gap-[0.75]">
       <StarRating value={rating} />
       <span className="text-sm font-semibold leading-[1.2] tabular-nums">
@@ -52,5 +54,22 @@ export const RateMyProfessorCell = (params: ModifiedSection) => {
       </span>
       <span className="text-xs leading-[1.2] text-muted-foreground">/ 5</span>
     </div>
+  );
+
+  if (!profileUrl) {
+    return content;
+  }
+
+  return (
+    <a
+      href={profileUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center rounded-sm underline-offset-2 hover:underline"
+      title="Open Rate My Professors profile"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {content}
+    </a>
   );
 };

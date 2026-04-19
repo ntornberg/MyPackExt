@@ -78,7 +78,7 @@ export function PlannerPreviewRail({
       <CardContent className="flex min-w-0 flex-col gap-4 p-3 sm:p-4">
         {selectedPreview ? (
           <div className="min-w-0 rounded-xl border border-border bg-background/55 p-3 sm:p-4">
-            <div className="w-full max-w-full min-w-0 overflow-x-auto overflow-y-hidden rounded-xl border border-border bg-background/40 p-1.5 [-webkit-overflow-scrolling:touch]">
+            <div className="w-full max-w-full min-w-0 overflow-x-auto overflow-y-hidden [-webkit-overflow-scrolling:touch]">
               <CalendarView
                 plannerPreview
                 dayTime={selectedSection?.dayTime}
@@ -117,7 +117,7 @@ export function PlannerPreviewRail({
                   : "Live context from your current schedule."}
               </p>
             </div>
-            <div className="w-full max-w-full min-w-0 overflow-x-auto overflow-y-hidden rounded-2xl border border-border bg-background/40 p-1.5 [-webkit-overflow-scrolling:touch]">
+            <div className="w-full max-w-full min-w-0 overflow-x-auto overflow-y-hidden [-webkit-overflow-scrolling:touch]">
               <CalendarView
                 plannerPreview
                 dayTime={selectedSection?.dayTime}

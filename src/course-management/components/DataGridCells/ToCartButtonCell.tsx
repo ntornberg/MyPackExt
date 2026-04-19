@@ -1,5 +1,5 @@
 import { AlertCircle, CheckCircle2, ChevronDown, ShoppingCartIcon } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,12 @@ import { cn } from "@/lib/utils";
 import { AppLogger } from "../../../utils/logger";
 import { submitAddSectionToCart } from "../../services/submitAddSectionToCart";
 import type { GroupedSections, ModifiedSection } from "../../types/Section";
+
+const cartButtonClassName =
+  "pointer-events-auto shrink-0 gap-2 rounded-lg border border-primary/35 bg-gradient-to-b from-primary via-primary to-primary/88 px-3.5 font-semibold text-primary-foreground shadow-sm transition-[transform,filter,box-shadow,border-color] duration-150 hover:border-primary/55 hover:brightness-[1.03] hover:shadow-md active:scale-[1.03]";
+
+const disabledCartButtonClassName =
+  "pointer-events-auto shrink-0 gap-2 rounded-lg border border-primary/20 bg-primary/50 px-3.5 font-semibold text-primary-foreground opacity-50";
 
 /**
  * Shared local toast feedback component. Absolute positioned relative to wrapper.
@@ -23,17 +29,17 @@ function ToastFeedback({
 }) {
   if (!open) return null;
   return (
-    <div className="absolute bottom-full right-0 z-[1000] mb-2 animate-in fade-in slide-in-from-bottom-2">
+    <div className="pointer-events-none absolute bottom-full left-1/2 z-[1000] mb-2 flex w-max max-w-[min(280px,calc(100vw-2rem))] -translate-x-1/2 animate-in justify-center fade-in slide-in-from-bottom-2">
       <Alert
         variant={severity === "error" ? "destructive" : "default"}
         className={cn(
-          "flex w-auto items-center gap-2 whitespace-nowrap bg-popover px-3 py-2 shadow-lg",
+          "flex items-center justify-center gap-2 rounded-lg border bg-popover px-3 py-2 text-center shadow-lg",
           severity === "error" ? "text-destructive" : "text-green-500",
         )}
       >
         {severity === "success" && <CheckCircle2 className="size-4" />}
         {severity === "error" && <AlertCircle className="size-4" />}
-        <AlertTitle className="mb-0 text-xs text-foreground">
+        <AlertTitle className="mb-0 text-center text-xs leading-snug text-foreground">
           {message || "Course added to cart"}
         </AlertTitle>
       </Alert>
@@ -62,7 +68,7 @@ export const ToCartButtonCell = (
         variant="default"
         size="sm"
         disabled
-        className="pointer-events-auto shrink-0 gap-2 rounded-lg border-0 bg-primary/50 px-3.5 font-semibold text-primary-foreground opacity-50"
+        className={disabledCartButtonClassName}
       >
         <ShoppingCartIcon className="size-4 opacity-95" strokeWidth={2.25} />
         Add to cart
@@ -96,7 +102,7 @@ export const ToCartButtonCell = (
           e.stopPropagation();
           void handleAddToCart();
         }}
-        className="pointer-events-auto shrink-0 gap-2 rounded-lg border-0 bg-gradient-to-b from-primary via-primary to-primary/88 px-3.5 font-semibold text-primary-foreground transition-[transform,filter] hover:brightness-[1.03] active:translate-y-px"
+        className={cartButtonClassName}
       >
         <ShoppingCartIcon className="size-4 opacity-95" strokeWidth={2.25} />
         Add to cart
@@ -121,7 +127,6 @@ function ToCartLectureWithLabAccordion({
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [severity, setSeverity] = useState<"success" | "error">("success");
-  const anchorRef = useRef<HTMLDivElement>(null);
 
   const showFeedback = (data: { ok: boolean; message: string }) => {
     setMessage(data.message);
@@ -148,7 +153,7 @@ function ToCartLectureWithLabAccordion({
         variant="default"
         size="sm"
         disabled
-        className="pointer-events-auto shrink-0 gap-2 rounded-lg border-0 bg-primary/50 px-3.5 font-semibold text-primary-foreground opacity-50"
+        className={disabledCartButtonClassName}
       >
         <ShoppingCartIcon className="size-4 opacity-95" strokeWidth={2.25} />
         Add to cart
@@ -157,11 +162,7 @@ function ToCartLectureWithLabAccordion({
   }
 
   return (
-    <div
-      ref={anchorRef}
-      className="relative flex min-w-[196px] flex-col gap-1"
-      onClick={(e) => e.stopPropagation()}
-    >
+    <div className="relative flex min-w-[196px] flex-col gap-1" onClick={(e) => e.stopPropagation()}>
       <div className="flex flex-row flex-wrap items-center gap-1">
         <Button
           type="button"
@@ -171,7 +172,7 @@ function ToCartLectureWithLabAccordion({
             e.stopPropagation();
             void handleAddToCart();
           }}
-          className="pointer-events-auto shrink-0 gap-2 rounded-lg border-0 bg-gradient-to-b from-primary via-primary to-primary/88 px-3.5 font-semibold text-primary-foreground transition-[transform,filter] hover:brightness-[1.03] active:translate-y-px"
+          className={cartButtonClassName}
         >
           <ShoppingCartIcon className="size-4 opacity-95" strokeWidth={2.25} />
           Add to cart

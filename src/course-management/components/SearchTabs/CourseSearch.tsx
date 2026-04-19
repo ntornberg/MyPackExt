@@ -21,6 +21,10 @@ import { logEvent } from "../../../analytics/ga4";
 import { DEPT_COURSES } from "../../../degree-planning/DialogAutoCompleteKeys/CourseSearch/department_courses.typed";
 import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
 import { CircularProgressWithLabel } from "../../../ui-system/components/shared/CircularProgressWithLabel.tsx";
+import {
+  PaginationControls,
+  usePagination,
+} from "../../../ui-system/components/shared/PaginationControls";
 import { PlannerFilterCombobox } from "../../../ui-system/components/workbench/PlannerFilterCombobox";
 import { PlannerWorkbenchLayout } from "../../../ui-system/components/workbench/PlannerWorkbenchLayout";
 import { SectionCompareCard } from "../../../ui-system/components/workbench/SectionCompareCard";
@@ -404,6 +408,19 @@ export default function CourseSearch({
     : hasSearched
       ? "No courses found for this search."
       : "Select a term, subject, and course above to search.";
+  const paginationResetKey = [
+    resultsCacheKey ?? "no-results",
+    courseSearchData.instructorFilter ?? "",
+    courseSearchData.scheduleFitOnly ? "1" : "0",
+  ].join("|");
+  const {
+    page: resultsPage,
+    pageCount: resultsPageCount,
+    setPage: setResultsPage,
+    slice: paginatedTableRows,
+    sliceEnd: paginatedResultsEnd,
+    sliceStart: paginatedResultsStart,
+  } = usePagination(filteredTableRows, 10, paginationResetKey);
 
   const handleRowPreview = useCallback(
     (group: GroupedRow, labClassOverride?: string | null) => {
@@ -536,7 +553,7 @@ export default function CourseSearch({
           <Button
             onClick={() => void courseSearch()}
             disabled={isSearchDisabled}
-            className="w-full font-semibold"
+            className="w-full origin-center font-semibold motion-safe:duration-150 motion-safe:ease-out motion-safe:hover:scale-[1.01] motion-safe:active:scale-[1.04] active:!translate-y-0"
           >
             <SearchIcon data-icon="inline-start" />
             Search
@@ -544,7 +561,7 @@ export default function CourseSearch({
         </FieldGroup>
 
         {isLoading ? (
-          <div className="mt-4">
+          <div className="mt-4 flex w-full justify-center">
             <CircularProgressWithLabel value={progress} label={progressLabel} />
           </div>
         ) : null}
@@ -563,7 +580,7 @@ export default function CourseSearch({
 
   const sectionCompareItems = useMemo(
     () =>
-      filteredTableRows.map((row) => {
+      paginatedTableRows.map((row) => {
         const lec = row.lecture;
         if (!lec) {
           return null;
@@ -596,9 +613,9 @@ export default function CourseSearch({
         );
       }),
     [
-      filteredTableRows,
       handleRowPreview,
       labClassByRowId,
+      paginatedTableRows,
       selectedPreviewId,
     ],
   );
@@ -612,18 +629,27 @@ export default function CourseSearch({
         <CardTitle className="text-base">Sections</CardTitle>
         <CardDescription>
           {hasSectionResults
-            ? `${filteredTableRows.length} result${filteredTableRows.length === 1 ? "" : "s"}${filteredTableRows.length !== tableRows.length ? ` (of ${tableRows.length})` : ""}.`
+            ? filteredTableRows.length > 0
+              ? `Showing ${paginatedResultsStart + 1}-${paginatedResultsEnd} of ${filteredTableRows.length} result${filteredTableRows.length === 1 ? "" : "s"}${filteredTableRows.length !== tableRows.length ? ` (filtered from ${tableRows.length})` : ""}.`
+              : "0 results match the current filters."
             : undefined}
         </CardDescription>
       </CardHeader>
       <CardContent className="min-w-0 space-y-3">
         {hasSectionResults ? (
-          <SectionCompareList
-            isEmpty={filteredTableRows.length === 0}
-            emptyMessage="No sections match the current filters. Adjust instructor or schedule-fit options."
-          >
-            {sectionCompareItems}
-          </SectionCompareList>
+          <>
+            <SectionCompareList
+              isEmpty={filteredTableRows.length === 0}
+              emptyMessage="No sections match the current filters. Adjust instructor or schedule-fit options."
+            >
+              {sectionCompareItems}
+            </SectionCompareList>
+            <PaginationControls
+              page={resultsPage}
+              pageCount={resultsPageCount}
+              onPageChange={setResultsPage}
+            />
+          </>
         ) : (
           <div className="flex flex-col items-center gap-2 py-12 text-center">
             <div className="rounded-full bg-primary/10 p-4 text-primary">
