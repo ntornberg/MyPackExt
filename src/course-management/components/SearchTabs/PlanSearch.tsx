@@ -31,6 +31,7 @@ import { CircularProgressWithLabel } from "../../../ui-system/components/shared/
 import { PlannerFilterCombobox } from "../../../ui-system/components/workbench/PlannerFilterCombobox";
 import { PlannerWorkbenchLayout } from "../../../ui-system/components/workbench/PlannerWorkbenchLayout";
 import { formatSectionInstructors } from "../../../ui-system/components/workbench/sectionCompareUtils";
+import { SectionDensityToggle } from "../../../ui-system/components/workbench/SectionDensityToggle";
 import { useOverlayPortalContainer } from "../../../ui-system/components/workbench/useOverlayPortalContainer";
 import { useScheduleBackgroundEvents } from "../../../ui-system/components/workbench/useScheduleBackgroundEvents";
 import { type PlannerSectionPreview } from "../../../ui-system/components/workbench/workbenchTypes";
@@ -51,6 +52,7 @@ const CourseDisplay = memo(
     scheduleBackground,
     instructorFilter,
     scheduleFitOnly,
+    compactSections,
   }: {
     course: RequiredCourse;
     openCourses: Record<string, MergedCourseData> | null;
@@ -59,6 +61,7 @@ const CourseDisplay = memo(
     scheduleBackground: ScheduleEvent[];
     instructorFilter: string | null;
     scheduleFitOnly: boolean;
+    compactSections: boolean;
   }) => {
     const courseData =
       openCourses?.[`${course.course_abr} ${course.catalog_num}`];
@@ -83,6 +86,7 @@ const CourseDisplay = memo(
             instructorFilter={instructorFilter}
             scheduleFitOnly={scheduleFitOnly}
             scheduleBackground={scheduleBackground}
+            compact={compactSections}
           />
         </div>
       );
@@ -402,6 +406,7 @@ export default function PlanSearch({
                       scheduleBackground={scheduleBackground}
                       instructorFilter={planSearchData.instructorFilter}
                       scheduleFitOnly={planSearchData.scheduleFitOnly}
+                      compactSections={planSearchData.compactSections}
                     />
                   </div>
 
@@ -419,6 +424,7 @@ export default function PlanSearch({
     onPreviewSectionChange,
     planSearchData.instructorFilter,
     planSearchData.openCourses,
+    planSearchData.compactSections,
     planSearchData.scheduleFitOnly,
     requirementEntries,
     requirementListKey,
@@ -569,11 +575,21 @@ export default function PlanSearch({
 
   const resultsPanel = (
     <Card className="min-w-0 overflow-visible bg-card/80 shadow-sm">
-      <CardHeader className="gap-1">
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          Comparison Workspace
+      <CardHeader className="gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Comparison Workspace
+            </div>
+            <CardTitle className="text-base">Requirement Tree</CardTitle>
+          </div>
+          <SectionDensityToggle
+            value={planSearchData.compactSections ? "compact" : "comfy"}
+            onValueChange={(value) =>
+              setPlanSearchTabData("compactSections", value === "compact")
+            }
+          />
         </div>
-        <CardTitle className="text-base">Requirement Tree</CardTitle>
       </CardHeader>
       <CardContent>
         {hasPlanSearchRun && requirementsList ? (

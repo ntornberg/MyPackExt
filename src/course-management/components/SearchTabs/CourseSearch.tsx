@@ -36,6 +36,7 @@ import {
   previewIdForGroupedRow,
   sectionMatchesInstructorFilter,
 } from "../../../ui-system/components/workbench/sectionCompareUtils";
+import { SectionDensityToggle } from "../../../ui-system/components/workbench/SectionDensityToggle";
 import { useOverlayPortalContainer } from "../../../ui-system/components/workbench/useOverlayPortalContainer";
 import { useScheduleBackgroundEvents } from "../../../ui-system/components/workbench/useScheduleBackgroundEvents";
 import {
@@ -412,6 +413,7 @@ export default function CourseSearch({
     resultsCacheKey ?? "no-results",
     courseSearchData.instructorFilter ?? "",
     courseSearchData.scheduleFitOnly ? "1" : "0",
+    courseSearchData.compactSections ? "1" : "0",
   ].join("|");
   const {
     page: resultsPage,
@@ -420,7 +422,11 @@ export default function CourseSearch({
     slice: paginatedTableRows,
     sliceEnd: paginatedResultsEnd,
     sliceStart: paginatedResultsStart,
-  } = usePagination(filteredTableRows, 10, paginationResetKey);
+  } = usePagination(
+    filteredTableRows,
+    courseSearchData.compactSections ? 20 : 10,
+    paginationResetKey,
+  );
 
   const handleRowPreview = useCallback(
     (group: GroupedRow, labClassOverride?: string | null) => {
@@ -598,6 +604,7 @@ export default function CourseSearch({
             section={displaySection}
             isSelected={selectedId === selectedPreviewId}
             onSelect={() => handleRowPreview(row)}
+            compact={courseSearchData.compactSections}
             selectedLabClassNumber={
               multiLab && pick !== undefined ? pick : undefined
             }
@@ -608,11 +615,17 @@ export default function CourseSearch({
               }));
               handleRowPreview(row, classNbr);
             }}
-            addToCartSlot={<ToCartGroupedSectionCell {...row} />}
+            addToCartSlot={
+              <ToCartGroupedSectionCell
+                {...row}
+                selectedLabClassNumber={pick}
+              />
+            }
           />
         );
       }),
     [
+      courseSearchData.compactSections,
       handleRowPreview,
       labClassByRowId,
       paginatedTableRows,
@@ -622,18 +635,28 @@ export default function CourseSearch({
 
   const resultsPanel = (
     <Card className="min-w-0 overflow-visible bg-card/80 shadow-sm">
-      <CardHeader className="gap-1 pb-3">
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          Comparison workspace
+      <CardHeader className="gap-3 pb-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Comparison workspace
+            </div>
+            <CardTitle className="text-base">Sections</CardTitle>
+            <CardDescription>
+              {hasSectionResults
+                ? filteredTableRows.length > 0
+                  ? `Showing ${paginatedResultsStart + 1}-${paginatedResultsEnd} of ${filteredTableRows.length} result${filteredTableRows.length === 1 ? "" : "s"}${filteredTableRows.length !== tableRows.length ? ` (filtered from ${tableRows.length})` : ""}.`
+                  : "0 results match the current filters."
+                : undefined}
+            </CardDescription>
+          </div>
+          <SectionDensityToggle
+            value={courseSearchData.compactSections ? "compact" : "comfy"}
+            onValueChange={(value) =>
+              setCourseSearchTabData("compactSections", value === "compact")
+            }
+          />
         </div>
-        <CardTitle className="text-base">Sections</CardTitle>
-        <CardDescription>
-          {hasSectionResults
-            ? filteredTableRows.length > 0
-              ? `Showing ${paginatedResultsStart + 1}-${paginatedResultsEnd} of ${filteredTableRows.length} result${filteredTableRows.length === 1 ? "" : "s"}${filteredTableRows.length !== tableRows.length ? ` (filtered from ${tableRows.length})` : ""}.`
-              : "0 results match the current filters."
-            : undefined}
-        </CardDescription>
       </CardHeader>
       <CardContent className="min-w-0 space-y-3">
         {hasSectionResults ? (

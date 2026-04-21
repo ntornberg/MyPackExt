@@ -1,7 +1,7 @@
 // Keeps track of search info when switching dialog tabs.
-import type { MergedCourseData } from "../../types/Section";
-import type { RequiredCourse } from "../../../degree-planning/types/Plans.ts";
 import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
+import type { RequiredCourse } from "../../../degree-planning/types/Plans.ts";
+import type { MergedCourseData } from "../../types/Section";
 
 export type TabUpdater<T> = (
   keyOrPatch: keyof T | Partial<T>,
@@ -27,6 +27,7 @@ export type CourseSearchData = {
   };
   instructorFilter: string | null;
   scheduleFitOnly: boolean;
+  compactSections: boolean;
 };
 export const CourseSearchDataInitialState: CourseSearchData = {
   selectedTerm: DEFAULT_TERM,
@@ -35,6 +36,7 @@ export const CourseSearchDataInitialState: CourseSearchData = {
   selectedCourseInfo: { code: null, catalogNum: null, title: null, id: "" },
   instructorFilter: null,
   scheduleFitOnly: false,
+  compactSections: false,
 };
 export type PlanSearchData = {
   selectedMajor: string | null;
@@ -51,6 +53,7 @@ export type PlanSearchData = {
   hideNoSections: boolean | undefined;
   instructorFilter: string | null;
   scheduleFitOnly: boolean;
+  compactSections: boolean;
 };
 export const PlanSearchDataInitialState: PlanSearchData = {
   selectedMajor: null,
@@ -67,6 +70,7 @@ export const PlanSearchDataInitialState: PlanSearchData = {
   hideNoSections: true,
   instructorFilter: null,
   scheduleFitOnly: false,
+  compactSections: false,
 };
 
 export type GEPData = {
@@ -80,6 +84,7 @@ export type GEPData = {
   hideNoSections: boolean;
   instructorFilter: string | null;
   scheduleFitOnly: boolean;
+  compactSections: boolean;
 };
 export const GEPDataInitialState: GEPData = {
   selectedTerm: DEFAULT_TERM,
@@ -92,4 +97,5 @@ export const GEPDataInitialState: GEPData = {
   hideNoSections: true,
   instructorFilter: null,
   scheduleFitOnly: false,
+  compactSections: false,
 };

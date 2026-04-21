@@ -1,5 +1,4 @@
 import { ChevronRightIcon, ChevronDownIcon } from "lucide-react";
-
 import React, { useMemo, useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,7 @@ import { CircularProgressWithLabel } from "../../../ui-system/components/shared/
 import { PlannerFilterCombobox } from "../../../ui-system/components/workbench/PlannerFilterCombobox";
 import { PlannerWorkbenchLayout } from "../../../ui-system/components/workbench/PlannerWorkbenchLayout";
 import { formatSectionInstructors } from "../../../ui-system/components/workbench/sectionCompareUtils";
+import { SectionDensityToggle } from "../../../ui-system/components/workbench/SectionDensityToggle";
 import { useOverlayPortalContainer } from "../../../ui-system/components/workbench/useOverlayPortalContainer";
 import { useScheduleBackgroundEvents } from "../../../ui-system/components/workbench/useScheduleBackgroundEvents";
 import { type PlannerSectionPreview } from "../../../ui-system/components/workbench/workbenchTypes";
@@ -132,6 +132,7 @@ interface GEPTreeProps {
   scheduleBackground: ScheduleEvent[];
   instructorFilter: string | null;
   scheduleFitOnly: boolean;
+  compactSections: boolean;
 }
 
 const CourseSections = React.memo(
@@ -143,6 +144,7 @@ const CourseSections = React.memo(
     scheduleBackground,
     instructorFilter,
     scheduleFitOnly,
+    compactSections,
   }: {
     courseDataEntry: MergedCourseData | undefined;
     courseKeyPrefix: string;
@@ -151,6 +153,7 @@ const CourseSections = React.memo(
     scheduleBackground: ScheduleEvent[];
     instructorFilter: string | null;
     scheduleFitOnly: boolean;
+    compactSections: boolean;
   }) => {
     const sections = useMemo(() => {
       if (courseDataEntry?.sections) {
@@ -171,6 +174,7 @@ const CourseSections = React.memo(
             instructorFilter={instructorFilter}
             scheduleFitOnly={scheduleFitOnly}
             scheduleBackground={scheduleBackground}
+            compact={compactSections}
           />
         </div>
       );
@@ -195,12 +199,14 @@ const GEPTree: React.FC<GEPTreeProps> = React.memo(
     scheduleBackground,
     instructorFilter,
     scheduleFitOnly,
+    compactSections,
   }) => {
     return (
       <div className="w-full">
         {groupedData.map((group) => (
           <React.Fragment key={`group-fragment-${group.courseAbr}`}>
-            <div
+            <button
+              type="button"
               key={`group-${group.courseAbr}`}
               className="flex cursor-pointer items-center justify-between border-b border-border px-2 py-[1.25] hover:bg-foreground/[0.06]"
               onClick={() => onToggleGroup(group.courseAbr)}
@@ -213,7 +219,7 @@ const GEPTree: React.FC<GEPTreeProps> = React.memo(
               ) : (
                 <ChevronRightIcon className="size-4 text-muted-foreground" />
               )}
-            </div>
+            </button>
             {expandedGroups[group.courseAbr] &&
               group.courses.map((course) => {
                 const courseKey = `${course.course_abr} ${course.catalog_num}`;
@@ -230,7 +236,9 @@ const GEPTree: React.FC<GEPTreeProps> = React.memo(
                         <p className="text-sm font-medium text-foreground">
                           {`${course.course_descrip} (${course.course_abr} ${parseInt(course.catalog_num, 10)})`}
                         </p>
-                        <p className="text-xs text-muted-foreground">{courseKey}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {courseKey}
+                        </p>
                       </div>
                       <CourseSections
                         courseDataEntry={courseDataEntry}
@@ -240,6 +248,7 @@ const GEPTree: React.FC<GEPTreeProps> = React.memo(
                         scheduleBackground={scheduleBackground}
                         instructorFilter={instructorFilter}
                         scheduleFitOnly={scheduleFitOnly}
+                        compactSections={compactSections}
                       />
                     </div>
                   </div>
@@ -287,6 +296,7 @@ export default function GEPSearch({
     progressLabel,
     instructorFilter,
     scheduleFitOnly,
+    compactSections,
   } = gepSearchData;
   const selectedSubject = findGepSubject(searchSubject);
   const selectedSubjectCode = selectedSubject?.code ?? null;
@@ -545,11 +555,21 @@ export default function GEPSearch({
 
   const resultsPanel = (
     <Card className="min-w-0 overflow-visible bg-card/80 shadow-sm">
-      <CardHeader className="gap-1">
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          Comparison Workspace
+      <CardHeader className="gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Comparison Workspace
+            </div>
+            <CardTitle className="text-base">Requirement Matches</CardTitle>
+          </div>
+          <SectionDensityToggle
+            value={compactSections ? "compact" : "comfy"}
+            onValueChange={(value) =>
+              setGepSearchTabData("compactSections", value === "compact")
+            }
+          />
         </div>
-        <CardTitle className="text-base">Requirement Matches</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoaded && groupedAndFilteredCourses.length > 0 ? (
@@ -563,6 +583,7 @@ export default function GEPSearch({
             scheduleBackground={scheduleBackground}
             instructorFilter={instructorFilter}
             scheduleFitOnly={scheduleFitOnly}
+            compactSections={compactSections}
           />
         ) : (
           <p className="p-4 text-center text-base text-muted-foreground">

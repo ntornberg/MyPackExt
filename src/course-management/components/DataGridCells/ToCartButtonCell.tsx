@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, ChevronDown, ShoppingCartIcon } from "lucide-react";
+import { AlertCircle, CheckCircle2, ShoppingCartIcon } from "lucide-react";
 import { useState } from "react";
 
 import { Alert, AlertTitle } from "@/components/ui/alert";
@@ -113,157 +113,51 @@ export const ToCartButtonCell = (
 };
 
 /**
- * Several labs for one lecture: labs live in a collapsed list.
+ * Picks which lab to pair with the lecture for add-to-cart.
+ * Prefers the externally controlled selection (from the card's lab picker);
+ * falls back to the first lab when none is chosen yet.
  */
-function ToCartLectureWithLabAccordion({
-  lecture,
-  labs,
-}: {
-  lecture: ModifiedSection;
-  labs: ModifiedSection[];
-}) {
-  const [labPanelOpen, setLabPanelOpen] = useState(false);
-  const [selectedLab, setSelectedLab] = useState<ModifiedSection>(() => labs[0]!);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const [message, setMessage] = useState("");
-  const [severity, setSeverity] = useState<"success" | "error">("success");
-
-  const showFeedback = (data: { ok: boolean; message: string }) => {
-    setMessage(data.message);
-    setSeverity(data.ok ? "success" : "error");
-    setFeedbackOpen(true);
-    setTimeout(() => setFeedbackOpen(false), 3000);
-  };
-
-  const handleAddToCart = async () => {
-    const data = await submitAddSectionToCart(selectedLab, lecture);
-    showFeedback(data);
-  };
-
-  const canAddLecture =
-    lecture.course_id &&
-    lecture.classNumber &&
-    lecture.catalog_nbr &&
-    lecture.courseData;
-
-  if (!canAddLecture) {
-    return (
-      <Button
-        type="button"
-        variant="default"
-        size="sm"
-        disabled
-        className={disabledCartButtonClassName}
-      >
-        <ShoppingCartIcon className="size-4 opacity-95" strokeWidth={2.25} />
-        Add to cart
-      </Button>
+function resolveSelectedLab(
+  labs: ModifiedSection[],
+  selectedLabClassNumber: string | undefined,
+): ModifiedSection {
+  if (selectedLabClassNumber) {
+    const match = labs.find(
+      (lab) => String(lab.classNumber) === String(selectedLabClassNumber),
     );
+    if (match) {
+      return match;
+    }
   }
-
-  return (
-    <div className="relative flex min-w-[196px] flex-col gap-1" onClick={(e) => e.stopPropagation()}>
-      <div className="flex flex-row flex-wrap items-center gap-1">
-        <Button
-          type="button"
-          variant="default"
-          size="sm"
-          onClick={(e: React.MouseEvent) => {
-            e.stopPropagation();
-            void handleAddToCart();
-          }}
-          className={cartButtonClassName}
-        >
-          <ShoppingCartIcon className="size-4 opacity-95" strokeWidth={2.25} />
-          Add to cart
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-expanded={labPanelOpen}
-          aria-label={labPanelOpen ? "Hide lab sections" : "Show lab sections"}
-          onClick={(e: React.MouseEvent) => {
-            e.stopPropagation();
-            setLabPanelOpen((v) => !v);
-          }}
-          className="h-8 w-8 text-secondary-foreground"
-        >
-          <ChevronDown
-            className={cn(
-              "size-4 transition-transform duration-200 ease-in-out",
-              labPanelOpen ? "rotate-180" : "rotate-0",
-            )}
-          />
-        </Button>
-      </div>
-
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={(e: React.MouseEvent) => {
-          e.stopPropagation();
-          setLabPanelOpen((v) => !v);
-        }}
-        className="h-auto justify-start px-2 py-1 text-[0.65rem] font-normal leading-tight text-muted-foreground hover:bg-transparent hover:text-foreground"
-      >
-        Lab #{selectedLab.classNumber} · {selectedLab.dayTime}
-      </Button>
-
-      {labPanelOpen && (
-        <ul className="mt-1 flex max-h-[200px] flex-col overflow-auto rounded-md border border-border bg-muted/30">
-          <div className="px-2 py-1.5 text-[0.62rem] font-semibold leading-tight text-muted-foreground">
-            Lecture sec. {lecture.section} (#{lecture.classNumber}) — choose a lab
-          </div>
-          {labs.map((lab) => {
-            const selected = lab.classNumber === selectedLab.classNumber;
-            return (
-              <button
-                key={lab.id ?? lab.classNumber}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedLab(lab);
-                }}
-                className={cn(
-                  "flex w-full flex-col items-start border-t border-border px-2 py-1.5 text-left transition-colors hover:bg-accent hover:text-accent-foreground",
-                  selected && "bg-accent/80 text-accent-foreground",
-                )}
-              >
-                <div className="text-[0.75rem] font-medium leading-tight">
-                  {lab.component} · Sec {lab.section} · #{lab.classNumber}
-                </div>
-                <div className="text-[0.62rem] text-muted-foreground">
-                  {lab.dayTime} · {lab.location}
-                </div>
-              </button>
-            );
-          })}
-        </ul>
-      )}
-
-      <ToastFeedback open={feedbackOpen} message={message} severity={severity} />
-    </div>
-  );
+  return labs[0]!;
 }
 
+export type ToCartGroupedSectionCellProps = GroupedSections & {
+  /**
+   * Class number of the lab currently selected in the parent card's lab picker.
+   * When provided, the cart submission uses this lab; otherwise the first lab is used.
+   */
+  selectedLabClassNumber?: string;
+};
+
 /**
- * Main course row: adds lecture alone if there are no labs; adds lecture+the only lab
- * in one step when there is exactly one lab; when several labs exist, an accordion-style
- * nested list picks the lab, then **Add to cart** pairs it with the lecture.
+ * Main course row: adds lecture alone if there are no labs, else adds the currently
+ * selected lab paired with its lecture. The lab selection is driven by the parent
+ * card's lab picker (via {@link ToCartGroupedSectionCellProps.selectedLabClassNumber}),
+ * so this cell never renders its own lab dropdown.
  */
-export function ToCartGroupedSectionCell(group: GroupedSections) {
-  const lecture = group.lecture;
+export function ToCartGroupedSectionCell({
+  lecture,
+  labs: rawLabs,
+  selectedLabClassNumber,
+}: ToCartGroupedSectionCellProps) {
   if (!lecture) {
     return null;
   }
-  const labs = (group.labs ?? []).filter(Boolean) as ModifiedSection[];
+  const labs = (rawLabs ?? []).filter(Boolean) as ModifiedSection[];
   if (labs.length === 0) {
     return ToCartButtonCell(lecture);
   }
-  if (labs.length === 1) {
-    return ToCartButtonCell(labs[0]!, lecture);
-  }
-  return <ToCartLectureWithLabAccordion lecture={lecture} labs={labs} />;
+  const selectedLab = resolveSelectedLab(labs, selectedLabClassNumber);
+  return ToCartButtonCell(selectedLab, lecture);
 }
