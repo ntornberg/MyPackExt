@@ -1,37 +1,40 @@
 import { useMemo, useSyncExternalStore } from "react";
+import chroma from "chroma-js";
 import { InfoIcon, StarIcon } from "lucide-react";
 
 import type { GradeData, MatchedRateMyProf } from "../../../types/api";
 import { cn } from "@/lib/utils";
 import { buildRateMyProfessorUrl } from "@/utils/rateMyProfessor";
 
+const ENROLLMENT_HEAT_FALLBACK = "hsl(220, 12%, 42%)";
+const ENROLLMENT_HEAT_SCALE = chroma
+  .scale(["#b91c1c", "#f59e0b", "#16a34a"])
+  .domain([0, 0.4, 1])
+  .mode("lab");
+
 /** Matches `StatusAndSlotsCell` seat chip heat so staging and preview rail stay consistent. */
 export function seatTallyHeatBackground(enrollment: string | undefined): string {
   if (!enrollment) {
-    return "hsl(220, 12%, 42%)";
+    return ENROLLMENT_HEAT_FALLBACK;
   }
+
   const match = enrollment.match(/(\d+)\/(\d+)/);
   if (!match) {
-    return "hsl(220, 12%, 42%)";
+    return ENROLLMENT_HEAT_FALLBACK;
   }
-  const current = Number.parseInt(match[1]!, 10);
-  const max = Number.parseInt(match[2]!, 10);
-  if (Number.isNaN(current) || Number.isNaN(max) || max === 0) {
-    return "hsl(220, 12%, 42%)";
+
+  const enrolled = Number.parseInt(match[1]!, 10);
+  const capacity = Number.parseInt(match[2]!, 10);
+  if (Number.isNaN(enrolled) || Number.isNaN(capacity) || capacity <= 0) {
+    return ENROLLMENT_HEAT_FALLBACK;
   }
-  const ratio = current / max;
-  if (ratio < 0.5) {
-    return "hsl(142, 55%, 32%)";
-  }
-  if (ratio < 0.8) {
-    const hue = Math.round(142 - ((ratio - 0.5) / 0.3) * 87);
-    return `hsl(${hue}, 72%, 36%)`;
-  }
-  if (ratio < 0.98) {
-    const hue = Math.round(55 - ((ratio - 0.8) / 0.18) * 45);
-    return `hsl(${hue}, 78%, 40%)`;
-  }
-  return "hsl(0, 72%, 38%)";
+
+  const openSeatRatio = Math.max(
+    0,
+    Math.min(1, (capacity - enrolled) / capacity),
+  );
+
+  return ENROLLMENT_HEAT_SCALE(openSeatRatio).hex();
 }
 
 const GRADE_DISTRIBUTION_COLORS = [
@@ -306,7 +309,7 @@ export function RmpStarsWithScore({
       href={profileUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex rounded-sm underline-offset-2 hover:underline"
+      className="inline-flex w-fit self-start rounded-sm underline-offset-2 hover:underline"
       title={RMP_LINK_TOOLTIP}
       aria-label={RMP_LINK_TOOLTIP}
       onClick={(e) => e.stopPropagation()}

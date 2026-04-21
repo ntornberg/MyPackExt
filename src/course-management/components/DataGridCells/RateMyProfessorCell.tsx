@@ -65,7 +65,7 @@ export const RateMyProfessorCell = (params: ModifiedSection) => {
       href={profileUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center rounded-sm underline-offset-2 hover:underline"
+      className="inline-flex w-fit items-center self-start rounded-sm underline-offset-2 hover:underline"
       title="Open Rate My Professors profile"
       onClick={(e) => e.stopPropagation()}
     >

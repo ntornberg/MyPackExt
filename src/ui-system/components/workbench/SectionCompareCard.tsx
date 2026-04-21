@@ -1,11 +1,8 @@
-import {
-  BookMarkedIcon,
-  ChevronDown,
-  Clock,
-  MapPinIcon,
-} from "lucide-react";
+import { BookMarkedIcon, ChevronDown, Clock, MapPinIcon } from "lucide-react";
 import {
   type KeyboardEvent,
+  memo,
+  type PointerEvent,
   type ReactNode,
   useEffect,
   useMemo,
@@ -14,6 +11,11 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import type { ModifiedSection } from "../../../course-management/types/Section";
@@ -26,15 +28,45 @@ import {
   RmpStarsWithScore,
   seatTallyHeatBackground,
 } from "./PlannerSectionInsights";
-import { formatSectionInstructors, gradeDistributionTotal } from "./sectionCompareUtils";
+import {
+  formatSectionInstructors,
+  gpaBandChipColor,
+  gradeDistributionTotal,
+} from "./sectionCompareUtils";
 
 /** Nested controls use stopPropagation; role="group" is for structure only. */
 /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
 
 const CARD_GRADE_PIE_SIZE = 80;
 const CARD_GRADE_PIE_SIZE_EMPTY = 64;
+const COMPACT_GRADE_PIE_SIZE = 72;
 
-function SectionGradeDistributionBlock({ section }: { section: ModifiedSection }) {
+function averageGradeValue(section: ModifiedSection): number | null {
+  const g = section.grade_distribution;
+  if (!g) {
+    return null;
+  }
+  const total = gradeDistributionTotal(g);
+  if (total <= 0) {
+    return null;
+  }
+  return (
+    (g.a_average * 4 +
+      g.b_average * 3 +
+      g.c_average * 2 +
+      g.d_average * 1 +
+      g.f_average * 0) /
+    total
+  );
+}
+
+function SectionGradeDistributionBlock({
+  section,
+  compact = false,
+}: {
+  section: ModifiedSection;
+  compact?: boolean;
+}) {
   const g = section.grade_distribution;
   const total = gradeDistributionTotal(g);
   const chartData = g ?? emptyGradeData;
@@ -46,6 +78,7 @@ function SectionGradeDistributionBlock({ section }: { section: ModifiedSection }
     Number.isFinite(min) &&
     Number.isFinite(max) &&
     (max as number) >= (min as number);
+  const averageGrade = averageGradeValue(section);
 
   const detailRows = useMemo(() => {
     if (!hasSample || !g) {
@@ -55,6 +88,73 @@ function SectionGradeDistributionBlock({ section }: { section: ModifiedSection }
     const filtered = all.filter((r) => r.pct >= 0.05);
     return filtered.length > 0 ? filtered : all;
   }, [g, hasSample]);
+  const topGrade = useMemo(
+    () =>
+      detailRows.reduce<{ label: string; pct: number } | null>(
+        (best, row) => (!best || row.pct > best.pct ? row : best),
+        null,
+      ),
+    [detailRows],
+  );
+
+  if (compact) {
+    if (!hasSample) {
+      return null;
+    }
+    const averageGradeChipColor = gpaBandChipColor(averageGrade ?? 0);
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge
+            className="max-w-full cursor-help gap-1 truncate rounded-lg border-0 px-2 py-1 text-[11px] font-semibold text-primary-foreground shadow-none"
+            style={{ backgroundColor: averageGradeChipColor }}
+          >
+            {averageGrade != null
+              ? `Average grade ${averageGrade.toFixed(2)}`
+              : topGrade
+                ? `Average grade ${topGrade.label}`
+                : "Average grade"}
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent
+          side="top"
+          sideOffset={6}
+          className="max-w-none rounded-xl border border-border bg-card px-3 py-2 text-card-foreground shadow-lg"
+        >
+          <div className="flex items-start gap-3">
+            <GradeDistributionPieChart
+              data={g!}
+              size={COMPACT_GRADE_PIE_SIZE}
+              className="drop-shadow-sm"
+            />
+            <div className="min-w-0 space-y-1">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Average grade
+              </div>
+              <p className="text-sm font-semibold tabular-nums text-foreground">
+                {averageGrade != null
+                  ? averageGrade.toFixed(2)
+                  : topGrade
+                    ? topGrade.label
+                    : "Unavailable"}
+              </p>
+              {hasGpaBand ? (
+                <p className="text-[11px] text-muted-foreground">
+                  Typical GPA range {(min as number).toFixed(2)}-
+                  {(max as number).toFixed(2)}
+                </p>
+              ) : null}
+              <GradeDistributionPercentList
+                rows={detailRows}
+                variant="compact"
+                fractionDigits={1}
+              />
+            </div>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
 
   return (
     <div
@@ -156,6 +256,7 @@ export type SectionCompareCardProps = {
   section: ModifiedSection;
   isSelected: boolean;
   onSelect: () => void;
+  compact?: boolean;
   /** When several linked meetings: controlled active lab class # */
   selectedLabClassNumber?: string;
   onLabClassChange?: (classNbr: string) => void;
@@ -163,24 +264,43 @@ export type SectionCompareCardProps = {
   addToCartSlot: ReactNode;
 };
 
-export function SectionCompareCard({
+function areSectionCompareCardPropsEqual(
+  prev: SectionCompareCardProps,
+  next: SectionCompareCardProps,
+) {
+  return (
+    prev.section === next.section &&
+    prev.isSelected === next.isSelected &&
+    prev.onSelect === next.onSelect &&
+    prev.compact === next.compact &&
+    prev.selectedLabClassNumber === next.selectedLabClassNumber &&
+    prev.onLabClassChange === next.onLabClassChange &&
+    prev.addToCartSlot === next.addToCartSlot
+  );
+}
+
+export const SectionCompareCard = memo(function SectionCompareCard({
   section,
   isSelected,
   onSelect,
+  compact = false,
   selectedLabClassNumber,
   onLabClassChange,
   addToCartSlot,
 }: SectionCompareCardProps) {
-  const linkedLabs = section.linkedMeetings ?? [];
+  const linkedLabs = useMemo(
+    () => section.linkedMeetings ?? [],
+    [section.linkedMeetings],
+  );
   const multiLab = linkedLabs.length > 1;
   const linkedPanelTitle = useMemo(
     () => linkedMeetingsPanelTitle(linkedLabs),
     [linkedLabs],
   );
-  const [labPanelOpen, setLabPanelOpen] = useState(() => multiLab);
+  const [labPanelOpen, setLabPanelOpen] = useState(() => !compact && multiLab);
   useEffect(() => {
-    setLabPanelOpen(linkedLabs.length > 1);
-  }, [section.id, linkedLabs.length]);
+    setLabPanelOpen(!compact && linkedLabs.length > 1);
+  }, [compact, section.id, linkedLabs.length]);
   const activeLabClass =
     multiLab && selectedLabClassNumber
       ? selectedLabClassNumber
@@ -196,12 +316,18 @@ export function SectionCompareCard({
   const courseCode = section.courseData?.code ?? section.course_id ?? "";
   const title = section.courseData?.title ?? "";
   const instructor = formatSectionInstructors(section);
+  const handleSelectPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0 || event.defaultPrevented) {
+      return;
+    }
+    onSelect();
+  };
 
   return (
     <div
       role="option"
       tabIndex={0}
-      onClick={onSelect}
+      onPointerDown={handleSelectPointerDown}
       onKeyDown={(e: KeyboardEvent) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -209,16 +335,33 @@ export function SectionCompareCard({
         }
       }}
       aria-selected={isSelected}
-      className={`cursor-pointer rounded-xl border-2 p-4 text-left transition outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+      className={cn(
+        "cursor-pointer rounded-xl border-2 text-left transition outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        compact ? "p-2.5" : "p-4",
         isSelected
           ? "border-primary bg-primary/[0.12] shadow-sm ring-2 ring-primary/25 dark:border-primary/50 dark:bg-primary/12 dark:shadow-[inset_0_0_0_1px_rgba(79,140,255,0.25)] dark:ring-primary/35"
-          : "border-border bg-card hover:border-primary/40 hover:bg-muted/30 dark:bg-background/40 dark:hover:border-border dark:hover:bg-background/55"
-      }`}
+          : "border-border bg-card hover:border-primary/40 hover:bg-muted/30 dark:bg-background/40 dark:hover:border-border dark:hover:bg-background/55",
+      )}
     >
-      <div className="flex flex-wrap items-start gap-3">
-        <div className="min-w-0 flex-1 space-y-1">
+      <div
+        className={cn(
+          "flex flex-wrap items-start",
+          compact ? "gap-2" : "gap-3",
+        )}
+      >
+        <div
+          className={cn(
+            "min-w-0 flex-1",
+            compact ? "space-y-0.5" : "space-y-1",
+          )}
+        >
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-lg font-semibold text-foreground">
+            <span
+              className={cn(
+                "font-semibold text-foreground",
+                compact ? "text-base" : "text-lg",
+              )}
+            >
               {courseCode}
             </span>
             <Badge
@@ -236,53 +379,89 @@ export function SectionCompareCard({
               Seats {section.enrollment || "—"}
             </Badge>
           </div>
-          {title ? (
+          {!compact && title ? (
             <p className="text-sm text-muted-foreground">{title}</p>
           ) : null}
         </div>
-        <SectionGradeDistributionBlock section={section} />
+        <SectionGradeDistributionBlock section={section} compact={compact} />
       </div>
 
-      <div className="mt-2 flex min-w-0 flex-col gap-1 text-sm">
-        <span className="min-w-0 font-medium text-foreground">{instructor}</span>
+      <div
+        className={cn(
+          "flex min-w-0 flex-col text-sm",
+          compact ? "mt-1 gap-0.5" : "mt-2 gap-1",
+        )}
+      >
+        <span className="min-w-0 font-medium text-foreground">
+          {instructor}
+        </span>
         <RmpStarsWithScore
           avgRating={section.professor_rating?.avgRating ?? null}
           rating={section.professor_rating ?? null}
-          starClassName="size-3.5"
+          starClassName={compact ? "size-3" : "size-3.5"}
         />
       </div>
 
-      <div className="mt-3 flex flex-col gap-1.5 text-sm">
-        <div className="flex items-center gap-2 text-foreground">
-          <BookMarkedIcon
-            className="size-4 shrink-0 text-primary"
-            aria-hidden
-          />
-          <span>
-            Section {section.section} · {section.classNumber}
-            {section.component ? (
-              <>
-                {" "}
-                ·{" "}
-                <span className="text-muted-foreground">
-                  {section.component}
-                </span>
-              </>
-            ) : null}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <MapPinIcon className="size-4 shrink-0 text-primary" aria-hidden />
-          <span>{section.location || "—"}</span>
-        </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Clock className="size-4 shrink-0 text-primary" aria-hidden />
-          <span>{section.dayTime || "—"}</span>
-        </div>
+      <div
+        className={cn(
+          "flex flex-col text-sm",
+          compact ? "mt-1.5 gap-1" : "mt-3 gap-1.5",
+        )}
+      >
+        {compact ? (
+          <div className="flex items-start gap-2 text-muted-foreground">
+            <Clock
+              className="mt-0.5 size-4 shrink-0 text-primary"
+              aria-hidden
+            />
+            <span className="leading-snug">
+              Section {section.section} · {section.classNumber}
+              {section.component ? ` · ${section.component}` : ""}
+              {section.dayTime ? ` · ${section.dayTime}` : ""}
+              {section.location ? ` · ${section.location}` : ""}
+            </span>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2 text-foreground">
+              <BookMarkedIcon
+                className="size-4 shrink-0 text-primary"
+                aria-hidden
+              />
+              <span>
+                Section {section.section} · {section.classNumber}
+                {section.component ? (
+                  <>
+                    {" "}
+                    ·{" "}
+                    <span className="text-muted-foreground">
+                      {section.component}
+                    </span>
+                  </>
+                ) : null}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <MapPinIcon
+                className="size-4 shrink-0 text-primary"
+                aria-hidden
+              />
+              <span>{section.location || "—"}</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Clock className="size-4 shrink-0 text-primary" aria-hidden />
+              <span>{section.dayTime || "—"}</span>
+            </div>
+          </>
+        )}
         {multiLab ? (
           <div
             role="group"
-            className="mt-2 space-y-2 border-l-2 border-primary/50 pl-3"
+            className={cn(
+              "border-l-2 border-primary/50 pl-3",
+              compact ? "mt-1.5 space-y-1.5" : "mt-2 space-y-2",
+            )}
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
           >
@@ -292,7 +471,11 @@ export function SectionCompareCard({
             </Label>
             <button
               type="button"
-              className="flex w-full items-center gap-2 rounded-lg border border-border/60 bg-background/60 py-2 pl-2 pr-2 text-left text-sm text-foreground shadow-sm backdrop-blur-sm transition hover:border-primary/35 hover:bg-background/90 dark:border-white/10 dark:bg-[rgb(12,18,32)]/85 dark:hover:bg-[rgb(14,22,38)]/95"
+              className={cn(
+                "flex w-full items-center gap-2 rounded-lg border border-border/60 bg-background/60 text-left text-sm text-foreground shadow-sm backdrop-blur-sm transition hover:border-primary/35 hover:bg-background/90 dark:border-white/10 dark:bg-[rgb(12,18,32)]/85 dark:hover:bg-[rgb(14,22,38)]/95",
+                compact ? "px-2 py-1.5" : "py-2 pl-2 pr-2",
+              )}
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
                 setLabPanelOpen((o) => !o);
@@ -314,12 +497,23 @@ export function SectionCompareCard({
                 #{activeLab?.classNumber}
               </span>
             </button>
-            <p className="pl-1 text-[11px] leading-snug text-primary/90 dark:text-primary/80">
-              For cart & preview: {activeLab?.component} · {activeLab?.dayTime} ·{" "}
-              {activeLab?.location}
+            <p
+              className={cn(
+                "pl-1 text-[11px] leading-snug text-primary/90 dark:text-primary/80",
+                compact && "line-clamp-2",
+              )}
+            >
+              For cart & preview: {activeLab?.component} · Sec{" "}
+              {activeLab?.section ?? "—"} · #{activeLab?.classNumber} ·{" "}
+              {activeLab?.dayTime} · {activeLab?.location}
             </p>
             {labPanelOpen ? (
-              <div className="flex max-h-52 flex-col gap-1.5 overflow-y-auto rounded-lg border border-border/50 bg-card/40 p-1.5 dark:border-white/[0.08] dark:bg-[rgb(8,14,26)]/60">
+              <div
+                className={cn(
+                  "flex max-h-52 flex-col gap-1.5 overflow-y-auto rounded-lg border border-border/50 bg-card/40 dark:border-white/[0.08] dark:bg-[rgb(8,14,26)]/60",
+                  compact ? "p-1" : "p-1.5",
+                )}
+              >
                 {linkedLabs.map((m) => {
                   const selected =
                     String(m.classNumber) === String(activeLabClass);
@@ -327,6 +521,7 @@ export function SectionCompareCard({
                     <button
                       key={m.classNumber ?? m.component}
                       type="button"
+                      onPointerDown={(e) => e.stopPropagation()}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (m.classNumber != null) {
@@ -334,7 +529,8 @@ export function SectionCompareCard({
                         }
                       }}
                       className={cn(
-                        "flex flex-col items-start rounded-md border px-3 py-2 text-left transition",
+                        "flex flex-col items-start rounded-md border text-left transition",
+                        compact ? "px-2 py-1.5" : "px-3 py-2",
                         "border-transparent bg-transparent hover:border-border hover:bg-primary/[0.06]",
                         selected &&
                           "border-primary/40 bg-primary/[0.12] shadow-[inset_0_0_0_1px_rgba(59,130,246,0.25)] dark:border-primary/50 dark:bg-primary/15",
@@ -357,37 +553,61 @@ export function SectionCompareCard({
           linkedLabs.map((m, i) => (
             <div
               key={`${m.classNumber ?? m.component}-${i}`}
-              className="border-t border-border/50 pt-2"
+              className={cn(
+                "border-t border-border/50",
+                compact ? "pt-1.5" : "pt-2",
+              )}
             >
-              <div className="flex items-center gap-2 text-foreground">
-                <BookMarkedIcon
-                  className="size-4 shrink-0 text-primary"
-                  aria-hidden
-                />
-                <span>
-                  {m.component}
-                  {m.classNumber ? (
-                    <>
-                      {" "}
-                      ·{" "}
-                      <span className="text-muted-foreground">
-                        {m.classNumber}
-                      </span>
-                    </>
-                  ) : null}
-                </span>
-              </div>
-              <div className="mt-1.5 flex items-center gap-2 text-muted-foreground">
-                <MapPinIcon
-                  className="size-4 shrink-0 text-primary"
-                  aria-hidden
-                />
-                <span>{m.location}</span>
-              </div>
-              <div className="mt-1.5 flex items-center gap-2 text-muted-foreground">
-                <Clock className="size-4 shrink-0 text-primary" aria-hidden />
-                <span>{m.dayTime}</span>
-              </div>
+              {compact ? (
+                <div className="flex items-start gap-2 text-muted-foreground">
+                  <Clock
+                    className="mt-0.5 size-4 shrink-0 text-primary"
+                    aria-hidden
+                  />
+                  <span className="leading-snug">
+                    {m.component}
+                    {m.section ? ` · Sec ${m.section}` : ""}
+                    {m.classNumber ? ` · #${m.classNumber}` : ""}
+                    {m.dayTime ? ` · ${m.dayTime}` : ""}
+                    {m.location ? ` · ${m.location}` : ""}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 text-foreground">
+                    <BookMarkedIcon
+                      className="size-4 shrink-0 text-primary"
+                      aria-hidden
+                    />
+                    <span>
+                      {m.component}
+                      {m.classNumber ? (
+                        <>
+                          {" "}
+                          ·{" "}
+                          <span className="text-muted-foreground">
+                            {m.classNumber}
+                          </span>
+                        </>
+                      ) : null}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-2 text-muted-foreground">
+                    <MapPinIcon
+                      className="size-4 shrink-0 text-primary"
+                      aria-hidden
+                    />
+                    <span>{m.location}</span>
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-2 text-muted-foreground">
+                    <Clock
+                      className="size-4 shrink-0 text-primary"
+                      aria-hidden
+                    />
+                    <span>{m.dayTime}</span>
+                  </div>
+                </>
+              )}
             </div>
           ))
         )}
@@ -395,7 +615,11 @@ export function SectionCompareCard({
 
       <div
         role="group"
-        className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-border/60 pt-3"
+        className={cn(
+          "flex flex-wrap items-center justify-end gap-2 border-t border-border/60",
+          compact ? "mt-2 pt-2" : "mt-4 pt-3",
+        )}
+        onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
       >
@@ -403,4 +627,4 @@ export function SectionCompareCard({
       </div>
     </div>
   );
-}
+}, areSectionCompareCardPropsEqual);

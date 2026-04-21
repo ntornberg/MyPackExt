@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   PaginationControls,
@@ -26,6 +26,74 @@ import { ToCartGroupedSectionCell } from "../DataGridCells/ToCartButtonCell";
 
 type GroupedRow = GroupedSections & { uniqueRowId: string };
 
+type CourseSectionCardRowProps = {
+  row: GroupedRow;
+  isSelected: boolean;
+  compact: boolean;
+  selectedLabClassNumber?: string;
+  onSelect: (rowId: string) => void;
+  onLabClassChange: (rowId: string, classNbr: string) => void;
+};
+
+const CourseSectionCardRow = memo(
+  function CourseSectionCardRow({
+    row,
+    isSelected,
+    compact,
+    selectedLabClassNumber,
+    onSelect,
+    onLabClassChange,
+  }: CourseSectionCardRowProps) {
+    const lecture = row.lecture;
+    const labs = useMemo(
+      () => (row.labs ?? []).filter(Boolean) as ModifiedSection[],
+      [row.labs],
+    );
+    const multiLab = labs.length > 1;
+    const handleSelect = useCallback(() => {
+      onSelect(row.uniqueRowId);
+    }, [onSelect, row.uniqueRowId]);
+    const handleLabClassChange = useCallback(
+      (classNbr: string) => {
+        onLabClassChange(row.uniqueRowId, classNbr);
+      },
+      [onLabClassChange, row.uniqueRowId],
+    );
+    const addToCartSlot = useMemo(
+      () => (
+        <ToCartGroupedSectionCell
+          {...row}
+          selectedLabClassNumber={selectedLabClassNumber}
+        />
+      ),
+      [row, selectedLabClassNumber],
+    );
+
+    if (!lecture) {
+      return null;
+    }
+
+    return (
+      <SectionCompareCard
+        section={lecture}
+        isSelected={isSelected}
+        onSelect={handleSelect}
+        compact={compact}
+        selectedLabClassNumber={multiLab ? selectedLabClassNumber : undefined}
+        onLabClassChange={multiLab ? handleLabClassChange : undefined}
+        addToCartSlot={addToCartSlot}
+      />
+    );
+  },
+  (prev, next) =>
+    prev.row === next.row &&
+    prev.isSelected === next.isSelected &&
+    prev.compact === next.compact &&
+    prev.selectedLabClassNumber === next.selectedLabClassNumber &&
+    prev.onSelect === next.onSelect &&
+    prev.onLabClassChange === next.onLabClassChange,
+);
+
 export type CourseSectionsCardListProps = {
   tab: PlannerWorkbenchTab;
   sections: GroupedSections[];
@@ -37,6 +105,7 @@ export type CourseSectionsCardListProps = {
   instructorFilter: string | null;
   scheduleFitOnly: boolean;
   scheduleBackground: ScheduleEvent[];
+  compact?: boolean;
 };
 
 export function CourseSectionsCardList({
@@ -49,6 +118,7 @@ export function CourseSectionsCardList({
   instructorFilter,
   scheduleFitOnly,
   scheduleBackground,
+  compact = false,
 }: CourseSectionsCardListProps) {
   const [labClassByRowId, setLabClassByRowId] = useState<
     Record<string, string>
@@ -111,16 +181,26 @@ export function CourseSectionsCardList({
     rowKeyPrefix,
     instructorFilter ?? "",
     scheduleFitOnly ? "1" : "0",
+    compact ? "1" : "0",
   ].join("|");
   const {
     page,
     pageCount,
     setPage,
     slice: paginatedRows,
-  } = usePagination(filteredRows, 10, paginationResetKey);
+  } = usePagination(filteredRows, compact ? 8 : 4, paginationResetKey);
 
-  const handleRowPreview = useCallback(
-    (group: GroupedRow, labClassOverride?: string | null) => {
+  const processedRowsById = useMemo(
+    () => new Map(processedRows.map((row) => [row.uniqueRowId, row])),
+    [processedRows],
+  );
+
+  const handleRowPreviewById = useCallback(
+    (rowId: string, labClassOverride?: string | null) => {
+      const group = processedRowsById.get(rowId);
+      if (!group) {
+        return;
+      }
       const lec = group.lecture;
       if (!lec) {
         return;
@@ -128,14 +208,31 @@ export function CourseSectionsCardList({
       const pick =
         labClassOverride !== undefined
           ? labClassOverride
-          : labClassByRowId[group.uniqueRowId];
+          : labClassByRowId[rowId];
       const section = groupedSectionForPreview(group, pick);
       if (!section) {
         return;
       }
       onPreviewSectionChange(createSectionPreview(tab, section));
     },
-    [labClassByRowId, onPreviewSectionChange, tab],
+    [labClassByRowId, onPreviewSectionChange, processedRowsById, tab],
+  );
+
+  const handleCardSelect = useCallback(
+    (rowId: string) => {
+      handleRowPreviewById(rowId);
+    },
+    [handleRowPreviewById],
+  );
+
+  const handleCardLabClassChange = useCallback(
+    (rowId: string, classNbr: string) => {
+      setLabClassByRowId((prev) =>
+        prev[rowId] === classNbr ? prev : { ...prev, [rowId]: classNbr },
+      );
+      handleRowPreviewById(rowId, classNbr);
+    },
+    [handleRowPreviewById],
   );
 
   return (
@@ -145,33 +242,19 @@ export function CourseSectionsCardList({
         emptyMessage="No sections match the current filters for this course."
       >
         {paginatedRows.map((row) => {
-          const lec = row.lecture;
-          if (!lec) {
-            return null;
-          }
-          const labs = (row.labs ?? []).filter(Boolean) as ModifiedSection[];
-          const multiLab = labs.length > 1;
           const pick =
             labClassByRowId[row.uniqueRowId] ?? defaultLabClassForGroup(row);
           const selectedId = previewIdForGroupedRow(row, pick);
 
           return (
-            <SectionCompareCard
+            <CourseSectionCardRow
               key={row.uniqueRowId}
-              section={lec}
+              row={row}
               isSelected={selectedId === selectedPreviewId}
-              onSelect={() => handleRowPreview(row)}
-              selectedLabClassNumber={
-                multiLab && pick !== undefined ? pick : undefined
-              }
-              onLabClassChange={(classNbr) => {
-                setLabClassByRowId((prev) => ({
-                  ...prev,
-                  [row.uniqueRowId]: classNbr,
-                }));
-                handleRowPreview(row, classNbr);
-              }}
-              addToCartSlot={<ToCartGroupedSectionCell {...row} />}
+              onSelect={handleCardSelect}
+              compact={compact}
+              selectedLabClassNumber={pick}
+              onLabClassChange={handleCardLabClassChange}
             />
           );
         })}

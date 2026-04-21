@@ -1,8 +1,4 @@
-import {
-  GraduationCapIcon,
-  MoonStarIcon,
-  SunMediumIcon,
-} from "lucide-react";
+import { GraduationCapIcon, MoonStarIcon, SunMediumIcon } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -14,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 import { logEvent } from "../../analytics/ga4";
 import CourseSearch from "../../course-management/components/SearchTabs/CourseSearch";
@@ -113,6 +110,13 @@ const MemoizedPlanSearchTab = React.memo(
       selectedPreviewId={selectedPreviewId}
     />
   ),
+);
+
+const MemoizedPlannerPreviewRail = React.memo(
+  PlannerPreviewRail,
+  (prev, next) =>
+    prev.isOpen === next.isOpen &&
+    prev.selectedPreview?.id === next.selectedPreview?.id,
 );
 
 function mergeCourseSearchData(
@@ -260,56 +264,21 @@ export default function SlideOutDrawer() {
     });
   }, [courseSearchData, gepSearchData, planSearchData, selectedTab]);
 
+  const selectedPreviewId = selectedPreview?.id ?? null;
   const previewRail = useMemo(
     () => (
-      <PlannerPreviewRail
+      <MemoizedPlannerPreviewRail
         selectedPreview={selectedPreview}
         isOpen={drawerOpen}
       />
     ),
     [drawerOpen, selectedPreview],
   );
-
-  const tabContent = useMemo(
-    () => ({
-      courseSearch: (
-        <MemoizedCourseSearchTab
-          setCourseSearchTabData={setCourseSearchTabData}
-          courseSearchData={courseSearchData}
-          onPreviewSectionChange={setSelectedPreview}
-          previewContent={previewRail}
-          selectedPreviewId={selectedPreview?.id ?? null}
-        />
-      ),
-      gepSearch: (
-        <MemoizedGEPSearchTab
-          setGepSearchTabData={setGepSearchTabData}
-          gepSearchData={gepSearchData}
-          onPreviewSectionChange={setSelectedPreview}
-          previewContent={previewRail}
-          selectedPreviewId={selectedPreview?.id ?? null}
-        />
-      ),
-      planSearch: (
-        <MemoizedPlanSearchTab
-          setPlanSearchTabData={setPlanSearchTabData}
-          planSearchData={planSearchData}
-          onPreviewSectionChange={setSelectedPreview}
-          previewContent={previewRail}
-          selectedPreviewId={selectedPreview?.id ?? null}
-        />
-      ),
-    }),
-    [
-      courseSearchData,
-      gepSearchData,
-      planSearchData,
-      previewRail,
-      selectedPreview?.id,
-      setCourseSearchTabData,
-      setGepSearchTabData,
-      setPlanSearchTabData,
-    ],
+  const inactivePreviewRail = useMemo(
+    () => (
+      <MemoizedPlannerPreviewRail selectedPreview={null} isOpen={drawerOpen} />
+    ),
+    [drawerOpen],
   );
 
   return (
@@ -332,6 +301,7 @@ export default function SlideOutDrawer() {
 
       <Dialog
         open={drawerOpen}
+        modal={false}
         onOpenChange={(open) => {
           if (!open) {
             handleDrawerClose();
@@ -351,131 +321,172 @@ export default function SlideOutDrawer() {
           onTouchMoveCapture={(e) => e.stopPropagation()}
           className="mypack-shell flex h-[min(92vh,1040px)] min-h-0 w-[min(96vw,1580px)] max-w-[min(96vw,1580px)] sm:max-w-[min(96vw,1580px)] flex-col gap-0 overflow-hidden rounded-2xl border-2 border-slate-300/90 bg-[linear-gradient(180deg,rgb(251,252,254)_0%,rgb(236,241,249)_100%)] p-0 !text-base text-card-foreground shadow-xl ring-1 ring-slate-900/10 sm:rounded-[28px] dark:border-slate-500/55 dark:bg-[linear-gradient(165deg,rgb(14,22,38)_0%,rgb(8,14,26)_52%,rgb(5,9,17)_100%)] dark:shadow-[0_24px_80px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(148,174,224,0.14)] dark:ring-white/15 [&_[data-slot=card]]:border-2 [&_[data-slot=card]]:border-slate-300/85 [&_[data-slot=card]]:bg-card/85 [&_[data-slot=card]]:shadow-sm [&_[data-slot=card]]:ring-1 [&_[data-slot=card]]:ring-slate-900/10 dark:[&_[data-slot=card]]:border-slate-500/50 dark:[&_[data-slot=card]]:ring-white/10"
         >
-          <DialogTitle className="sr-only">Pack Planner</DialogTitle>
-          <DialogDescription className="sr-only">
-            Use Search to filter sections, pick a row to pin the preview, and
-            compare options with schedule context.
-          </DialogDescription>
+          <TooltipProvider delayDuration={150}>
+            <DialogTitle className="sr-only">Pack Planner</DialogTitle>
+            <DialogDescription className="sr-only">
+              Use Search to filter sections, pick a row to pin the preview, and
+              compare options with schedule context.
+            </DialogDescription>
 
-          <Tabs
-            value={selectedTab}
-            activationMode="manual"
-            onValueChange={(value) => {
-              const next = value as PlannerWorkbenchTab;
-              setSelectedTab(next);
-              persistPlannerSelectedTab(next);
-              setSelectedPreview(null);
-            }}
-            className="flex min-h-0 max-h-full flex-1 flex-col gap-0 overflow-hidden"
-          >
-            <div className="shrink-0 border-b border-border/60 bg-muted/25 px-4 py-4 sm:px-6 sm:py-5 dark:bg-background/40">
-              <div className="mb-3 flex min-h-7 flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-                    Pack Planner
+            <Tabs
+              value={selectedTab}
+              activationMode="manual"
+              onValueChange={(value) => {
+                const next = value as PlannerWorkbenchTab;
+                setSelectedTab(next);
+                persistPlannerSelectedTab(next);
+                setSelectedPreview(null);
+              }}
+              className="flex min-h-0 max-h-full flex-1 flex-col gap-0 overflow-hidden"
+            >
+              <div className="shrink-0 border-b border-border/60 bg-muted/25 px-4 py-4 sm:px-6 sm:py-5 dark:bg-background/40">
+                <div className="mb-3 flex min-h-7 flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+                      Pack Planner
+                    </div>
+                    <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                      Use Search to filter, then pick a row to pin the preview
+                      and compare sections side by side.
+                    </p>
                   </div>
-                  <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                    Use Search to filter, then pick a row to pin the preview and
-                    compare sections side by side.
-                  </p>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  <Button asChild variant="outline" size="sm">
-                    <a href="mailto:nicktornberg12@gmail.com?subject=Pack%20Planner%20Feedback">
-                      Report bug / Feedback
-                    </a>
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon-sm"
-                    onClick={() =>
-                      setThemeMode((current) =>
-                        current === "dark" ? "light" : "dark",
-                      )
-                    }
-                    aria-label={`Switch to ${
-                      themeMode === "dark" ? "light" : "dark"
-                    } mode`}
-                  >
-                    {themeMode === "dark" ? (
-                      <SunMediumIcon />
-                    ) : (
-                      <MoonStarIcon />
-                    )}
-                  </Button>
-                  <DialogClose asChild>
+                  <div className="flex items-center gap-2">
+                    <Button asChild variant="outline" size="sm">
+                      <a href="mailto:nicktornberg12@gmail.com?subject=Pack%20Planner%20Feedback">
+                        Report bug / Feedback
+                      </a>
+                    </Button>
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="outline"
                       size="icon-sm"
-                      aria-label="Close planner"
+                      onClick={() =>
+                        setThemeMode((current) =>
+                          current === "dark" ? "light" : "dark",
+                        )
+                      }
+                      aria-label={`Switch to ${
+                        themeMode === "dark" ? "light" : "dark"
+                      } mode`}
                     >
-                      <span className="text-base leading-none">x</span>
+                      {themeMode === "dark" ? (
+                        <SunMediumIcon />
+                      ) : (
+                        <MoonStarIcon />
+                      )}
                     </Button>
-                  </DialogClose>
+                    <DialogClose asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="Close planner"
+                      >
+                        <span className="text-base leading-none">x</span>
+                      </Button>
+                    </DialogClose>
+                  </div>
                 </div>
+
+                <TabsList
+                  variant="segmented"
+                  className="w-full min-w-0 sm:min-h-12 sm:max-w-2xl"
+                  aria-label="Planner search tabs"
+                >
+                  <TabsTrigger
+                    value="course_search"
+                    className="min-w-0 truncate"
+                  >
+                    Course Search
+                  </TabsTrigger>
+                  <TabsTrigger value="gep_search" className="min-w-0 truncate">
+                    GEP Search
+                  </TabsTrigger>
+                  <TabsTrigger value="plan_search" className="min-w-0 truncate">
+                    Major Search
+                  </TabsTrigger>
+                </TabsList>
               </div>
 
-              <TabsList
-                variant="segmented"
-                className="w-full min-w-0 sm:min-h-12 sm:max-w-2xl"
-                aria-label="Planner search tabs"
+              <div
+                id="dialog-scroll-container"
+                className="min-h-0 max-h-full flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain bg-muted/15 touch-pan-y dark:bg-background/30"
+                onWheelCapture={(e) => e.stopPropagation()}
+                onTouchMoveCapture={(e) => e.stopPropagation()}
               >
-                <TabsTrigger value="course_search" className="min-w-0 truncate">
-                  Course Search
-                </TabsTrigger>
-                <TabsTrigger value="gep_search" className="min-w-0 truncate">
-                  GEP Search
-                </TabsTrigger>
-                <TabsTrigger value="plan_search" className="min-w-0 truncate">
-                  Major Search
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            <div
-              id="dialog-scroll-container"
-              className="min-h-0 max-h-full flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain bg-muted/15 touch-pan-y dark:bg-background/30"
-              onWheelCapture={(e) => e.stopPropagation()}
-              onTouchMoveCapture={(e) => e.stopPropagation()}
-            >
-              <TabsContent
-                value="course_search"
-                forceMount
-                className={
-                  selectedTab === "course_search"
-                    ? "block min-h-0"
-                    : "hidden min-h-0"
-                }
-              >
-                {tabContent.courseSearch}
-              </TabsContent>
-              <TabsContent
-                value="gep_search"
-                forceMount
-                className={
-                  selectedTab === "gep_search"
-                    ? "block min-h-0"
-                    : "hidden min-h-0"
-                }
-              >
-                {tabContent.gepSearch}
-              </TabsContent>
-              <TabsContent
-                value="plan_search"
-                forceMount
-                className={
-                  selectedTab === "plan_search"
-                    ? "block min-h-0"
-                    : "hidden min-h-0"
-                }
-              >
-                {tabContent.planSearch}
-              </TabsContent>
-            </div>
-          </Tabs>
+                <TabsContent
+                  value="course_search"
+                  forceMount
+                  className={
+                    selectedTab === "course_search"
+                      ? "block min-h-0"
+                      : "hidden min-h-0"
+                  }
+                >
+                  <MemoizedCourseSearchTab
+                    setCourseSearchTabData={setCourseSearchTabData}
+                    courseSearchData={courseSearchData}
+                    onPreviewSectionChange={setSelectedPreview}
+                    previewContent={
+                      selectedTab === "course_search"
+                        ? previewRail
+                        : inactivePreviewRail
+                    }
+                    selectedPreviewId={
+                      selectedTab === "course_search" ? selectedPreviewId : null
+                    }
+                  />
+                </TabsContent>
+                <TabsContent
+                  value="gep_search"
+                  forceMount
+                  className={
+                    selectedTab === "gep_search"
+                      ? "block min-h-0"
+                      : "hidden min-h-0"
+                  }
+                >
+                  <MemoizedGEPSearchTab
+                    setGepSearchTabData={setGepSearchTabData}
+                    gepSearchData={gepSearchData}
+                    onPreviewSectionChange={setSelectedPreview}
+                    previewContent={
+                      selectedTab === "gep_search"
+                        ? previewRail
+                        : inactivePreviewRail
+                    }
+                    selectedPreviewId={
+                      selectedTab === "gep_search" ? selectedPreviewId : null
+                    }
+                  />
+                </TabsContent>
+                <TabsContent
+                  value="plan_search"
+                  forceMount
+                  className={
+                    selectedTab === "plan_search"
+                      ? "block min-h-0"
+                      : "hidden min-h-0"
+                  }
+                >
+                  <MemoizedPlanSearchTab
+                    setPlanSearchTabData={setPlanSearchTabData}
+                    planSearchData={planSearchData}
+                    onPreviewSectionChange={setSelectedPreview}
+                    previewContent={
+                      selectedTab === "plan_search"
+                        ? previewRail
+                        : inactivePreviewRail
+                    }
+                    selectedPreviewId={
+                      selectedTab === "plan_search" ? selectedPreviewId : null
+                    }
+                  />
+                </TabsContent>
+              </div>
+            </Tabs>
+          </TooltipProvider>
         </DialogContent>
       </Dialog>
     </div>
