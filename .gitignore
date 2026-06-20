@@ -24,3 +24,8 @@ dist.zip
 *.njsproj
 *.sln
 *.sw?
+
+# Local agent/editor tooling
+.agents/
+.claude/
+.cursor/
