@@ -1,50 +1,103 @@
-# MyPack Plus (Course Picker Extension)
+# MyPack Plus
 
-MyPack Plus is a browser extension that makes course selection on the MyPack Portal less painful. It overlays historical grade distributions and RateMyProfessors info right where you’re making choices, and also pulls in live section availability.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Built with React](https://img.shields.io/badge/React-19-61dafb.svg)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178c6.svg)](https://www.typescriptlang.org/)
 
-## Features
-- Grade and professor overlays directly in the MyPack Portal UI
-- A dialog that lets you search by course, GEP plans, and major/minor plans (with concentrations)
-- Live availability checks to the registrar
-- Fast, $0-to-host backend: Supabase Edge Functions for consolidated grade/professor data
-- Performance-focused: batch retrievals, layered caching (Chrome storage + IndexedDB), and parallel subject lookups
+MyPack Plus is a browser extension that brings faster course search, section comparison, schedule preview, grade context, professor ratings, and live availability checks into NC State's MyPack Portal.
 
-## Try it
-- Site: `mypackplus.me`
-- Not affiliated with NC State
+Visit [mypackplus.me](https://mypackplus.me) for the project site.
 
-## How it works (short version)
-- Content script injects the UI and overlays into the existing MyPack pages
-- Background service worker proxies requests from the page when needed
-- Supabase Edge Functions serve consolidated grade and professor data
-- Registrar lookups are proxied and batched; caching keeps things quick and cheap
+## What It Does
 
-## Tech stack
-- React, TypeScript, MUI, Vite
+MyPack Plus helps students compare registration options without jumping between MyPack, planner notes, grade data, and professor-rating pages.
+
+- Search by subject, course number, GEP requirement, major, minor, plan, and concentration.
+- Compare sections with meeting times, locations, instructors, notes, prerequisites, seats, and status.
+- Preview sections against enrolled and carted classes before adding them.
+- Review historical grade distributions and professor-rating context in the planning flow.
+- Handle linked labs and recitations alongside their lectures.
+- Use caching and batched lookups to keep repeat searches fast.
+
+## Core Features
+
+### Course Search
+
+Find classes by course, GEP requirement, major, minor, or degree plan. Results are organized for registration decisions, with the details students need close to the section they are reviewing.
+
+### Section Comparison
+
+Section cards surface availability, instructor, schedule, location, linked components, grade context, professor information, notes, prerequisites, and cart actions where available.
+
+### Schedule Preview
+
+Preview selected sections alongside enrolled and carted classes. MyPack Plus highlights schedule fit and helps catch conflicts before students commit time to manual cart work.
+
+### Live Availability
+
+Availability checks pull current section status so students can see open, closed, waitlist, reserved, and capacity information before digging through MyPack manually.
+
+### Linked Components
+
+Lectures, labs, and recitations are grouped together when a course requires linked sections, making it easier to choose a complete class combination.
+
+## How It Works
+
+MyPack Plus runs as a Manifest V3 browser extension.
+
+- A content script adds the planning interface to supported MyPack Portal pages.
+- A background service worker handles extension-level requests.
+- Local browser storage and IndexedDB cache course and section data for faster repeat sessions.
+- Supabase Edge Functions provide consolidated grade and professor data.
+- Registrar availability lookups are batched and proxied to reduce repeated manual requests.
+
+## Tech Stack
+
+- React 19
+- TypeScript
+- Vite
+- Material UI
+- Chrome Extension Manifest V3
 - Supabase Edge Functions
-- Cloudflare Workers (registrar lookups)
+- Cloudflare Workers
 
-## Notes to developers
-This grew fast with one developer on a short timeline, so there are rough edges. I’ve cleaned up a lot but there’s still work to do.
+## Local Development
 
-### Dead code
-There are some unused `.ts`/`.tsx` files hanging around from earlier iterations.
+```bash
+npm install
+npm run dev
+```
 
-### Scattered CSS injections
-Early on I had to override some MyPack table styles, so there’s CSS being injected in a few places. Needs consolidation.
+For a production extension build:
 
-### Too many data types
-Data formats evolved as I pulled from different sources. It needs a proper abstracton.
+```bash
+npm run build:prod
+```
 
-### Heavy UI lists (GEP + Plans)
-Those views display a lot of data. I ended up with a tree-based UI to keep things usable, but there’s likely leftover code from prior attempts.
+The production build outputs extension assets to `dist/` and packages them as `dist.zip`.
 
-### File names and organization
-It’s not as organized as it should be. Some files are misnamed (e.g., an `index.ts` that only holds types). Reorganization is on the list.
+Useful project checks:
 
-## What’s next
-- Refactors for readability and better modularity
-- Smarter caching and invalidation rules
-- Automated testing: API contract checks + UI smoke tests so things keep working if MyPack changes its UI
+```bash
+npm run type-check
+npm run lint
+npm run build
+```
 
-Contributions and PRs are welcome.
+## Privacy And Data
+
+MyPack Plus is designed to support course planning inside the browser. It reads supported MyPack Portal pages, requests course and availability data needed for planning features, and stores cached course data locally to improve performance.
+
+Students should verify official course availability, enrollment requirements, and registration decisions through NC State's official systems before enrolling.
+
+## Disclaimer
+
+MyPack Plus is an independent project and is not affiliated with, endorsed by, or sponsored by NC State University.
+
+## Contributing
+
+Issues and pull requests are welcome. Please keep changes focused, include a short explanation of the user-facing impact, and run the relevant checks before opening a PR.
+
+## License
+
+MyPack Plus is released under the [MIT License](LICENSE).
