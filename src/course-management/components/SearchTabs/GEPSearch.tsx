@@ -1,7 +1,6 @@
 import { ChevronRightIcon, ChevronDownIcon } from "lucide-react";
 import React, { useMemo, useCallback, useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -43,7 +42,8 @@ import { CourseSectionsCardList } from "./CourseSectionsCardList";
 interface AutocompletesProps {
   selectedTerm: string | null;
   searchSubject: string | null;
-  setGepSearchTabData: TabUpdater<GEPData>;
+  onTermChange: (value: string | null) => void;
+  onSubjectChange: (value: string | null) => void;
   portalContainer: HTMLElement | null;
 }
 
@@ -79,7 +79,7 @@ function findGepSubject(value: string | null) {
 }
 
 const MemoizedAutocompletes: React.FC<AutocompletesProps> = React.memo(
-  ({ selectedTerm, searchSubject, setGepSearchTabData, portalContainer }) => {
+  ({ selectedTerm, searchSubject, onTermChange, onSubjectChange, portalContainer }) => {
     return (
       <FieldGroup>
         <Field>
@@ -87,9 +87,7 @@ const MemoizedAutocompletes: React.FC<AutocompletesProps> = React.memo(
           <PlannerFilterCombobox
             items={TERM_OPTIONS}
             value={selectedTerm}
-            onValueChange={(value) =>
-              setGepSearchTabData("selectedTerm", value)
-            }
+            onValueChange={onTermChange}
             placeholder="Select term"
             emptyLabel="No terms found."
             portalContainer={portalContainer}
@@ -100,9 +98,7 @@ const MemoizedAutocompletes: React.FC<AutocompletesProps> = React.memo(
           <PlannerFilterCombobox
             items={SUBJECT_OPTIONS}
             value={findGepSubject(searchSubject)?.label ?? searchSubject}
-            onValueChange={(value) =>
-              setGepSearchTabData("searchSubject", value)
-            }
+            onValueChange={onSubjectChange}
             placeholder="Select GEP subject"
             emptyLabel="No GEP subjects found."
             portalContainer={portalContainer}
@@ -457,6 +453,30 @@ export default function GEPSearch({
     [setGepSearchTabData],
   );
 
+  const handleTermChange = useCallback(
+    (value: string | null) => {
+      setGepSearchTabData({
+        selectedTerm: value,
+        instructorFilter: null,
+      });
+      setExpandedGroups({});
+      onPreviewSectionChange(null);
+    },
+    [onPreviewSectionChange, setGepSearchTabData],
+  );
+
+  const handleSubjectChange = useCallback(
+    (value: string | null) => {
+      setGepSearchTabData({
+        searchSubject: value,
+        instructorFilter: null,
+      });
+      setExpandedGroups({});
+      onPreviewSectionChange(null);
+    },
+    [onPreviewSectionChange, setGepSearchTabData],
+  );
+
   const controlsPanel = (
     <Card className="overflow-visible bg-card/80 shadow-sm">
       <CardHeader className="gap-1">
@@ -473,7 +493,8 @@ export default function GEPSearch({
         <MemoizedAutocompletes
           selectedTerm={selectedTerm}
           searchSubject={searchSubject}
-          setGepSearchTabData={setGepSearchTabData}
+          onTermChange={handleTermChange}
+          onSubjectChange={handleSubjectChange}
           portalContainer={portalContainer}
         />
         <FieldGroup className="mt-4">
@@ -521,13 +542,14 @@ export default function GEPSearch({
           </Field>
         </FieldGroup>
         <div className="mt-4 flex flex-col gap-3">
-          <Button
+          <button
+            type="button"
             onClick={courseSearch}
             disabled={isSearchDisabled}
-            className="w-full origin-center font-semibold motion-safe:duration-150 motion-safe:ease-out motion-safe:hover:scale-[1.01] motion-safe:active:scale-[1.04] active:!translate-y-0"
+            className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-transparent bg-primary px-2.5 text-sm font-semibold whitespace-nowrap text-primary-foreground transition-colors outline-none select-none hover:brightness-[1.04] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:!transform-none active:![scale:1] active:![translate:none] disabled:pointer-events-none disabled:opacity-50"
           >
             Search
-          </Button>
+          </button>
           <Field orientation="horizontal">
             <ShadcnCheckbox
               checked={hideNoSections}
@@ -535,6 +557,7 @@ export default function GEPSearch({
                 handleHideNoSectionsChange(Boolean(checked))
               }
               id="hide-empty-gep"
+              className="size-5 rounded-md border-2 border-foreground/40 bg-background shadow-sm dark:border-foreground/50 dark:bg-muted/80 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
             />
             <FieldLabel htmlFor="hide-empty-gep" className="font-normal">
               Hide courses with no open sections

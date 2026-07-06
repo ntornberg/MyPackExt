@@ -89,21 +89,86 @@ export function gradeDistributionTotal(g: GradeData | undefined): number {
   return g.a_average + g.b_average + g.c_average + g.d_average + g.f_average;
 }
 
-/** Midpoint of typical class GPA band → chip fill. */
-export function gpaBandChipColor(mid: number): string {
-  if (mid >= 3.55) {
+export function gradeDistributionAverageGradePoint(
+  g: GradeData | undefined,
+): number | null {
+  const total = gradeDistributionTotal(g);
+  if (!g || total <= 0) {
+    return null;
+  }
+  return (
+    (g.a_average * 4 +
+      g.b_average * 3 +
+      g.c_average * 2 +
+      g.d_average * 1 +
+      g.f_average * 0) /
+    total
+  );
+}
+
+export function gradePointToPercent(gradePoint: number): number {
+  if (!Number.isFinite(gradePoint)) {
+    return 0;
+  }
+  return Math.max(0, Math.min(100, (gradePoint / 4) * 100));
+}
+
+export function formatGradePointAsPercent(
+  gradePoint: number,
+  fractionDigits = 0,
+): string {
+  return `${gradePointToPercent(gradePoint).toFixed(fractionDigits)}%`;
+}
+
+const LETTER_GRADE_POINT_SCALE = [
+  { letter: "A+", points: 4.333 },
+  { letter: "A", points: 4 },
+  { letter: "A-", points: 3.667 },
+  { letter: "B+", points: 3.333 },
+  { letter: "B", points: 3 },
+  { letter: "B-", points: 2.667 },
+  { letter: "C+", points: 2.333 },
+  { letter: "C", points: 2 },
+  { letter: "C-", points: 1.667 },
+  { letter: "D+", points: 1.333 },
+  { letter: "D", points: 1 },
+  { letter: "D-", points: 0.667 },
+  { letter: "F", points: 0 },
+] as const;
+
+export function formatGradePointAsLetter(gradePoint: number): string {
+  if (!Number.isFinite(gradePoint)) {
+    return "Unavailable";
+  }
+
+  for (let i = 0; i < LETTER_GRADE_POINT_SCALE.length - 1; i += 1) {
+    const current = LETTER_GRADE_POINT_SCALE[i]!;
+    const next = LETTER_GRADE_POINT_SCALE[i + 1]!;
+    const threshold = (current.points + next.points) / 2;
+
+    if (gradePoint >= threshold) {
+      return current.letter;
+    }
+  }
+
+  return "F";
+}
+
+/** 0-100 grade percentage → chip fill. */
+export function gradePercentChipColor(percent: number): string {
+  if (percent >= gradePointToPercent(3.55)) {
     return "hsl(152, 58%, 32%)";
   }
-  if (mid >= 3.15) {
+  if (percent >= gradePointToPercent(3.15)) {
     return "hsl(128, 52%, 34%)";
   }
-  if (mid >= 2.75) {
+  if (percent >= gradePointToPercent(2.75)) {
     return "hsl(88, 48%, 36%)";
   }
-  if (mid >= 2.35) {
+  if (percent >= gradePointToPercent(2.35)) {
     return "hsl(48, 86%, 38%)";
   }
-  if (mid >= 2.0) {
+  if (percent >= gradePointToPercent(2.0)) {
     return "hsl(28, 88%, 42%)";
   }
   return "hsl(0, 62%, 40%)";

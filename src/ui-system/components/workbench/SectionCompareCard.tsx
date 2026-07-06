@@ -29,8 +29,11 @@ import {
   seatTallyHeatBackground,
 } from "./PlannerSectionInsights";
 import {
+  formatGradePointAsLetter,
   formatSectionInstructors,
-  gpaBandChipColor,
+  gradeDistributionAverageGradePoint,
+  gradePercentChipColor,
+  gradePointToPercent,
   gradeDistributionTotal,
 } from "./sectionCompareUtils";
 
@@ -40,25 +43,6 @@ import {
 const CARD_GRADE_PIE_SIZE = 80;
 const CARD_GRADE_PIE_SIZE_EMPTY = 64;
 const COMPACT_GRADE_PIE_SIZE = 72;
-
-function averageGradeValue(section: ModifiedSection): number | null {
-  const g = section.grade_distribution;
-  if (!g) {
-    return null;
-  }
-  const total = gradeDistributionTotal(g);
-  if (total <= 0) {
-    return null;
-  }
-  return (
-    (g.a_average * 4 +
-      g.b_average * 3 +
-      g.c_average * 2 +
-      g.d_average * 1 +
-      g.f_average * 0) /
-    total
-  );
-}
 
 function SectionGradeDistributionBlock({
   section,
@@ -71,14 +55,11 @@ function SectionGradeDistributionBlock({
   const total = gradeDistributionTotal(g);
   const chartData = g ?? emptyGradeData;
   const hasSample = Boolean(g) && total > 0;
-  const min = g?.class_avg_min;
-  const max = g?.class_avg_max;
-  const hasGpaBand =
-    g != null &&
-    Number.isFinite(min) &&
-    Number.isFinite(max) &&
-    (max as number) >= (min as number);
-  const averageGrade = averageGradeValue(section);
+  const averageGradePoint = gradeDistributionAverageGradePoint(g);
+  const averageGradePercent =
+    averageGradePoint != null ? gradePointToPercent(averageGradePoint) : null;
+  const averageGradeLetter =
+    averageGradePoint != null ? formatGradePointAsLetter(averageGradePoint) : null;
 
   const detailRows = useMemo(() => {
     if (!hasSample || !g) {
@@ -101,7 +82,9 @@ function SectionGradeDistributionBlock({
     if (!hasSample) {
       return null;
     }
-    const averageGradeChipColor = gpaBandChipColor(averageGrade ?? 0);
+    const averageGradeChipColor = gradePercentChipColor(
+      averageGradePercent ?? 0,
+    );
     return (
       <Tooltip>
         <TooltipTrigger asChild>
@@ -109,11 +92,11 @@ function SectionGradeDistributionBlock({
             className="max-w-full cursor-help gap-1 truncate rounded-lg border-0 px-2 py-1 text-[11px] font-semibold text-primary-foreground shadow-none"
             style={{ backgroundColor: averageGradeChipColor }}
           >
-            {averageGrade != null
-              ? `Average grade ${averageGrade.toFixed(2)}`
+            {averageGradePoint != null
+              ? `Typical grade ${averageGradeLetter}`
               : topGrade
-                ? `Average grade ${topGrade.label}`
-                : "Average grade"}
+                ? `Top grade ${topGrade.label} ${topGrade.pct.toFixed(0)}%`
+                : "Typical grade"}
           </Badge>
         </TooltipTrigger>
         <TooltipContent
@@ -129,19 +112,18 @@ function SectionGradeDistributionBlock({
             />
             <div className="min-w-0 space-y-1">
               <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Average grade
+                Typical grade
               </div>
               <p className="text-sm font-semibold tabular-nums text-foreground">
-                {averageGrade != null
-                  ? averageGrade.toFixed(2)
+                {averageGradePoint != null
+                  ? averageGradeLetter
                   : topGrade
-                    ? topGrade.label
+                    ? `${topGrade.label} ${topGrade.pct.toFixed(0)}%`
                     : "Unavailable"}
               </p>
-              {hasGpaBand ? (
+              {averageGradePoint != null ? (
                 <p className="text-[11px] text-muted-foreground">
-                  Typical GPA range {(min as number).toFixed(2)}-
-                  {(max as number).toFixed(2)}
+                  Computed from letter mix
                 </p>
               ) : null}
               <GradeDistributionPercentList
@@ -166,7 +148,7 @@ function SectionGradeDistributionBlock({
       )}
       title={
         hasSample
-          ? "Historical letter-grade mix and typical class GPA range when available"
+          ? "Historical letter-grade mix and typical class grade range when available"
           : "No grade distribution sample for this section"
       }
     >
@@ -199,11 +181,11 @@ function SectionGradeDistributionBlock({
               variant="compact"
               fractionDigits={1}
             />
-            {hasGpaBand ? (
+            {averageGradePoint != null ? (
               <p className="pt-0.5 text-[10px] leading-snug text-muted-foreground sm:text-[11px]">
-                Typical class GPA{" "}
+                Typical class grade{" "}
                 <span className="font-semibold tabular-nums text-foreground">
-                  {(min as number).toFixed(2)}–{(max as number).toFixed(2)}
+                  {averageGradeLetter}
                 </span>
               </p>
             ) : null}

@@ -4,6 +4,11 @@ import {
   handleAnalyticsSetOptOut,
   isAnalyticsMessage,
 } from "../analytics/gaBackground";
+import { clearAllExtensionCaches } from "../course-management/cache/CourseRetrieval";
+import {
+  fetchStatusWorkerStatusDirect,
+  isStatusWorkerFetchMessage,
+} from "../user-experience/status/statusWorker";
 import { AppLogger } from "../utils/logger";
 
 let isListenerRegistered = false;
@@ -80,6 +85,22 @@ function setupMessageListener() {
       return true;
     }
 
+    if (isStatusWorkerFetchMessage(message)) {
+      fetchStatusWorkerStatusDirect()
+        .then((status) => {
+          sendResponse({ success: true, status });
+        })
+        .catch((error) => {
+          AppLogger.error("[Status] Failed to fetch worker status:", error);
+          sendResponse({
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        });
+
+      return true;
+    }
+
     if (message.type === "ping") {
       sendResponse({ type: "pong", timestamp: Date.now() });
       return false;
@@ -96,9 +117,29 @@ function initializeServiceWorker() {
   AppLogger.info("[Background] Service worker initialization complete");
 }
 
-chrome.runtime.onInstalled.addListener((details) => {
+async function handleInstalled(
+  details: chrome.runtime.InstalledDetails,
+): Promise<void> {
   AppLogger.info("[Background] Extension installed/updated:", details.reason);
+  if (details.reason === "install") {
+    void handleAnalyticsEvent({
+      type: "analytics_event",
+      name: "extension_installed",
+      params: {
+        install_reason: details.reason,
+        previous_version: details.previousVersion ?? "none",
+      },
+    });
+  }
+  if (details.reason === "update") {
+    AppLogger.info("[Background] Extension updated; clearing local caches");
+    await clearAllExtensionCaches();
+  }
   initializeServiceWorker();
+}
+
+chrome.runtime.onInstalled.addListener((details) => {
+  void handleInstalled(details);
 });
 
 chrome.runtime.onStartup.addListener(() => {

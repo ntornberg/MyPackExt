@@ -7,8 +7,9 @@ export interface CacheEntry {
   expiresAt?: number;
 }
 
-// Cache expiration time (24 hours in milliseconds)
-const CACHE_EXPIRATION = 24 * 60 * 60 * 1000;
+// Default persistent cache expiration time (6 hours in milliseconds).
+// Live open-course availability uses a shorter override at the call site.
+const CACHE_EXPIRATION = 6 * 60 * 60 * 1000;
 
 /**
  * Returns whether a cache entry is expired.
@@ -28,6 +29,27 @@ export function isCacheEntryExpired(
   );
 }
 
+function pruneExpiredCacheEntries(
+  cache: Record<string, CacheEntry>,
+  now = Date.now(),
+): {
+  validEntries: Record<string, CacheEntry>;
+  expiredHashes: string[];
+} {
+  const validEntries: Record<string, CacheEntry> = {};
+  const expiredHashes: string[] = [];
+
+  for (const [hash, entry] of Object.entries(cache)) {
+    if (isCacheEntryExpired(entry, now)) {
+      expiredHashes.push(hash);
+    } else {
+      validEntries[hash] = entry;
+    }
+  }
+
+  return { validEntries, expiredHashes };
+}
+
 // Size threshold in bytes above which to use IndexedDB instead of chrome.storage
 const SIZE_THRESHOLD = 100 * 1024;
 
@@ -35,6 +57,17 @@ const SIZE_THRESHOLD = 100 * 1024;
 const DB_NAME = "mypack-extension-cache";
 const STORE_NAME = "cache-store";
 const DB_VERSION = 1;
+const EXTENSION_CACHE_CATEGORIES = [
+  "courseList",
+  "openCourses",
+  "gradeProfData",
+  "nullCourses",
+  "scheduleTableData",
+  "shopCartTableData",
+  "planTermTableData",
+  "shopCartCalEventsData",
+  "scheduleCalEventsData",
+];
 
 /**
  * Opens a connection to the IndexedDB database
@@ -217,7 +250,12 @@ export async function getCacheCategory(
     if (isChromeStorageAvailable()) {
       const cached = await chrome.storage.local.get(cacheCategory);
       if (cached && cached[cacheCategory]) {
-        return cached[cacheCategory];
+        const cache = cached[cacheCategory] as Record<string, CacheEntry>;
+        const { validEntries, expiredHashes } = pruneExpiredCacheEntries(cache);
+        if (expiredHashes.length > 0) {
+          await chrome.storage.local.set({ [cacheCategory]: validEntries });
+        }
+        return Object.keys(validEntries).length > 0 ? validEntries : null;
       }
     }
 
@@ -234,9 +272,11 @@ export async function getCacheCategory(
         getAllKeysRequest.onsuccess = () => {
           const keys = getAllKeysRequest.result;
           const result: Record<string, CacheEntry> = {};
+          const expiredKeys: string[] = [];
           let processed = 0;
           const finish = () => {
             if (processed === keys.length) {
+              void deleteIndexedDBEntries(expiredKeys);
               resolve(Object.keys(result).length > 0 ? result : null);
             }
           };
@@ -257,11 +297,18 @@ export async function getCacheCategory(
               getRequest.onsuccess = () => {
                 if (getRequest.result) {
                   const hash = getRequest.result.hash;
-                  result[hash] = {
+                  const entry = {
                     combinedData: getRequest.result.combinedData,
                     timestamp: getRequest.result.timestamp,
                     expiresAt: getRequest.result.expiresAt,
                   };
+                  if (isCacheEntryExpired(entry)) {
+                    if (typeof key === "string") {
+                      expiredKeys.push(key);
+                    }
+                  } else {
+                    result[hash] = entry;
+                  }
                 }
                 processed++;
                 finish();
@@ -486,6 +533,42 @@ async function clearFromIndexedDB(cacheCategory: string): Promise<void> {
   }
 }
 
+async function deleteIndexedDBEntries(keys: string[]): Promise<void> {
+  if (keys.length === 0) {
+    return;
+  }
+
+  try {
+    const db = await openDatabase();
+    await new Promise<void>((resolve) => {
+      const transaction = db.transaction([STORE_NAME], "readwrite");
+      const store = transaction.objectStore(STORE_NAME);
+
+      for (const key of keys) {
+        store.delete(key);
+      }
+
+      transaction.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      transaction.onerror = () => {
+        AppLogger.error(
+          `[CACHE ERROR] Failed to delete expired IndexedDB entries:`,
+          transaction.error,
+        );
+        db.close();
+        resolve();
+      };
+    });
+  } catch (error) {
+    AppLogger.error(
+      `[CACHE ERROR] IndexedDB expired-entry cleanup failed:`,
+      error,
+    );
+  }
+}
+
 /**
  * Estimates the size of a string in bytes
  * @param {string} str - The string to measure
@@ -706,6 +789,24 @@ export async function clearGenericCache(cacheCategory: string): Promise<void> {
  */
 export async function clearCache(): Promise<void> {
   return clearGenericCache("courseList");
+}
+
+export async function clearAllExtensionCaches(): Promise<void> {
+  try {
+    if (isChromeStorageAvailable()) {
+      await chrome.storage.local.remove([...EXTENSION_CACHE_CATEGORIES]);
+    }
+
+    if (typeof indexedDB !== "undefined") {
+      await Promise.all(
+        EXTENSION_CACHE_CATEGORIES.map((cacheCategory) =>
+          clearFromIndexedDB(cacheCategory),
+        ),
+      );
+    }
+  } catch (error) {
+    AppLogger.error(`[CACHE ERROR] clearAllExtensionCaches failed`, error);
+  }
 }
 
 

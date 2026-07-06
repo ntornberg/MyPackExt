@@ -5,6 +5,10 @@ import { InfoIcon, StarIcon } from "lucide-react";
 import type { GradeData, MatchedRateMyProf } from "../../../types/api";
 import { cn } from "@/lib/utils";
 import { buildRateMyProfessorUrl } from "@/utils/rateMyProfessor";
+import {
+  formatGradePointAsLetter,
+  gradeDistributionAverageGradePoint,
+} from "./sectionCompareUtils";
 
 const ENROLLMENT_HEAT_FALLBACK = "hsl(220, 12%, 42%)";
 const ENROLLMENT_HEAT_SCALE = chroma
@@ -516,12 +520,11 @@ export function GradeDistributionPanel({
   const narrowPreview = useNarrowGradePreview(380);
   const previewPieSize = narrowPreview ? 96 : 120;
 
-  const gpaSummary =
-    Number.isFinite(data.class_avg_min) &&
-    Number.isFinite(data.class_avg_max) ? (
+  const averageGradePoint = gradeDistributionAverageGradePoint(data);
+  const gradeSummary =
+    averageGradePoint != null ? (
       <p className="text-[11px] text-muted-foreground">
-        Typical class GPA range: {data.class_avg_min.toFixed(2)} –{" "}
-        {data.class_avg_max.toFixed(2)}
+        Typical class grade: {formatGradePointAsLetter(averageGradePoint)}
       </p>
     ) : null;
 
@@ -561,7 +564,7 @@ export function GradeDistributionPanel({
           <GradeDistributionPercentList rows={rows} className="w-full" />
         </div>
       </div>
-      {gpaSummary}
+      {gradeSummary}
     </div>
   );
 }

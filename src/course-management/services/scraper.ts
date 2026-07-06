@@ -561,19 +561,19 @@ async function applyFlexDialogLayout(
     "important",
   );
   parent_dialog.style.setProperty(
-    "maxHeight",
+    "max-height",
     parent_dialog.style.maxHeight || getComputedStyle(parent_dialog).maxHeight,
     "important",
   );
   parent_dialog.style.setProperty("overflow", "hidden", "important");
-  inner_dialog.style.setProperty("overflowY", "auto", "important");
-  inner_dialog.style.setProperty("overflowX", "hidden", "important");
-  inner_dialog.style.setProperty("flexGrow", "1", "important");
-  inner_dialog.style.setProperty("flexShrink", "1", "important");
+  inner_dialog.style.setProperty("overflow-y", "auto", "important");
+  inner_dialog.style.setProperty("overflow-x", "hidden", "important");
+  inner_dialog.style.setProperty("flex-grow", "1", "important");
+  inner_dialog.style.setProperty("flex-shrink", "1", "important");
   inner_dialog.style.setProperty("height", "auto", "important");
-  inner_dialog.style.setProperty("maxHeight", "none", "important");
+  inner_dialog.style.setProperty("max-height", "none", "important");
   if (titleBar) {
-    titleBar.style.setProperty("flexShrink", "0", "important");
+    titleBar.style.setProperty("flex-shrink", "0", "important");
   }
   if (buttonPane) {
     buttonPane.style.setProperty("position", "static", "important");

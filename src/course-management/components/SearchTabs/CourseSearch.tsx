@@ -1,7 +1,6 @@
 import { SearchIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -253,8 +252,33 @@ export default function CourseSearch({
     setCourseSearchTabData,
   ]);
 
+  const handleTermChange = (value: string | null) => {
+    setCourseSearchTabData({
+      selectedTerm: value,
+      instructorFilter: null,
+    });
+    setLabClassByRowId({});
+    onPreviewSectionChange(null);
+  };
+
+  const handleSubjectChange = (value: string | null) => {
+    setCourseSearchTabData({
+      searchSubject: value,
+      searchCourse: null,
+      selectedCourseInfo: null,
+      instructorFilter: null,
+    });
+    setLabClassByRowId({});
+    onPreviewSectionChange(null);
+  };
+
   const handleCourseChange = (value: string | null) => {
-    setCourseSearchTabData("searchCourse", value);
+    setCourseSearchTabData({
+      searchCourse: value,
+      instructorFilter: null,
+    });
+    setLabClassByRowId({});
+    onPreviewSectionChange(null);
 
     if (value && courseSearchData.searchSubject) {
       AppLogger.info("Course change detected:", {
@@ -283,11 +307,15 @@ export default function CourseSearch({
             `Extracted catalog number ${catalogNum} from course code ${courseCode}`,
           );
 
-          setCourseSearchTabData("selectedCourseInfo", {
-            code: courseCode,
-            catalogNum: catalogNum,
-            title: courseInfo.course_title,
-            id: courseInfo.course_id,
+          setCourseSearchTabData({
+            searchCourse: value,
+            instructorFilter: null,
+            selectedCourseInfo: {
+              code: courseCode,
+              catalogNum: catalogNum,
+              title: courseInfo.course_title,
+              id: courseInfo.course_id,
+            },
           });
           return;
         }
@@ -465,9 +493,7 @@ export default function CourseSearch({
             <PlannerFilterCombobox
               items={Object.keys(TermIdByName)}
               value={courseSearchData.selectedTerm}
-              onValueChange={(value) =>
-                setCourseSearchTabData("selectedTerm", value)
-              }
+              onValueChange={handleTermChange}
               placeholder="Select term"
               emptyLabel="No terms found."
               portalContainer={portalContainer}
@@ -479,9 +505,7 @@ export default function CourseSearch({
             <PlannerFilterCombobox
               items={Object.keys(DEPT_COURSES)}
               value={courseSearchData.searchSubject}
-              onValueChange={(value) =>
-                setCourseSearchTabData("searchSubject", value)
-              }
+              onValueChange={handleSubjectChange}
               placeholder="Select subject"
               emptyLabel="No subjects found."
               portalContainer={portalContainer}
@@ -556,14 +580,15 @@ export default function CourseSearch({
             </div>
           </Field>
 
-          <Button
+          <button
+            type="button"
             onClick={() => void courseSearch()}
             disabled={isSearchDisabled}
-            className="w-full origin-center font-semibold motion-safe:duration-150 motion-safe:ease-out motion-safe:hover:scale-[1.01] motion-safe:active:scale-[1.04] active:!translate-y-0"
+            className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-transparent bg-primary px-2.5 text-sm font-semibold whitespace-nowrap text-primary-foreground transition-colors outline-none select-none hover:brightness-[1.04] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:!transform-none active:![scale:1] active:![translate:none] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
           >
             <SearchIcon data-icon="inline-start" />
             Search
-          </Button>
+          </button>
         </FieldGroup>
 
         {isLoading ? (

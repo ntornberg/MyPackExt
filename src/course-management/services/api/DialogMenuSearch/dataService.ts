@@ -31,6 +31,7 @@ const CACHE_KEYS = {
   GRADE_PROF: "gradeProfData",
   NULL_COURSES: "nullCourses", // Cache for courses that return no data
 };
+const OPEN_COURSES_CACHE_TTL_MS = 2 * 60 * 1000;
 
 function buildNullCourseCacheKey(courseKey: string, term: string): string {
   return `null-${courseKey} ${term}`;
@@ -150,7 +151,7 @@ export async function fetchSingleCourseData(
     await setGenericCache(
       CACHE_KEYS.OPEN_COURSES,
       { [openCoursesHashKey]: JSON.stringify(courseData) },
-      120,
+      OPEN_COURSES_CACHE_TTL_MS,
     );
     onProgress?.(40, `Cached open courses data for ${courseKey}`);
   }
@@ -376,7 +377,7 @@ export async function batchFetchCoursesData(
               await setGenericCache(
                 CACHE_KEYS.OPEN_COURSES,
                 { [hashKey]: cacheData },
-                120,
+                OPEN_COURSES_CACHE_TTL_MS,
               );
               openCoursesCache[course.code] = course;
             }
@@ -402,7 +403,7 @@ export async function batchFetchCoursesData(
               await setGenericCache(
                 CACHE_KEYS.OPEN_COURSES,
                 { [hashKey]: cacheData },
-                120,
+                OPEN_COURSES_CACHE_TTL_MS,
               );
               openCoursesCache[courseData.code] = courseData;
             }

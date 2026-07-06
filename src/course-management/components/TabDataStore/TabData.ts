@@ -24,7 +24,7 @@ export type CourseSearchData = {
     catalogNum: string | null;
     title: string | null;
     id: string;
-  };
+  } | null;
   instructorFilter: string | null;
   scheduleFitOnly: boolean;
   compactSections: boolean;

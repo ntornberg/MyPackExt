@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -66,9 +67,9 @@ export const GradeDistributionCell = (params: ModifiedSection) => {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Grade Distribution for {course_name}</DialogTitle>
-            <p className="text-sm text-muted-foreground">
+            <DialogDescription>
               Instructor: {instructor_name}
-            </p>
+            </DialogDescription>
           </DialogHeader>
 
           <div className="h-[300px] w-full">

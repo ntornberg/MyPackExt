@@ -25,6 +25,7 @@ import {
   type PlanSearchData,
   type TabUpdater,
 } from "../../course-management/components/TabDataStore/TabData";
+import { StatusBanner } from "../../user-experience/status/StatusBanner";
 import { customDataTableStyles } from "../styles/dataTableStyles";
 
 import {
@@ -122,33 +123,62 @@ const MemoizedPlannerPreviewRail = React.memo(
 function mergeCourseSearchData(
   stored: Partial<CourseSearchData> | undefined,
 ): CourseSearchData {
+  const storedCourseInfo = stored?.selectedCourseInfo;
+
   return {
     ...CourseSearchDataInitialState,
     ...stored,
-    selectedCourseInfo: {
-      ...CourseSearchDataInitialState.selectedCourseInfo,
-      ...(stored?.selectedCourseInfo ?? {}),
-    },
+    selectedCourseInfo:
+      storedCourseInfo === null
+        ? null
+        : {
+            code: storedCourseInfo?.code ?? null,
+            catalogNum: storedCourseInfo?.catalogNum ?? null,
+            title: storedCourseInfo?.title ?? null,
+            id: storedCourseInfo?.id ?? "",
+          },
   };
 }
 
 function mergePlanSearchData(
   stored: Partial<PlanSearchData> | undefined,
 ): PlanSearchData {
-  return {
+  const restored = {
     ...PlanSearchDataInitialState,
     ...stored,
     openCourses: stored?.openCourses ?? PlanSearchDataInitialState.openCourses,
   };
+
+  if (restored.isLoaded === false) {
+    return {
+      ...restored,
+      isLoaded: true,
+      progress: 0,
+      progressLabel: "",
+    };
+  }
+
+  return restored;
 }
 
 function mergeGepData(stored: Partial<GEPData> | undefined): GEPData {
-  return {
+  const restored = {
     ...GEPDataInitialState,
     ...stored,
     courseData: stored?.courseData ?? GEPDataInitialState.courseData,
     courses: stored?.courses ?? GEPDataInitialState.courses,
   };
+
+  if (restored.isLoaded === false) {
+    return {
+      ...restored,
+      isLoaded: true,
+      progress: 0,
+      progressLabel: "",
+    };
+  }
+
+  return restored;
 }
 
 export default function SlideOutDrawer() {
@@ -169,14 +199,16 @@ export default function SlideOutDrawer() {
   const [selectedPreview, setSelectedPreview] =
     useState<PlannerSectionPreview | null>(null);
   const [themeMode, setThemeMode] = useState<"light" | "dark">(() => {
-    if (
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches
-    ) {
-      return "dark";
+    if (typeof window === "undefined") return "light";
+    try {
+      const saved = localStorage.getItem("mypack-theme-mode");
+      if (saved === "dark" || saved === "light") return saved;
+    } catch {
+      /* ignore */
     }
-
-    return "light";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
   });
   const [courseSearchData, setCourseSearchData] = useState(() =>
     mergeCourseSearchData(persisted?.courseSearchData),
@@ -243,6 +275,12 @@ export default function SlideOutDrawer() {
   }, [courseSearchData, gepSearchData, planSearchData, selectedTab]);
 
   useEffect(() => {
+    try {
+      localStorage.setItem("mypack-theme-mode", themeMode);
+    } catch {
+      /* ignore */
+    }
+
     document.documentElement.setAttribute("data-pp-mode", themeMode);
 
     const overlayRoot = document.getElementById("extension-overlay-root");
@@ -250,8 +288,23 @@ export default function SlideOutDrawer() {
       return;
     }
 
+    const isDark = themeMode === "dark";
+    // Set the attribute so CSS-var blocks (:host([data-mpp-theme="dark"])) apply.
     overlayRoot.setAttribute("data-mpp-theme", themeMode);
-    overlayRoot.classList.toggle("dark", themeMode === "dark");
+
+    const shadow = overlayRoot.shadowRoot;
+    if (shadow) {
+      // Tailwind's `.dark *` selector cannot pierce the shadow boundary — the
+      // host's class is invisible to shadow-root stylesheets.  Toggle `dark`
+      // directly on the .mypack-shell containers inside the shadow root so
+      // every portaled descendant is covered.
+      shadow.querySelectorAll<HTMLElement>(".mypack-shell").forEach((el) => {
+        el.classList.toggle("dark", isDark);
+      });
+    } else {
+      // Staging (no shadow root): toggle on the host element itself.
+      overlayRoot.classList.toggle("dark", isDark);
+    }
   }, [themeMode]);
 
   useEffect(() => {
@@ -282,7 +335,7 @@ export default function SlideOutDrawer() {
   );
 
   return (
-    <div className="mypack-shell">
+    <div className="mypack-shell flex flex-col items-end gap-2">
       <style>{customDataTableStyles}</style>
 
       <Button
@@ -341,7 +394,7 @@ export default function SlideOutDrawer() {
             >
               <div className="shrink-0 border-b border-border/60 bg-muted/25 px-4 py-4 sm:px-6 sm:py-5 dark:bg-background/40">
                 <div className="mb-3 flex min-h-7 flex-wrap items-start justify-between gap-3">
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
                       Pack Planner
                     </div>
@@ -352,7 +405,13 @@ export default function SlideOutDrawer() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Button asChild variant="outline" size="sm">
+                    <StatusBanner className="shrink-0" />
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full border-2 border-slate-300/70 bg-background/40 text-foreground shadow-sm ring-1 ring-white/10 hover:border-primary/55 hover:bg-muted/70 dark:border-slate-500/80 dark:bg-white/[0.04] dark:hover:border-slate-300/90 dark:hover:bg-white/[0.08]"
+                    >
                       <a href="mailto:nicktornberg12@gmail.com?subject=Pack%20Planner%20Feedback">
                         Report bug / Feedback
                       </a>
@@ -361,6 +420,7 @@ export default function SlideOutDrawer() {
                       type="button"
                       variant="outline"
                       size="icon-sm"
+                      className="rounded-full border-2 border-slate-300/70 bg-background/40 text-foreground shadow-sm ring-1 ring-white/10 hover:border-primary/55 hover:bg-muted/70 dark:border-slate-500/80 dark:bg-white/[0.04] dark:hover:border-slate-300/90 dark:hover:bg-white/[0.08]"
                       onClick={() =>
                         setThemeMode((current) =>
                           current === "dark" ? "light" : "dark",
@@ -379,8 +439,9 @@ export default function SlideOutDrawer() {
                     <DialogClose asChild>
                       <Button
                         type="button"
-                        variant="ghost"
+                        variant="outline"
                         size="icon-sm"
+                        className="rounded-full border-2 border-slate-300/70 bg-background/40 text-foreground shadow-sm ring-1 ring-white/10 hover:border-primary/55 hover:bg-muted/70 dark:border-slate-500/80 dark:bg-white/[0.04] dark:hover:border-slate-300/90 dark:hover:bg-white/[0.08]"
                         aria-label="Close planner"
                       >
                         <span className="text-base leading-none">x</span>
@@ -411,7 +472,7 @@ export default function SlideOutDrawer() {
 
               <div
                 id="dialog-scroll-container"
-                className="min-h-0 max-h-full flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain bg-muted/15 touch-pan-y dark:bg-background/30"
+                className="min-h-0 max-h-full flex-1 overflow-y-auto overflow-x-hidden overscroll-y-contain [scrollbar-gutter:stable] bg-muted/15 touch-pan-y dark:bg-background/30"
                 onWheelCapture={(e) => e.stopPropagation()}
                 onTouchMoveCapture={(e) => e.stopPropagation()}
               >

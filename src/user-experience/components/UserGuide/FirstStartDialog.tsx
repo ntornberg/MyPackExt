@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -53,6 +54,10 @@ export default function FirstStartDialog({
         <div className="border-b border-border px-5 py-4">
           <DialogHeader>
             <DialogTitle>Extension Quick-Start Guide</DialogTitle>
+            <DialogDescription>
+              Learn how to use MyPack Plus course search, plan search, GEP search,
+              and schedule tools.
+            </DialogDescription>
           </DialogHeader>
         </div>
 

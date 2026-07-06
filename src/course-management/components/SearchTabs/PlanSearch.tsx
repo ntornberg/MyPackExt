@@ -1,7 +1,6 @@
 import { ChevronRight } from "lucide-react";
-import { useMemo, memo } from "react";
+import { useCallback, useMemo, memo } from "react";
 
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -159,6 +158,51 @@ export default function PlanSearch({
       planSearchData.selectedMinor ||
       (planSearchData.selectedMajor && planSearchData.selectedSubplan)
     );
+
+  const handleTermChange = useCallback(
+    (value: string | null) => {
+      setPlanSearchTabData({
+        selectedTerm: value,
+        instructorFilter: null,
+      });
+      onPreviewSectionChange(null);
+    },
+    [onPreviewSectionChange, setPlanSearchTabData],
+  );
+
+  const handleMajorChange = useCallback(
+    (value: string | null) => {
+      setPlanSearchTabData({
+        selectedMajor: value,
+        selectedSubplan: null,
+        instructorFilter: null,
+      });
+      onPreviewSectionChange(null);
+    },
+    [onPreviewSectionChange, setPlanSearchTabData],
+  );
+
+  const handleMinorChange = useCallback(
+    (value: string | null) => {
+      setPlanSearchTabData({
+        selectedMinor: value,
+        instructorFilter: null,
+      });
+      onPreviewSectionChange(null);
+    },
+    [onPreviewSectionChange, setPlanSearchTabData],
+  );
+
+  const handleSubplanChange = useCallback(
+    (value: string | null) => {
+      setPlanSearchTabData({
+        selectedSubplan: value,
+        instructorFilter: null,
+      });
+      onPreviewSectionChange(null);
+    },
+    [onPreviewSectionChange, setPlanSearchTabData],
+  );
 
   const planSearch = async () => {
     logEvent("plan_search_clicked", {
@@ -389,7 +433,7 @@ export default function PlanSearch({
             <div className="flex w-full flex-col border-t border-border px-4 pt-2 pb-4">
               {courses.map((course: RequiredCourse, index: number) => (
                 <div
-                  key={`${course.course_abr} ${course.catalog_num}`}
+                  key={`${requirementKey}-${course.course_abr} ${course.catalog_num}-${index}`}
                   className="mb-3"
                 >
                   <h6 className="mb-2 border-b border-border pb-1 text-base font-medium text-foreground">
@@ -451,9 +495,7 @@ export default function PlanSearch({
             <PlannerFilterCombobox
               items={Object.keys(TermIdByName)}
               value={planSearchData.selectedTerm}
-              onValueChange={(value) =>
-                setPlanSearchTabData("selectedTerm", value)
-              }
+              onValueChange={handleTermChange}
               placeholder="Select term"
               emptyLabel="No terms found."
               portalContainer={portalContainer}
@@ -464,9 +506,7 @@ export default function PlanSearch({
             <PlannerFilterCombobox
               items={major_options}
               value={planSearchData.selectedMajor}
-              onValueChange={(value) =>
-                setPlanSearchTabData("selectedMajor", value)
-              }
+              onValueChange={handleMajorChange}
               placeholder="Select major"
               emptyLabel="No majors found."
               portalContainer={portalContainer}
@@ -477,9 +517,7 @@ export default function PlanSearch({
             <PlannerFilterCombobox
               items={minor_options}
               value={planSearchData.selectedMinor}
-              onValueChange={(value) =>
-                setPlanSearchTabData("selectedMinor", value)
-              }
+              onValueChange={handleMinorChange}
               placeholder="Select minor"
               emptyLabel="No minors found."
               portalContainer={portalContainer}
@@ -490,9 +528,7 @@ export default function PlanSearch({
             <PlannerFilterCombobox
               items={subplanOptions}
               value={planSearchData.selectedSubplan}
-              onValueChange={(value) =>
-                setPlanSearchTabData("selectedSubplan", value)
-              }
+              onValueChange={handleSubplanChange}
               placeholder="Select subplan"
               emptyLabel="No subplans found."
               disabled={!planSearchData.selectedMajor}
@@ -541,13 +577,14 @@ export default function PlanSearch({
               </div>
             </div>
           </Field>
-          <Button
+          <button
+            type="button"
             onClick={planSearch}
             disabled={isSearchDisabled}
-            className="w-full origin-center font-semibold motion-safe:duration-150 motion-safe:ease-out motion-safe:hover:scale-[1.01] motion-safe:active:scale-[1.04] active:!translate-y-0"
+            className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-transparent bg-primary px-2.5 text-sm font-semibold whitespace-nowrap text-primary-foreground transition-colors outline-none select-none hover:brightness-[1.04] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:!transform-none active:![scale:1] active:![translate:none] disabled:pointer-events-none disabled:opacity-50"
           >
             Search
-          </Button>
+          </button>
           <Field orientation="horizontal">
             <ShadcnCheckbox
               checked={planSearchData.hideNoSections}
@@ -555,6 +592,7 @@ export default function PlanSearch({
                 setPlanSearchTabData("hideNoSections", Boolean(checked))
               }
               id="hide-empty-plan"
+              className="size-5 rounded-md border-2 border-foreground/40 bg-background shadow-sm dark:border-foreground/50 dark:bg-muted/80 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
             />
             <FieldLabel htmlFor="hide-empty-plan" className="font-normal">
               Hide courses with no open sections

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -88,7 +89,7 @@ export default function WhatsNewDialog({ onResolved }: WhatsNewDialogProps) {
               </Badge>
             </div>
             <DialogTitle className="text-xl font-bold">{release.title}</DialogTitle>
-            <p className="text-sm text-muted-foreground">{release.subtitle}</p>
+            <DialogDescription>{release.subtitle}</DialogDescription>
           </DialogHeader>
         </div>
 
