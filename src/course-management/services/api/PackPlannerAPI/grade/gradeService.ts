@@ -1,13 +1,16 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 
-import { createShadowHost } from "../../../../../utils/dom";
+import degreeAuditCardCss from "../../../../../degree-planning/components/DegreeAuditCards/degreeAuditCards.css?inline";
+import { createShadowHost, injectCssOnce } from "../../../../../utils/dom";
 import { GradeCard } from "../../../../../degree-planning/components/DegreeAuditCards/GradeCard";
 import type {
   Course,
   GradeData,
   SingleCourseDataResponse,
 } from "../../../../../types/api.ts";
+
+const DEGREE_AUDIT_CARD_STYLE_ID = "mpp-degree-audit-card-styles";
 
 /**
  * Creates a grade card component from course data.
@@ -22,11 +25,15 @@ export function createGradeCard(
   const { host: wrapper, container } = createShadowHost(
     "mypack-extension-data-grade",
   );
-  wrapper.style.overflow = "visible";
-  wrapper.style.width = "100%";
-  wrapper.style.maxWidth = "100%";
-  wrapper.style.boxSizing = "border-box";
-  wrapper.style.display = "block";
+  injectCssOnce(document, DEGREE_AUDIT_CARD_STYLE_ID, degreeAuditCardCss);
+  if (wrapper.shadowRoot) {
+    injectCssOnce(
+      wrapper.shadowRoot,
+      DEGREE_AUDIT_CARD_STYLE_ID,
+      degreeAuditCardCss,
+    );
+  }
+  wrapper.className = "mpp-degree-card-host";
 
   const courseData = data.CourseData;
   if (!courseData) {

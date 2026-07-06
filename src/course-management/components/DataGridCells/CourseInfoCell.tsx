@@ -27,7 +27,7 @@ export const CourseInfoCell = (params: ModifiedSection) => {
 
   const tooltipContent = useMemo(
     () => (
-      <div className="flex flex-col gap-1 p-1" style={{ maxWidth: 800 }}>
+      <div className="flex max-w-[800px] flex-col gap-1 p-1">
         <p className="text-sm font-bold">Section: {section}</p>
         <p className="text-sm">Type: {component}</p>
         <p className="text-sm">Time: {dayTime}</p>

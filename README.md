@@ -1,50 +1,70 @@
-# MyPack Plus (Course Picker Extension)
+# MyPack Plus
 
-MyPack Plus is a browser extension that makes course selection on the MyPack Portal less painful. It overlays historical grade distributions and RateMyProfessors info right where you’re making choices, and also pulls in live section availability.
+MyPack Plus is a browser extension for NC State students using MyPack Portal. It adds course search, section comparison, grade history, professor ratings, schedule previews, and cart helpers directly inside the registration workflow.
+
+The extension is independent and is not affiliated with, endorsed by, or sponsored by NC State University.
 
 ## Features
-- Grade and professor overlays directly in the MyPack Portal UI
-- A dialog that lets you search by course, GEP plans, and major/minor plans (with concentrations)
-- Live availability checks to the registrar
-- Fast, $0-to-host backend: Supabase Edge Functions for consolidated grade/professor data
-- Performance-focused: batch retrievals, layered caching (Chrome storage + IndexedDB), and parallel subject lookups
 
-## Try it
-- Site: `mypackplus.me`
-- Not affiliated with NC State
+- Course Search by term, subject, and course.
+- GEP Search by requirement category.
+- Major and minor requirement search, including subplans where available.
+- Section comparison cards with availability, seats, instructor, meeting time, linked labs or recitations, grades, and professor ratings.
+- Schedule preview with enrolled/cart blocks, selected-section blocks, and conflict markers.
+- Add-to-cart helpers for compatible lecture/lab combinations.
+- Light and dark mode support.
+- Local caching and batched lookups for faster repeat searches.
 
-## How it works (short version)
-- Content script injects the UI and overlays into the existing MyPack pages
-- Background service worker proxies requests from the page when needed
-- Supabase Edge Functions serve consolidated grade and professor data
-- Registrar lookups are proxied and batched; caching keeps things quick and cheap
+## Tech Stack
 
-## Tech stack
-- React, TypeScript, MUI, Vite
-- Supabase Edge Functions
-- Cloudflare Workers (registrar lookups)
+- React 19, TypeScript, Vite, Manifest V3.
+- Tailwind CSS v4 and shadcn-style UI primitives.
+- MUI X Charts for chart rendering.
+- Supabase-backed grade/professor data.
+- Cloudflare/registrar lookup infrastructure.
 
-## Notes to developers
-This grew fast with one developer on a short timeline, so there are rough edges. I’ve cleaned up a lot but there’s still work to do.
+## Project Layout
 
-### Dead code
-There are some unused `.ts`/`.tsx` files hanging around from earlier iterations.
+- `src/extension` contains the content script and background service worker.
+- `src/ui-system/components` contains shared planner UI, workbench components, and reusable controls.
+- `src/course-management` contains section search, registrar data, cart actions, and result rendering.
+- `src/degree-planning` contains plan/GEP data and injected grade/professor cards.
+- `src/staging` contains the planner staging app used for visual and interaction checks outside MyPack.
 
-### Scattered CSS injections
-Early on I had to override some MyPack table styles, so there’s CSS being injected in a few places. Needs consolidation.
+## Development
 
-### Too many data types
-Data formats evolved as I pulled from different sources. It needs a proper abstracton.
+Install dependencies:
 
-### Heavy UI lists (GEP + Plans)
-Those views display a lot of data. I ended up with a tree-based UI to keep things usable, but there’s likely leftover code from prior attempts.
+```bash
+npm install
+```
 
-### File names and organization
-It’s not as organized as it should be. Some files are misnamed (e.g., an `index.ts` that only holds types). Reorganization is on the list.
+Run the Vite dev server:
 
-## What’s next
-- Refactors for readability and better modularity
-- Smarter caching and invalidation rules
-- Automated testing: API contract checks + UI smoke tests so things keep working if MyPack changes its UI
+```bash
+npm run dev
+```
 
-Contributions and PRs are welcome.
+Run the staging planner:
+
+```bash
+npm run dev:planner-staging
+```
+
+Build the extension:
+
+```bash
+npm run build
+```
+
+Run tests:
+
+```bash
+npm exec vitest
+```
+
+## Notes
+
+- The main planner UI renders inside a shadow-root overlay so host MyPack styles do not leak into the extension.
+- Injected grade/professor cards use their own small stylesheet because they render inside MyPack rows and, in one case, a separate shadow root.
+- Some inline styles remain intentionally for dynamic geometry and data-driven color values, such as calendar event placement and fractional star fills.

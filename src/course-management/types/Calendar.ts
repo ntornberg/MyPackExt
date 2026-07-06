@@ -3,7 +3,7 @@ export interface ScheduleEvent {
   subj: string;
   start: string;
   end: string;
-  days: { day: string; isOverlapping: boolean }[];
+  days: { day: string; isOverlapping: boolean; conflictsWith?: string[] }[];
   color: string;
 }
 

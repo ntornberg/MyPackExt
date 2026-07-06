@@ -1,0 +1,133 @@
+:host,
+.mpp-degree-card-host {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.mpp-degree-card {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0.375rem 0.5rem 0.5rem;
+  border: 1px solid rgb(148 163 184 / 0.28);
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgb(15 23 42 / 0.16);
+  color: #0f172a;
+  font-size: 12px;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+.mpp-degree-card-title {
+  margin: 0 0 0.125rem;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.mpp-degree-card-center-text {
+  margin: 0;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.mpp-degree-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.mpp-degree-card-link-icon {
+  color: #1d4ed8;
+}
+
+.mpp-degree-card-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 0.25rem;
+}
+
+.mpp-degree-card-muted {
+  margin: 0;
+  color: #475569;
+  text-align: center;
+  font-size: 11px;
+}
+
+.mpp-degree-card-empty {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  text-align: center;
+  font-size: 11px;
+}
+
+.mpp-degree-card-score {
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.mpp-degree-stars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.mpp-degree-star {
+  position: relative;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  line-height: 0;
+}
+
+.mpp-degree-star-base,
+.mpp-degree-star-fill-icon {
+  position: absolute;
+  inset: 0;
+}
+
+.mpp-degree-star-base {
+  color: #c2c7d0;
+}
+
+.mpp-degree-star-fill {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.mpp-degree-star-fill-icon {
+  color: #f59e0b;
+}
+
+.mpp-grade-card-average {
+  margin: 0.125rem 0 0;
+  color: #64748b;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.mpp-degree-card .MuiPieArcLabel-root {
+  font-weight: 700;
+}

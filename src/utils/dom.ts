@@ -20,6 +20,25 @@ export function createShadowHost(id: string): {
   return { host, container };
 }
 
+export function injectCssOnce(
+  root: Document | ShadowRoot,
+  id: string,
+  css: string,
+): void {
+  if (root.getElementById(id)) {
+    return;
+  }
+  const ownerDocument = "head" in root ? root : root.ownerDocument;
+  const style = ownerDocument.createElement("style");
+  style.id = id;
+  style.textContent = css;
+  if ("head" in root) {
+    root.head.appendChild(style);
+    return;
+  }
+  root.appendChild(style);
+}
+
 /**
  * Ensures that an extension cell exists in the given row, creating one if necessary.
  *
@@ -111,6 +130,13 @@ function ensureExtensionOverlayHostReset(): void {
   el.id = HOST_RESET_STYLE_ID;
   el.textContent = `
 #extension-overlay-root {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 1000 !important;
+  pointer-events: none !important;
   font-size: 16px !important;
   line-height: 1.5 !important;
   font-family: "Geist Variable", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
@@ -179,19 +205,7 @@ export function rewriteCssAssetUrlsForExtension(css: string): string {
 }
 
 function applySlideOutDrawerChrome(drawer: HTMLDivElement) {
-  // Compact, non-intrusive launcher pinned to the bottom-right corner of the
-  // viewport. Previously this was a full-height 300px-wide column that covered
-  // the right edge of the MyPack UI.
-  drawer.style.position = "fixed";
-  drawer.style.bottom = "20px";
-  drawer.style.right = "20px";
-  drawer.style.top = "auto";
-  drawer.style.left = "auto";
-  drawer.style.width = "auto";
-  drawer.style.height = "auto";
-  drawer.style.transition = "opacity 0.2s ease, transform 0.2s ease";
-  drawer.style.zIndex = "1001";
-  drawer.style.pointerEvents = "auto";
+  drawer.classList.add("planner-drawer-container");
 }
 
 /**
@@ -228,13 +242,6 @@ export function ensureOverlayContainer(shadowCss: string): HTMLDivElement {
   if (!host) {
     host = document.createElement("div");
     host.id = "extension-overlay-root";
-    host.style.position = "fixed";
-    host.style.top = "0";
-    host.style.left = "0";
-    host.style.width = "100%";
-    host.style.height = "100%";
-    host.style.zIndex = "1000";
-    host.style.pointerEvents = "none";
     document.body.appendChild(host);
   }
 
@@ -262,7 +269,6 @@ export function ensureOverlayContainer(shadowCss: string): HTMLDivElement {
     const portalRoot = document.createElement("div");
     portalRoot.id = "extension-portal-root";
     portalRoot.className = "mypack-shell";
-    portalRoot.style.pointerEvents = "auto";
     shadow.appendChild(portalRoot);
   } else {
     const styleEl =
@@ -280,7 +286,6 @@ export function ensureOverlayContainer(shadowCss: string): HTMLDivElement {
       const portalRoot = document.createElement("div");
       portalRoot.id = "extension-portal-root";
       portalRoot.className = "mypack-shell";
-      portalRoot.style.pointerEvents = "auto";
       shadow.appendChild(portalRoot);
     }
   }

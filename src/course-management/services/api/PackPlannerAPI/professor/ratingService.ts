@@ -1,12 +1,16 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 
+import degreeAuditCardCss from "../../../../../degree-planning/components/DegreeAuditCards/degreeAuditCards.css?inline";
 import { ProfRatingCard } from "../../../../../degree-planning/components/DegreeAuditCards/ProfRatingCard";
 import type {
   Course,
   MatchedRateMyProf,
   SingleCourseDataResponse,
 } from "../../../../../types/api.ts";
+import { createShadowHost, injectCssOnce } from "../../../../../utils/dom";
+
+const DEGREE_AUDIT_CARD_STYLE_ID = "mpp-degree-audit-card-styles";
 
 /**
  * Creates a professor rating card component from course data.
@@ -18,13 +22,17 @@ export function createProfessorCard(
   course: Course,
   data: SingleCourseDataResponse,
 ): HTMLDivElement {
-  const wrapper = document.createElement("div");
-  wrapper.id = "mypack-extension-data-prof";
-  wrapper.style.overflow = "visible";
-  wrapper.style.width = "100%";
-  wrapper.style.maxWidth = "100%";
-  wrapper.style.boxSizing = "border-box";
-  wrapper.style.display = "block";
+  const { host: wrapper, container } = createShadowHost(
+    "mypack-extension-data-prof",
+  );
+  if (wrapper.shadowRoot) {
+    injectCssOnce(
+      wrapper.shadowRoot,
+      DEGREE_AUDIT_CARD_STYLE_ID,
+      degreeAuditCardCss,
+    );
+  }
+  wrapper.className = "mpp-degree-card-host";
 
   const profInfo = data.RateMyProfInfo;
 
@@ -36,7 +44,7 @@ export function createProfessorCard(
       !profInfo.first_name &&
       !profInfo.last_name)
   ) {
-    wrapper.textContent = "Professor not found.";
+    container.textContent = "Professor not found.";
     return wrapper;
   }
 
@@ -52,7 +60,7 @@ export function createProfessorCard(
   };
 
   // Render the professor rating card component
-  const root = createRoot(wrapper);
+  const root = createRoot(container);
   root.render(React.createElement(ProfRatingCard, profData));
 
   return wrapper;

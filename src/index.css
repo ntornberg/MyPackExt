@@ -3,6 +3,7 @@
 @import "tailwindcss/preflight.css" layer(base);
 @import "tw-animate-css";
 @import "@fontsource-variable/geist";
+@import "./ui-system/styles/planner.css";
 
 /* Shadow extension: theme lives on the host via `data-mpp-theme`; `.dark` covers staging/MUI. */
 @custom-variant dark (&:is(.dark *, #extension-overlay-root[data-mpp-theme="dark"] *));

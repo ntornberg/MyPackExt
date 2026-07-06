@@ -21,7 +21,7 @@ export const InfoCell = (params: ModifiedSection) => {
 
   // Return both cells side by side if both have content
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+    <div className="flex items-center gap-2">
       {hasNotes && <ClassNotesCell {...params} />}
       {hasRequisites && <PrereqCell {...params} />}
     </div>

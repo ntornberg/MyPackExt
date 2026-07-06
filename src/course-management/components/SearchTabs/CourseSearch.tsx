@@ -2,14 +2,6 @@ import { SearchIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
   Field,
   FieldDescription,
   FieldGroup,
@@ -24,6 +16,11 @@ import {
   PaginationControls,
   usePagination,
 } from "../../../ui-system/components/shared/PaginationControls";
+import { PlannerPanel } from "../../../ui-system/components/planner/PlannerPanel";
+import {
+  ScheduleFitField,
+  SearchSubmitButton,
+} from "../../../ui-system/components/planner/PlannerControls";
 import { PlannerFilterCombobox } from "../../../ui-system/components/workbench/PlannerFilterCombobox";
 import { PlannerWorkbenchLayout } from "../../../ui-system/components/workbench/PlannerWorkbenchLayout";
 import { SectionCompareCard } from "../../../ui-system/components/workbench/SectionCompareCard";
@@ -476,17 +473,11 @@ export default function CourseSearch({
   );
 
   const controlsPanel = (
-    <Card className="overflow-visible bg-card/80 shadow-sm">
-      <CardHeader className="gap-1">
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-primary/75">
-          Course Search
-        </div>
-        <CardTitle className="text-base">Parameters</CardTitle>
-        <CardDescription>
-          Pick a term, subject, and course to load section comparisons.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <PlannerPanel
+      eyebrow="Course Search"
+      title="Parameters"
+      description="Pick a term, subject, and course to load section comparisons."
+    >
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="term_selector">Term</FieldLabel>
@@ -554,41 +545,19 @@ export default function CourseSearch({
             </FieldDescription>
           </Field>
 
-          <Field>
-            <div className="flex items-start gap-3 rounded-lg border-2 border-border bg-card p-3.5 shadow-sm dark:bg-card/95">
-              <Checkbox
-                id="course-schedule-fit"
-                checked={courseSearchData.scheduleFitOnly}
-                onCheckedChange={(v) =>
-                  setCourseSearchTabData("scheduleFitOnly", v === true)
-                }
-                aria-describedby="course-schedule-fit-desc"
-                className="mt-0.5 size-5 rounded-md border-2 border-foreground/40 bg-background shadow-sm dark:border-foreground/50 dark:bg-muted/80 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
-              />
-              <div className="min-w-0 space-y-1">
-                <FieldLabel
-                  htmlFor="course-schedule-fit"
-                  className="cursor-pointer text-sm font-medium text-foreground"
-                >
-                  Fits my schedule
-                </FieldLabel>
-                <FieldDescription id="course-schedule-fit-desc">
-                  Hide sections that overlap classes in your cart or enrolled
-                  schedule.
-                </FieldDescription>
-              </div>
-            </div>
-          </Field>
+          <ScheduleFitField
+            id="course-schedule-fit"
+            checked={courseSearchData.scheduleFitOnly}
+            onCheckedChange={(checked) =>
+              setCourseSearchTabData("scheduleFitOnly", checked)
+            }
+          />
 
-          <button
-            type="button"
+          <SearchSubmitButton
             onClick={() => void courseSearch()}
             disabled={isSearchDisabled}
-            className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-transparent bg-primary px-2.5 text-sm font-semibold whitespace-nowrap text-primary-foreground transition-colors outline-none select-none hover:brightness-[1.04] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:!transform-none active:![scale:1] active:![translate:none] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
-          >
-            <SearchIcon data-icon="inline-start" />
-            Search
-          </button>
+            showIcon
+          />
         </FieldGroup>
 
         {isLoading ? (
@@ -602,8 +571,7 @@ export default function CourseSearch({
             Error: {error.message}
           </p>
         ) : null}
-      </CardContent>
-    </Card>
+    </PlannerPanel>
   );
 
   const hasSectionResults =
@@ -659,31 +627,27 @@ export default function CourseSearch({
   );
 
   const resultsPanel = (
-    <Card className="min-w-0 overflow-visible bg-card/80 shadow-sm">
-      <CardHeader className="gap-3 pb-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Comparison workspace
-            </div>
-            <CardTitle className="text-base">Sections</CardTitle>
-            <CardDescription>
-              {hasSectionResults
-                ? filteredTableRows.length > 0
-                  ? `Showing ${paginatedResultsStart + 1}-${paginatedResultsEnd} of ${filteredTableRows.length} result${filteredTableRows.length === 1 ? "" : "s"}${filteredTableRows.length !== tableRows.length ? ` (filtered from ${tableRows.length})` : ""}.`
-                  : "0 results match the current filters."
-                : undefined}
-            </CardDescription>
-          </div>
-          <SectionDensityToggle
-            value={courseSearchData.compactSections ? "compact" : "comfy"}
-            onValueChange={(value) =>
-              setCourseSearchTabData("compactSections", value === "compact")
-            }
-          />
-        </div>
-      </CardHeader>
-      <CardContent className="min-w-0 space-y-3">
+    <PlannerPanel
+      eyebrow="Comparison workspace"
+      title="Sections"
+      description={
+        hasSectionResults
+          ? filteredTableRows.length > 0
+            ? `Showing ${paginatedResultsStart + 1}-${paginatedResultsEnd} of ${filteredTableRows.length} result${filteredTableRows.length === 1 ? "" : "s"}${filteredTableRows.length !== tableRows.length ? ` (filtered from ${tableRows.length})` : ""}.`
+            : "0 results match the current filters."
+          : undefined
+      }
+      actions={
+        <SectionDensityToggle
+          value={courseSearchData.compactSections ? "compact" : "comfy"}
+          onValueChange={(value) =>
+            setCourseSearchTabData("compactSections", value === "compact")
+          }
+        />
+      }
+      contentClassName="min-w-0 space-y-3"
+      headerClassName="pb-3"
+    >
         {hasSectionResults ? (
           <>
             <SectionCompareList
@@ -706,8 +670,7 @@ export default function CourseSearch({
             <p className="text-sm text-muted-foreground">{emptyStateMessage}</p>
           </div>
         )}
-      </CardContent>
-    </Card>
+    </PlannerPanel>
   );
 
   return (

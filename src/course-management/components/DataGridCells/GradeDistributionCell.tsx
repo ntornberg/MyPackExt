@@ -13,6 +13,14 @@ import {
 import type { GradeData } from "../../../types/api.ts";
 import type { ModifiedSection } from "../../types/Section";
 
+const GRADE_TEXT_CLASSES: Record<string, string> = {
+  A: "text-[#4caf50]",
+  B: "text-[#8bc34a]",
+  C: "text-[#b9aa00]",
+  D: "text-[#ff9800]",
+  F: "text-[#f44336]",
+};
+
 /**
  * Renders a button that opens a dialog with grade distribution pie chart for a section.
  * Returns null when no grade data available.
@@ -96,7 +104,9 @@ export const GradeDistributionCell = (params: ModifiedSection) => {
             <div className="mt-1 flex justify-around">
               {pieData.map((grade) => (
                 <div key={grade.id} className="text-center">
-                  <p className="font-bold" style={{ color: grade.color }}>
+                  <p
+                    className={`font-bold ${GRADE_TEXT_CLASSES[grade.label] ?? ""}`}
+                  >
                     {grade.label}
                   </p>
                   <p className="text-sm">{grade.value.toFixed(1)}%</p>

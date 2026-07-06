@@ -22,6 +22,14 @@ export function toMinutes(time: string) {
   return h * 60 + m;
 }
 
+function compactEventLabel(subject: string): string {
+  if (subject.length <= 15 || window.innerWidth >= 600) {
+    return subject;
+  }
+  const parts = subject.split(" ");
+  return `${parts[0] ?? subject} ${parts[1] ?? ""}...`.trim();
+}
+
 /**
  * Calculates pixel positions for an event block within the calendar body.
  *
@@ -196,10 +204,21 @@ export default function CreateCalendar({
                   const isOverlap = ev.days.some(
                     (d) => d.isOverlapping && d.day === day,
                   );
+                  const conflictNames = ev.days
+                    .find((d) => d.day === day)
+                    ?.conflictsWith?.filter((name) => name !== ev.subj);
+                  const conflictLabel =
+                    conflictNames && conflictNames.length > 0
+                      ? `Conflicts with ${conflictNames.join(", ")}`
+                      : "Conflicts with another class";
                   return (
                     <div
                       key={`${ev.id}-${day}`}
-                      className="absolute flex min-h-[18px] items-center overflow-hidden rounded-lg px-1.5 py-0.5 text-[8px] leading-snug font-semibold tracking-tight text-white sm:min-h-5 sm:px-2 sm:py-1 sm:text-[9px] md:text-[10px]"
+                      className={cn(
+                        "group/event absolute flex min-h-[18px] items-center overflow-hidden rounded-lg px-1.5 py-0.5 text-[8px] leading-snug font-semibold tracking-tight text-white transition-opacity sm:min-h-5 sm:px-2 sm:py-1 sm:text-[9px] md:text-[10px]",
+                        isOverlap && "hover:opacity-[0.85]",
+                      )}
+                      title={isOverlap ? conflictLabel : undefined}
                       style={{
                         top: topPx,
                         left: window.innerWidth < 640 ? 3 : 5,
@@ -211,9 +230,14 @@ export default function CreateCalendar({
                           : calendarBlockShellStyle(ev.color)),
                       }}
                     >
-                      {ev.subj.length > 15 && window.innerWidth < 600
-                        ? `${ev.subj.split(" ")[0]} ${ev.subj.split(" ")[1]}...`
-                        : ev.subj}
+                      <span className={cn(isOverlap && "group-hover/event:opacity-20")}>
+                        {compactEventLabel(ev.subj)}
+                      </span>
+                      {isOverlap ? (
+                        <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 px-1 text-center text-[8px] font-semibold leading-tight opacity-0 transition-opacity group-hover/event:opacity-100 sm:text-[9px]">
+                          {compactEventLabel(conflictLabel)}
+                        </span>
+                      ) : null}
                     </div>
                   );
                 })}

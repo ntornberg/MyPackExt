@@ -524,13 +524,7 @@ export function PlannerStagingApp() {
   return (
     <div
       id="extension-overlay-root"
-      className="min-h-screen w-full px-4 py-6 sm:px-6 sm:py-8"
-      style={{
-        background:
-          themeMode === "dark"
-            ? "radial-gradient(ellipse 120% 80% at 50% -20%, #1a2d52 0%, #0a1220 45%, #060a12 100%)"
-            : "linear-gradient(180deg, #e8eef8 0%, #f4f7fb 100%)",
-      }}
+      className={`planner-staging-root min-h-screen w-full px-4 py-6 sm:px-6 sm:py-8 ${themeMode === "dark" ? "dark" : ""}`}
     >
       <div
         className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-[1680px] flex-col overflow-hidden rounded-2xl border-2 border-border bg-card text-card-foreground shadow-lg ring-1 ring-border/50 dark:shadow-[0_24px_80px_rgba(0,0,0,0.35)] dark:ring-white/12 sm:rounded-[28px]"

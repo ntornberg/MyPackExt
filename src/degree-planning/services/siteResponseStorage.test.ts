@@ -66,4 +66,43 @@ describe("siteResponseStorage listener", () => {
       expect(mocks.invalidateScheduleCache).toHaveBeenCalledTimes(1);
     },
   );
+
+  it("keeps separate cache keys for repeated calendar occurrences of the same class", async () => {
+    await setupListener();
+
+    await messageHandler?.({
+      data: {
+        source: "realFetchHook",
+        type: "CLASS_DATA",
+        payload: {
+          responseType: "_getScheduleCalEvents",
+          data: [
+            {
+              class_nbr: "12345",
+              title: "CSC 226 (001)",
+              start: "2026-01-12T08:30:00",
+              end: "2026-01-12T09:45:00",
+            },
+            {
+              class_nbr: "12345",
+              title: "CSC 226 (001)",
+              start: "2026-01-14T08:30:00",
+              end: "2026-01-14T09:45:00",
+            },
+          ],
+        },
+      },
+    });
+
+    expect(mocks.generateCacheKey).toHaveBeenNthCalledWith(
+      1,
+      "12345|CSC 226 (001)|2026-01-12T08:30:00|2026-01-12T09:45:00",
+    );
+    expect(mocks.generateCacheKey).toHaveBeenNthCalledWith(
+      2,
+      "12345|CSC 226 (001)|2026-01-14T08:30:00|2026-01-14T09:45:00",
+    );
+    expect(mocks.setGenericCache).toHaveBeenCalledTimes(2);
+    expect(mocks.invalidateScheduleCache).toHaveBeenCalledTimes(2);
+  });
 });

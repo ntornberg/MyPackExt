@@ -1,4 +1,4 @@
-﻿import { pieArcLabelClasses, PieChart } from "@mui/x-charts/PieChart";
+import { PieChart } from "@mui/x-charts/PieChart";
 import React from "react";
 
 import { useAutoSize } from "../../../hooks/useAutoSize";
@@ -24,32 +24,8 @@ export const GradeCard: React.FC<GradeData> = (props) => {
   const chartHeight = Math.min(h, 180);
 
   return (
-    <div
-      ref={wrapRef}
-      style={{
-        width: "100%",
-        maxWidth: "100%",
-        margin: 0,
-        padding: ".375rem .5rem .5rem",
-        boxSizing: "border-box",
-        background: "#fff",
-        boxShadow: "0 1px 4px rgba(15, 23, 42, 0.16)",
-        borderRadius: 6,
-        border: "1px solid rgba(148, 163, 184, 0.28)",
-        fontSize: 12,
-      }}
-    >
-      <h4
-        style={{
-          margin: "0 0 .125rem",
-          fontSize: 11,
-          fontWeight: 700,
-          letterSpacing: ".02em",
-          textAlign: "center",
-        }}
-      >
-        Grades
-      </h4>
+    <div ref={wrapRef} className="mpp-degree-card">
+      <h4 className="mpp-degree-card-title">Grades</h4>
 
       <PieChart
         width={chartWidth}
@@ -72,23 +48,10 @@ export const GradeCard: React.FC<GradeData> = (props) => {
             ],
           },
         ]}
-        sx={{ [`& .${pieArcLabelClasses.root}`]: { fontWeight: "bold" } }}
       />
 
-      <h4
-        style={{
-          color: "#64748b",
-          margin: ".125rem 0 0",
-          textAlign: "center",
-          fontSize: 11,
-          fontWeight: 600,
-          lineHeight: 1.2,
-        }}
-      >
-        Avg{" "}
-        <strong>
-          {class_avg_min}% – {class_avg_max}%
-        </strong>
+      <h4 className="mpp-grade-card-average">
+        Avg <strong>{class_avg_min}% - {class_avg_max}%</strong>
       </h4>
     </div>
   );

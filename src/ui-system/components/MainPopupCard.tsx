@@ -26,7 +26,6 @@ import {
   type TabUpdater,
 } from "../../course-management/components/TabDataStore/TabData";
 import { StatusBanner } from "../../user-experience/status/StatusBanner";
-import { customDataTableStyles } from "../styles/dataTableStyles";
 
 import {
   loadPersistedPlannerSession,
@@ -34,6 +33,11 @@ import {
   persistPlannerSelectedTab,
   persistPlannerSession,
 } from "./plannerSessionPersistence";
+import {
+  plannerActionButtonClassName,
+  plannerDrawerContentClassName,
+  plannerFloatingButtonClassName,
+} from "./planner/plannerShellStyles";
 import { PlannerPreviewRail } from "./workbench/PlannerPreviewRail";
 import { useOverlayPortalContainer } from "./workbench/useOverlayPortalContainer";
 import {
@@ -256,11 +260,14 @@ export default function SlideOutDrawer() {
   );
 
   const handleDrawerOpen = useCallback(() => {
+    if (drawerOpen) {
+      return;
+    }
     setDrawerOpen(true);
     void logEvent("drawer_opened", {
       source: "toolbar",
     });
-  }, []);
+  }, [drawerOpen]);
 
   const handleDrawerClose = useCallback(() => {
     persistPlannerSession({
@@ -336,21 +343,18 @@ export default function SlideOutDrawer() {
 
   return (
     <div className="mypack-shell flex flex-col items-end gap-2">
-      <style>{customDataTableStyles}</style>
-
-      <Button
-        type="button"
-        onClick={handleDrawerOpen}
-        size="sm"
-        aria-label="Open Pack Planner"
-        className="h-9 gap-1.5 rounded-full px-3.5 text-[13px] font-semibold tracking-[0.01em] text-primary-foreground shadow-[0_6px_14px_rgba(61,124,255,0.28)] hover:brightness-[1.05]"
-        style={{
-          backgroundImage: "linear-gradient(180deg, #5d95ff 0%, #3f79ff 100%)",
-        }}
-      >
-        <GraduationCapIcon className="size-4" strokeWidth={2.25} />
-        Pack Planner
-      </Button>
+      {!drawerOpen ? (
+        <Button
+          type="button"
+          onClick={handleDrawerOpen}
+          size="sm"
+          aria-label="Open Pack Planner"
+          className={plannerFloatingButtonClassName}
+        >
+          <GraduationCapIcon className="size-4" strokeWidth={2.25} />
+          Pack Planner
+        </Button>
+      ) : null}
 
       <Dialog
         open={drawerOpen}
@@ -372,7 +376,7 @@ export default function SlideOutDrawer() {
           }}
           onWheelCapture={(e) => e.stopPropagation()}
           onTouchMoveCapture={(e) => e.stopPropagation()}
-          className="mypack-shell flex h-[min(92vh,1040px)] min-h-0 w-[min(96vw,1580px)] max-w-[min(96vw,1580px)] sm:max-w-[min(96vw,1580px)] flex-col gap-0 overflow-hidden rounded-2xl border-2 border-slate-300/90 bg-[linear-gradient(180deg,rgb(251,252,254)_0%,rgb(236,241,249)_100%)] p-0 !text-base text-card-foreground shadow-xl ring-1 ring-slate-900/10 sm:rounded-[28px] dark:border-slate-500/55 dark:bg-[linear-gradient(165deg,rgb(14,22,38)_0%,rgb(8,14,26)_52%,rgb(5,9,17)_100%)] dark:shadow-[0_24px_80px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(148,174,224,0.14)] dark:ring-white/15 [&_[data-slot=card]]:border-2 [&_[data-slot=card]]:border-slate-300/85 [&_[data-slot=card]]:bg-card/85 [&_[data-slot=card]]:shadow-sm [&_[data-slot=card]]:ring-1 [&_[data-slot=card]]:ring-slate-900/10 dark:[&_[data-slot=card]]:border-slate-500/50 dark:[&_[data-slot=card]]:ring-white/10"
+          className={plannerDrawerContentClassName}
         >
           <TooltipProvider delayDuration={150}>
             <DialogTitle className="sr-only">Pack Planner</DialogTitle>
@@ -410,7 +414,7 @@ export default function SlideOutDrawer() {
                       asChild
                       variant="outline"
                       size="sm"
-                      className="rounded-full border-2 border-slate-300/70 bg-background/40 text-foreground shadow-sm ring-1 ring-white/10 hover:border-primary/55 hover:bg-muted/70 dark:border-slate-500/80 dark:bg-white/[0.04] dark:hover:border-slate-300/90 dark:hover:bg-white/[0.08]"
+                      className={plannerActionButtonClassName}
                     >
                       <a href="mailto:nicktornberg12@gmail.com?subject=Pack%20Planner%20Feedback">
                         Report bug / Feedback
@@ -420,7 +424,7 @@ export default function SlideOutDrawer() {
                       type="button"
                       variant="outline"
                       size="icon-sm"
-                      className="rounded-full border-2 border-slate-300/70 bg-background/40 text-foreground shadow-sm ring-1 ring-white/10 hover:border-primary/55 hover:bg-muted/70 dark:border-slate-500/80 dark:bg-white/[0.04] dark:hover:border-slate-300/90 dark:hover:bg-white/[0.08]"
+                      className={plannerActionButtonClassName}
                       onClick={() =>
                         setThemeMode((current) =>
                           current === "dark" ? "light" : "dark",
@@ -441,7 +445,7 @@ export default function SlideOutDrawer() {
                         type="button"
                         variant="outline"
                         size="icon-sm"
-                        className="rounded-full border-2 border-slate-300/70 bg-background/40 text-foreground shadow-sm ring-1 ring-white/10 hover:border-primary/55 hover:bg-muted/70 dark:border-slate-500/80 dark:bg-white/[0.04] dark:hover:border-slate-300/90 dark:hover:bg-white/[0.08]"
+                        className={plannerActionButtonClassName}
                         aria-label="Close planner"
                       >
                         <span className="text-base leading-none">x</span>

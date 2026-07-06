@@ -49,6 +49,12 @@ type ScheduleTableEntry = {
   waitlist_total: string | null;
 };
 
+type CachedEntry = {
+  combinedData?: unknown;
+};
+
+type CalendarEventEntry = Record<string, unknown>;
+
 type CalendarViewProps = {
   dayTime?: string;
   courseData?: { code?: string };
@@ -135,7 +141,10 @@ const hasSharedDay = (
 export const markOverlaps = (events: ScheduleEvent[]): ScheduleEvent[] => {
   const result = events.map((e) => ({
     ...e,
-    days: e.days.map((d) => ({ ...d })),
+    days: e.days.map((d) => ({
+      ...d,
+      conflictsWith: d.conflictsWith ? [...d.conflictsWith] : [],
+    })),
   }));
   for (let i = 0; i < result.length; i++) {
     for (let j = i + 1; j < result.length; j++) {
@@ -154,15 +163,33 @@ export const markOverlaps = (events: ScheduleEvent[]): ScheduleEvent[] => {
         );
         result[i] = {
           ...eventA,
-          days: eventA.days.map((day) =>
-            daysB[day.day] ? { ...day, isOverlapping: true } : day,
-          ),
+          days: eventA.days.map((day) => {
+            if (!daysB[day.day]) {
+              return day;
+            }
+            return {
+              ...day,
+              isOverlapping: true,
+              conflictsWith: Array.from(
+                new Set([...(day.conflictsWith ?? []), eventB.subj]),
+              ),
+            };
+          }),
         };
         result[j] = {
           ...eventB,
-          days: eventB.days.map((day) =>
-            daysA[day.day] ? { ...day, isOverlapping: true } : day,
-          ),
+          days: eventB.days.map((day) => {
+            if (!daysA[day.day]) {
+              return day;
+            }
+            return {
+              ...day,
+              isOverlapping: true,
+              conflictsWith: Array.from(
+                new Set([...(day.conflictsWith ?? []), eventA.subj]),
+              ),
+            };
+          }),
         };
       }
     }
@@ -182,11 +209,8 @@ function buildEventsFromTableEntries(
     return events;
   }
 
-  for (const course of Object.values(courses as Record<string, { combinedData?: unknown }>)) {
-    const scheduleEntry: ScheduleTableEntry =
-      typeof course.combinedData === "string"
-        ? (JSON.parse(course.combinedData) as ScheduleTableEntry)
-        : (course.combinedData as unknown as ScheduleTableEntry);
+  for (const course of Object.values(courses as Record<string, CachedEntry>)) {
+    const scheduleEntry = unpackCachedData(course) as ScheduleTableEntry | null;
 
     if (!scheduleEntry?.section_details) {
       continue;
@@ -232,6 +256,254 @@ function buildEventsFromTableEntries(
   return events;
 }
 
+function unpackCachedData(entry: unknown): unknown {
+  const data =
+    entry && typeof entry === "object" && "combinedData" in entry
+      ? (entry as CachedEntry).combinedData
+      : entry;
+
+  if (typeof data !== "string") {
+    return data;
+  }
+
+  try {
+    return JSON.parse(data);
+  } catch {
+    return data;
+  }
+}
+
+function stringValue(
+  entry: CalendarEventEntry,
+  keys: string[],
+): string | null {
+  for (const key of keys) {
+    const value = entry[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+  }
+  return null;
+}
+
+function normalizeTime(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  const isoTime = trimmed.match(/T(\d{1,2}):(\d{2})/);
+  if (isoTime) {
+    return formatTime(Number(isoTime[1]), Number(isoTime[2]));
+  }
+
+  const dateWithTime = trimmed.match(/\b(\d{1,2}):(\d{2})(?::\d{2})?\b/);
+  if (dateWithTime && !/[AP]M/i.test(trimmed)) {
+    return formatTime(Number(dateWithTime[1]), Number(dateWithTime[2]));
+  }
+
+  const amPm = trimmed.match(/\b(\d{1,2})(?::(\d{2}))?\s*([AP]M)\b/i);
+  if (amPm) {
+    const hour = Number(amPm[1]);
+    const minute = Number(amPm[2] ?? "0");
+    const meridiem = amPm[3]!.toUpperCase();
+    return `${hour}:${minute.toString().padStart(2, "0")} ${meridiem}`;
+  }
+
+  return null;
+}
+
+function formatTime(hour24: number, minute: number): string | null {
+  if (
+    !Number.isFinite(hour24) ||
+    !Number.isFinite(minute) ||
+    hour24 < 0 ||
+    hour24 > 23 ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    return null;
+  }
+  const meridiem = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 || 12;
+  return `${hour12}:${minute.toString().padStart(2, "0")} ${meridiem}`;
+}
+
+function weekdayFromDate(value: string | null): ScheduleEvent["days"] {
+  if (!value) {
+    return [];
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return [];
+  }
+
+  const day = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][
+    parsed.getDay()
+  ];
+  return day && day !== "Sun" && day !== "Sat"
+    ? [{ day: day as "Mon" | "Tue" | "Wed" | "Thu" | "Fri", isOverlapping: false }]
+    : [];
+}
+
+function weekdaysFromEvent(entry: CalendarEventEntry): ScheduleEvent["days"] {
+  const directDays = entry.days;
+  if (Array.isArray(directDays)) {
+    return directDays
+      .map((day) =>
+        typeof day === "string"
+          ? day.slice(0, 3)
+          : typeof day === "object" && day && "day" in day
+            ? String((day as { day: unknown }).day).slice(0, 3)
+            : "",
+      )
+      .filter((day): day is "Mon" | "Tue" | "Wed" | "Thu" | "Fri" =>
+        ["Mon", "Tue", "Wed", "Thu", "Fri"].includes(day),
+      )
+      .map((day) => ({ day, isOverlapping: false }));
+  }
+
+  const dow = entry.dow;
+  if (Array.isArray(dow)) {
+    const byIndex = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    return dow
+      .map((value) =>
+        typeof value === "number" ? byIndex[value] : byIndex[Number(value)],
+      )
+      .filter((day): day is "Mon" | "Tue" | "Wed" | "Thu" | "Fri" =>
+        ["Mon", "Tue", "Wed", "Thu", "Fri"].includes(day ?? ""),
+      )
+      .map((day) => ({ day, isOverlapping: false }));
+  }
+
+  const meetDays = stringValue(entry, ["meet_days", "meeting_days", "days_of_week"]);
+  if (meetDays) {
+    return meetDays
+      .split(/[\/,\s]+/)
+      .map((day) => day.trim().slice(0, 3))
+      .filter((day): day is "Mon" | "Tue" | "Wed" | "Thu" | "Fri" =>
+        ["Mon", "Tue", "Wed", "Thu", "Fri"].includes(day),
+      )
+      .map((day) => ({ day, isOverlapping: false }));
+  }
+
+  return weekdayFromDate(stringValue(entry, ["start", "start_date", "startDate"]));
+}
+
+function buildEventsFromCalendarEntries(
+  calendarEntries: unknown,
+  color: string,
+  idStart: number,
+): ScheduleEvent[] {
+  const events: ScheduleEvent[] = [];
+  let eventId = idStart;
+
+  if (!calendarEntries || typeof calendarEntries !== "object") {
+    return events;
+  }
+
+  for (const value of Object.values(calendarEntries as Record<string, CachedEntry>)) {
+    const raw = unpackCachedData(value);
+    if (!raw || typeof raw !== "object") {
+      continue;
+    }
+    const entry = raw as CalendarEventEntry;
+    const startRaw = stringValue(entry, [
+      "start",
+      "start_date",
+      "startDate",
+      "start_time",
+      "startTime",
+      "begin",
+      "begin_time",
+    ]);
+    const endRaw = stringValue(entry, [
+      "end",
+      "end_date",
+      "endDate",
+      "end_time",
+      "endTime",
+      "finish",
+      "finish_time",
+    ]);
+    const start = normalizeTime(startRaw);
+    const end = normalizeTime(endRaw);
+    const days = weekdaysFromEvent(entry);
+    if (!start || !end || days.length === 0) {
+      continue;
+    }
+
+    const subj =
+      stringValue(entry, [
+        "title",
+        "subject",
+        "subj",
+        "className",
+        "class",
+        "course",
+        "course_title",
+        "description",
+      ]) ?? "Class";
+    events.push({
+      id: eventId++,
+      subj,
+      start,
+      end,
+      days,
+      color,
+    });
+  }
+
+  return events;
+}
+
+function normalizedCourseToken(subject: string): string | null {
+  const match = subject.toUpperCase().match(/\b[A-Z]{2,5}\s*\d{3}[A-Z]?\b/);
+  return match ? match[0].replace(/\s+/g, " ") : null;
+}
+
+function eventCoversCandidate(
+  existing: ScheduleEvent,
+  candidate: ScheduleEvent,
+): boolean {
+  if (existing.start !== candidate.start || existing.end !== candidate.end) {
+    return false;
+  }
+
+  const existingToken = normalizedCourseToken(existing.subj);
+  const candidateToken = normalizedCourseToken(candidate.subj);
+  if (existingToken && candidateToken && existingToken !== candidateToken) {
+    return false;
+  }
+  if (!existingToken && !candidateToken && existing.subj !== candidate.subj) {
+    return false;
+  }
+
+  const existingDays = new Set(existing.days.map((day) => day.day));
+  return candidate.days.every((day) => existingDays.has(day.day));
+}
+
+function mergeScheduleSources(
+  tableEvents: ScheduleEvent[],
+  calendarEvents: ScheduleEvent[],
+): ScheduleEvent[] {
+  const merged = [...tableEvents];
+  for (const calendarEvent of calendarEvents) {
+    if (
+      !merged.some((existingEvent) =>
+        eventCoversCandidate(existingEvent, calendarEvent),
+      )
+    ) {
+      merged.push(calendarEvent);
+    }
+  }
+  return merged;
+}
+
 export const loadScheduleEvents = async (): Promise<ScheduleEvent[]> => {
   if (cachedScheduleEvents) {
     return cachedScheduleEvents;
@@ -242,12 +514,20 @@ export const loadScheduleEvents = async (): Promise<ScheduleEvent[]> => {
 
   cachedScheduleEventsPromise = (async () => {
     try {
-      const courses = await getCacheCategory("scheduleTableData");
-      cachedScheduleEvents = buildEventsFromTableEntries(
-        courses,
+      const calendarEntries = await getCacheCategory("scheduleCalEventsData");
+      const calendarEvents = buildEventsFromCalendarEntries(
+        calendarEntries,
         CALENDAR_COLOR_ENROLLED_CLASS,
         1,
       );
+
+      const tableEntries = await getCacheCategory("scheduleTableData");
+      const tableEvents = buildEventsFromTableEntries(
+        tableEntries,
+        CALENDAR_COLOR_ENROLLED_CLASS,
+        1 + calendarEvents.length,
+      );
+      cachedScheduleEvents = mergeScheduleSources(tableEvents, calendarEvents);
       return cachedScheduleEvents;
     } catch {
       cachedScheduleEventsPromise = null;
@@ -268,12 +548,20 @@ export const loadCartScheduleEvents = async (): Promise<ScheduleEvent[]> => {
 
   cachedCartEventsPromise = (async () => {
     try {
-      const courses = await getCacheCategory("shopCartTableData");
-      cachedCartEvents = buildEventsFromTableEntries(
-        courses,
+      const calendarEntries = await getCacheCategory("shopCartCalEventsData");
+      const calendarEvents = buildEventsFromCalendarEntries(
+        calendarEntries,
         CALENDAR_COLOR_CART_CLASS,
         10_000,
       );
+
+      const tableEntries = await getCacheCategory("shopCartTableData");
+      const tableEvents = buildEventsFromTableEntries(
+        tableEntries,
+        CALENDAR_COLOR_CART_CLASS,
+        10_000 + calendarEvents.length,
+      );
+      cachedCartEvents = mergeScheduleSources(tableEvents, calendarEvents);
       return cachedCartEvents;
     } catch {
       cachedCartEventsPromise = null;

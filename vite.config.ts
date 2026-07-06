@@ -40,7 +40,7 @@ export default defineConfig(({ mode }) => {
           manualChunks: isProduction
             ? {
                 vendor: ["react", "react-dom"],
-                mui: ["@mui/material", "@mui/icons-material", "@mui/lab"],
+                mui: ["@mui/material", "@mui/x-charts"],
                 utils: ["cheerio"],
               }
             : undefined,

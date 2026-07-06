@@ -2,14 +2,6 @@ import { ChevronRight } from "lucide-react";
 import { useCallback, useMemo, memo } from "react";
 
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Checkbox as ShadcnCheckbox, Checkbox } from "@/components/ui/checkbox";
-import {
   Field,
   FieldDescription,
   FieldGroup,
@@ -27,6 +19,12 @@ import type {
   Subplan,
 } from "../../../degree-planning/types/Plans";
 import { CircularProgressWithLabel } from "../../../ui-system/components/shared/CircularProgressWithLabel";
+import { PlannerPanel } from "../../../ui-system/components/planner/PlannerPanel";
+import {
+  HideEmptySectionsField,
+  ScheduleFitField,
+  SearchSubmitButton,
+} from "../../../ui-system/components/planner/PlannerControls";
 import { PlannerFilterCombobox } from "../../../ui-system/components/workbench/PlannerFilterCombobox";
 import { PlannerWorkbenchLayout } from "../../../ui-system/components/workbench/PlannerWorkbenchLayout";
 import { formatSectionInstructors } from "../../../ui-system/components/workbench/sectionCompareUtils";
@@ -477,18 +475,11 @@ export default function PlanSearch({
   ]);
 
   const controlsPanel = (
-    <Card className="overflow-visible bg-card/80 shadow-sm">
-      <CardHeader className="gap-1">
-        <div className="text-[11px] font-semibold uppercase tracking-wide text-primary/75">
-          Major Search
-        </div>
-        <CardTitle className="text-base">Parameters</CardTitle>
-        <CardDescription>
-          Open requirement groups, compare live sections, and keep schedule
-          context visible while you browse.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <PlannerPanel
+      eyebrow="Major Search"
+      title="Parameters"
+      description="Open requirement groups, compare live sections, and keep schedule context visible while you browse."
+    >
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="term_selector">Term</FieldLabel>
@@ -552,52 +543,21 @@ export default function PlanSearch({
               Optional: limit section lists to one instructor.
             </FieldDescription>
           </Field>
-          <Field>
-            <div className="flex items-start gap-3 rounded-lg border-2 border-border bg-card p-3.5 shadow-sm dark:bg-card/95">
-              <Checkbox
-                id="plan-schedule-fit"
-                checked={planSearchData.scheduleFitOnly}
-                onCheckedChange={(v) =>
-                  setPlanSearchTabData("scheduleFitOnly", v === true)
-                }
-                aria-describedby="plan-schedule-fit-desc"
-                className="mt-0.5 size-5 rounded-md border-2 border-foreground/40 bg-background shadow-sm dark:border-foreground/50 dark:bg-muted/80 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
-              />
-              <div className="min-w-0 space-y-1">
-                <FieldLabel
-                  htmlFor="plan-schedule-fit"
-                  className="cursor-pointer text-sm font-medium text-foreground"
-                >
-                  Fits my schedule
-                </FieldLabel>
-                <FieldDescription id="plan-schedule-fit-desc">
-                  Hide sections that overlap classes in your cart or enrolled
-                  schedule.
-                </FieldDescription>
-              </div>
-            </div>
-          </Field>
-          <button
-            type="button"
-            onClick={planSearch}
-            disabled={isSearchDisabled}
-            className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-transparent bg-primary px-2.5 text-sm font-semibold whitespace-nowrap text-primary-foreground transition-colors outline-none select-none hover:brightness-[1.04] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:!transform-none active:![scale:1] active:![translate:none] disabled:pointer-events-none disabled:opacity-50"
-          >
-            Search
-          </button>
-          <Field orientation="horizontal">
-            <ShadcnCheckbox
-              checked={planSearchData.hideNoSections}
-              onCheckedChange={(checked) =>
-                setPlanSearchTabData("hideNoSections", Boolean(checked))
-              }
-              id="hide-empty-plan"
-              className="size-5 rounded-md border-2 border-foreground/40 bg-background shadow-sm dark:border-foreground/50 dark:bg-muted/80 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
-            />
-            <FieldLabel htmlFor="hide-empty-plan" className="font-normal">
-              Hide courses with no open sections
-            </FieldLabel>
-          </Field>
+          <ScheduleFitField
+            id="plan-schedule-fit"
+            checked={planSearchData.scheduleFitOnly}
+            onCheckedChange={(checked) =>
+              setPlanSearchTabData("scheduleFitOnly", checked)
+            }
+          />
+          <SearchSubmitButton onClick={planSearch} disabled={isSearchDisabled} />
+          <HideEmptySectionsField
+            id="hide-empty-plan"
+            checked={planSearchData.hideNoSections ?? false}
+            onCheckedChange={(checked) =>
+              setPlanSearchTabData("hideNoSections", checked)
+            }
+          />
         </FieldGroup>
         {!planSearchData.isLoaded ? (
           <div className="mt-4 flex w-full justify-center">
@@ -607,29 +567,22 @@ export default function PlanSearch({
             />
           </div>
         ) : null}
-      </CardContent>
-    </Card>
+    </PlannerPanel>
   );
 
   const resultsPanel = (
-    <Card className="min-w-0 overflow-visible bg-card/80 shadow-sm">
-      <CardHeader className="gap-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Comparison Workspace
-            </div>
-            <CardTitle className="text-base">Requirement Tree</CardTitle>
-          </div>
-          <SectionDensityToggle
-            value={planSearchData.compactSections ? "compact" : "comfy"}
-            onValueChange={(value) =>
-              setPlanSearchTabData("compactSections", value === "compact")
-            }
-          />
-        </div>
-      </CardHeader>
-      <CardContent>
+    <PlannerPanel
+      eyebrow="Comparison Workspace"
+      title="Requirement Tree"
+      actions={
+        <SectionDensityToggle
+          value={planSearchData.compactSections ? "compact" : "comfy"}
+          onValueChange={(value) =>
+            setPlanSearchTabData("compactSections", value === "compact")
+          }
+        />
+      }
+    >
         {hasPlanSearchRun && requirementsList ? (
           requirementsList
         ) : (
@@ -637,8 +590,7 @@ export default function PlanSearch({
             No search results found for the selected plan and filters.
           </p>
         )}
-      </CardContent>
-    </Card>
+    </PlannerPanel>
   );
 
   return (
