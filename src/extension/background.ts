@@ -1,15 +1,19 @@
+import {
+  handleAnalyticsEvent,
+  handleAnalyticsInitialize,
+  handleAnalyticsSetOptOut,
+  isAnalyticsMessage,
+} from "../analytics/gaBackground";
+import { clearAllExtensionCaches } from "../course-management/cache/CourseRetrieval";
+import {
+  fetchStatusWorkerStatusDirect,
+  isStatusWorkerFetchMessage,
+} from "../user-experience/status/statusWorker";
 import { AppLogger } from "../utils/logger";
 
-// Service worker state tracking
 let isListenerRegistered = false;
 
-/**
- * Setup message listener with duplicate prevention.
- * Handles fetch proxy requests and ping messages from content scripts.
- * @returns {void}
- */
 function setupMessageListener() {
-  // Prevent duplicate listeners
   if (isListenerRegistered) {
     AppLogger.info(
       "[Background] Message listener already registered, skipping",
@@ -28,7 +32,6 @@ function setupMessageListener() {
         message.formData,
       );
 
-      // Handle the fetch request
       fetch(message.url, {
         method: "POST",
         headers: {
@@ -37,27 +40,67 @@ function setupMessageListener() {
         body: message.formData,
       })
         .then(async (res) => {
-          try {
-            const data = await res.text();
-            AppLogger.info(
-              `[Background] Fetch response text for course:`,
-              data,
-            );
-            sendResponse({ success: true, data });
-          } catch (err) {
-            AppLogger.error("[Background] Error reading response text:", err);
-            sendResponse({ success: false, error: (err as Error).toString() });
-          }
+          const data = await res.text();
+          AppLogger.info(`[Background] Fetch response text for course:`, data);
+          sendResponse({ success: true, data });
         })
         .catch((err) => {
           AppLogger.error("[Background] Fetch error:", err);
           sendResponse({ success: false, error: err.toString() });
         });
 
-      return true; // Keep message channel open for async response
+      return true;
     }
 
-    // Handle ping messages for connection testing
+    if (isAnalyticsMessage(message)) {
+      if (message.type === "analytics_initialize") {
+        sendResponse(handleAnalyticsInitialize());
+        return false;
+      }
+
+      if (message.type === "analytics_event") {
+        handleAnalyticsEvent(message, _sender)
+          .then((response) => sendResponse(response))
+          .catch((error) => {
+            AppLogger.error("[Analytics] Failed to process message:", error);
+            sendResponse({
+              success: false,
+              error: error instanceof Error ? error.message : String(error),
+            });
+          });
+
+        return true;
+      }
+
+      handleAnalyticsSetOptOut(message)
+        .then((response) => sendResponse(response))
+        .catch((error) => {
+          AppLogger.error("[Analytics] Failed to process message:", error);
+          sendResponse({
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        });
+
+      return true;
+    }
+
+    if (isStatusWorkerFetchMessage(message)) {
+      fetchStatusWorkerStatusDirect()
+        .then((status) => {
+          sendResponse({ success: true, status });
+        })
+        .catch((error) => {
+          AppLogger.error("[Status] Failed to fetch worker status:", error);
+          sendResponse({
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        });
+
+      return true;
+    }
+
     if (message.type === "ping") {
       sendResponse({ type: "pong", timestamp: Date.now() });
       return false;
@@ -68,35 +111,40 @@ function setupMessageListener() {
   AppLogger.info("[Background] Message listener registered successfully");
 }
 
-/**
- * Initialize service worker on startup/restart, ensuring listeners are registered.
- *
- * @returns {void}
- */
 function initializeServiceWorker() {
   AppLogger.info("[Background] Initializing service worker...");
-
-  // Setup message listener
   setupMessageListener();
-
   AppLogger.info("[Background] Service worker initialization complete");
 }
 
-/**
- * Handle service worker install event by initializing listeners.
- */
-chrome.runtime.onInstalled.addListener((details) => {
+async function handleInstalled(
+  details: chrome.runtime.InstalledDetails,
+): Promise<void> {
   AppLogger.info("[Background] Extension installed/updated:", details.reason);
+  if (details.reason === "install") {
+    void handleAnalyticsEvent({
+      type: "analytics_event",
+      name: "extension_installed",
+      params: {
+        install_reason: details.reason,
+        previous_version: details.previousVersion ?? "none",
+      },
+    });
+  }
+  if (details.reason === "update") {
+    AppLogger.info("[Background] Extension updated; clearing local caches");
+    await clearAllExtensionCaches();
+  }
   initializeServiceWorker();
+}
+
+chrome.runtime.onInstalled.addListener((details) => {
+  void handleInstalled(details);
 });
 
-/**
- * Handle service worker startup by initializing listeners.
- */
 chrome.runtime.onStartup.addListener(() => {
   AppLogger.info("[Background] Service worker startup event");
   initializeServiceWorker();
 });
 
-// Initialize immediately
 initializeServiceWorker();

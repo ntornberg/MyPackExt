@@ -22,13 +22,17 @@ export function createGradeCard(
   const { host: wrapper, container } = createShadowHost(
     "mypack-extension-data-grade",
   );
-  wrapper.style.marginTop = "0.5rem";
   wrapper.style.overflow = "visible";
-  wrapper.style.maxWidth = "400px";
-  wrapper.style.display = "inline-block";
-  wrapper.style.verticalAlign = "top";
+  wrapper.style.width = "100%";
+  wrapper.style.maxWidth = "100%";
+  wrapper.style.boxSizing = "border-box";
+  wrapper.style.display = "block";
 
   const courseData = data.CourseData;
+  if (!courseData) {
+    wrapper.textContent = "No grade data available.";
+    return wrapper;
+  }
 
   // Extract and parse grade data
   const a = parseFloat(courseData.a_average ?? "0");

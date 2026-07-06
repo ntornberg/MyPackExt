@@ -1,7 +1,19 @@
 // Keeps track of search info when switching dialog tabs.
-import type { MergedCourseData } from "../../types/Section";
 import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
 import type { RequiredCourse } from "../../../degree-planning/types/Plans.ts";
+import type { MergedCourseData } from "../../types/Section";
+
+export type TabUpdater<T> = (
+  keyOrPatch: keyof T | Partial<T>,
+  value?: unknown,
+) => void;
+
+export const DEFAULT_TERM_NAME = "2026 Fall Term";
+
+const termOptions = Object.keys(TermIdByName);
+const DEFAULT_TERM = termOptions.includes(DEFAULT_TERM_NAME)
+  ? DEFAULT_TERM_NAME
+  : (termOptions[0] ?? "");
 
 export type CourseSearchData = {
   selectedTerm: string | null;
@@ -12,16 +24,21 @@ export type CourseSearchData = {
     catalogNum: string | null;
     title: string | null;
     id: string;
-  };
+  } | null;
+  instructorFilter: string | null;
+  scheduleFitOnly: boolean;
+  compactSections: boolean;
 };
 export const CourseSearchDataInitialState: CourseSearchData = {
-  selectedTerm: Object.keys(TermIdByName)[2],
+  selectedTerm: DEFAULT_TERM,
   searchSubject: null,
   searchCourse: null,
   selectedCourseInfo: { code: null, catalogNum: null, title: null, id: "" },
+  instructorFilter: null,
+  scheduleFitOnly: false,
+  compactSections: false,
 };
 export type PlanSearchData = {
-  open: Record<string, boolean>;
   selectedMajor: string | null;
   selectedTerm: string | null;
   selectedMinor: string | null;
@@ -34,11 +51,13 @@ export type PlanSearchData = {
   progress: number | 0;
   progressLabel: string | null;
   hideNoSections: boolean | undefined;
+  instructorFilter: string | null;
+  scheduleFitOnly: boolean;
+  compactSections: boolean;
 };
 export const PlanSearchDataInitialState: PlanSearchData = {
-  open: {},
   selectedMajor: null,
-  selectedTerm: Object.keys(TermIdByName)[2],
+  selectedTerm: DEFAULT_TERM,
   selectedMinor: null,
   selectedSubplan: null,
   searchMajor: null,
@@ -49,6 +68,9 @@ export const PlanSearchDataInitialState: PlanSearchData = {
   progress: 0,
   progressLabel: "",
   hideNoSections: true,
+  instructorFilter: null,
+  scheduleFitOnly: false,
+  compactSections: false,
 };
 
 export type GEPData = {
@@ -60,9 +82,12 @@ export type GEPData = {
   courseData: Record<string, MergedCourseData> | {};
   courses: RequiredCourse[];
   hideNoSections: boolean;
+  instructorFilter: string | null;
+  scheduleFitOnly: boolean;
+  compactSections: boolean;
 };
 export const GEPDataInitialState: GEPData = {
-  selectedTerm: Object.keys(TermIdByName)[2],
+  selectedTerm: DEFAULT_TERM,
   searchSubject: "",
   isLoaded: true,
   progress: 0,
@@ -70,4 +95,7 @@ export const GEPDataInitialState: GEPData = {
   courseData: {},
   courses: [],
   hideNoSections: true,
+  instructorFilter: null,
+  scheduleFitOnly: false,
+  compactSections: false,
 };

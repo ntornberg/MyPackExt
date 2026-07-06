@@ -1,124 +1,126 @@
-import {
-  Button,
-  Checkbox,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControlLabel,
-  List,
-  ListItem,
-  ListItemText,
-  Typography,
-} from "@mui/material";
 import { useEffect, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+
+import { logEvent } from "../../../analytics/ga4";
 
 const LS_KEY = "firstStartDismissed";
 
+type FirstStartDialogProps = {
+  suppressAutoOpen?: boolean;
+};
+
 /**
- * Displays a quick‑start guide the first time the user opens the extension.
+ * Displays a quick-start guide the first time the user opens the extension.
  * A persistent "Don't show again" checkbox lets them skip the dialog next time.
- * //TODO: this needs to be redone this looks stupid
  */
-export default function FirstStartDialog() {
+export default function FirstStartDialog({
+  suppressAutoOpen = false,
+}: FirstStartDialogProps) {
   const [open, setOpen] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
-  /* On mount: check localStorage; if the user has dismissed before, don't open */
   useEffect(() => {
+    if (suppressAutoOpen) {
+      setOpen(false);
+      return;
+    }
     const dismissed = localStorage.getItem(LS_KEY) === "true";
     setOpen(!dismissed);
-  }, []);
+  }, [suppressAutoOpen]);
 
-  /* Handle close: persist the checkbox choice */
   const handleClose = () => {
     if (dontShowAgain) {
       localStorage.setItem(LS_KEY, "true");
     }
+    void logEvent("first_start_dismissed", { dont_show_again: dontShowAgain });
     setOpen(false);
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Extension Quick‑Start Guide</DialogTitle>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
+      <DialogContent showCloseButton={false} className="max-w-lg gap-0 overflow-hidden p-0">
+        {/* Header */}
+        <div className="border-b border-border px-5 py-4">
+          <DialogHeader>
+            <DialogTitle>Extension Quick-Start Guide</DialogTitle>
+            <DialogDescription>
+              Learn how to use MyPack Plus course search, plan search, GEP search,
+              and schedule tools.
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-      <DialogContent sx={{ maxWidth: 600 }}>
-        {/* ===== COURSE SEARCH TAB ===== */}
-        <SectionHeading text="Course Search tab" />
-        <UnorderedList
-          items={[
-            "Navigate to Planning & Enrollment → Enrollment Wizard, then click the new **Course Search** button in the page header.",
-            "Search by department and catalog number. Only sections that are **open** for registration are shown.",
-            "Each section card displays the professor, their Rate‑My‑Professor score, and historical grade distributions.",
-            "Hover the info icon to view meeting time, location, and a mini‑calendar. Your current schedule appears in **red**; the prospective section in **green**. Overlaps are rendered semi‑transparent.",
-            "Click **Add to Cart** to queue the section for enrollment. (Status feedback coming soon.)",
-          ]}
-        />
+        {/* Body */}
+        <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
+          <div className="flex flex-col gap-4">
+            <Section title="Course Search tab">
+              <Item text="Open Planning & Enrollment → Enrollment Wizard, then use the Course Search button in the page header." />
+              <Item text="Search by department and catalog number. Results only include sections that are currently open." />
+              <Item text="Each section card displays the professor, their Rate-My-Professor score, and historical grade distributions." />
+              <Item text="Use the info icon to view meeting time, location, and a mini-calendar. Your current schedule is shown in red, the candidate section in green." />
+              <Item text="Use Add to Cart to queue a section for enrollment." />
+            </Section>
 
-        {/* ===== PLAN SEARCH TAB ===== */}
-        <SectionHeading text="Plan Search tab" />
-        <UnorderedList
-          items={[
-            "Search for courses by major, minor, or major sub‑plan instead of typing catalog numbers.",
-            "Requirements are based on Registrar data (accuracy may vary). Click a requirement to see matching courses and their open sections in the familiar grid view.",
-          ]}
-        />
+            <Section title="Plan Search tab">
+              <Item text="Search for courses by major, minor, or major sub-plan instead of typing catalog numbers." />
+              <Item text="Requirements are based on Registrar data. Open any requirement to see matching courses and their available sections." />
+            </Section>
 
-        {/* ===== GEP SEARCH TAB ===== */}
-        <SectionHeading text="GEP Search tab" />
-        <UnorderedList
-          items={[
-            "Find classes that fulfill General Education Program requirements.",
-            "Interface mirrors the other tabs; UX polish is on the roadmap.",
-          ]}
-        />
+            <Section title="GEP Search tab">
+              <Item text="Find classes that fulfill General Education Program requirements." />
+              <Item text="The interface follows the same flow as the other search tabs." />
+            </Section>
 
-        {/* ===== GENERAL NOTES ===== */}
-        <SectionHeading text="General notes" />
-        <UnorderedList
-          items={[
-            "The extension is still in active development and lightly tested.",
-            "Feedback and bug reports are very welcome!",
-          ]}
-        />
-      </DialogContent>
+            <Section title="General notes">
+              <Item text="The extension is still in active development." />
+              <Item text="Feedback and bug reports are useful and appreciated." />
+            </Section>
+          </div>
+        </div>
 
-      <DialogActions sx={{ justifyContent: "space-between", px: 3, pb: 2 }}>
-        <FormControlLabel
-          control={
+        {/* Footer */}
+        <DialogFooter className="flex-row items-center justify-between rounded-none border-t border-border bg-muted/40 px-5 py-3">
+          <div className="flex items-center gap-2">
             <Checkbox
+              id="dont-show-again"
               checked={dontShowAgain}
-              onChange={(_, val) => setDontShowAgain(val)}
+              onCheckedChange={(v) => setDontShowAgain(!!v)}
             />
-          }
-          label="Don't show again"
-        />
-        <Button variant="contained" onClick={handleClose} autoFocus>
-          Got it!
-        </Button>
-      </DialogActions>
+            <Label htmlFor="dont-show-again" className="cursor-pointer text-sm font-normal">
+              Don't show again
+            </Label>
+          </div>
+          <Button size="sm" onClick={handleClose} autoFocus>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
   );
 }
 
-function SectionHeading({ text }: { text: string }) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
-      {text}
-    </Typography>
+    <div>
+      <h3 className="mb-2 text-sm font-bold">{title}</h3>
+      <ul className="flex flex-col gap-1.5 pl-4">{children}</ul>
+    </div>
   );
 }
 
-function UnorderedList({ items }: { items: string[] }) {
+function Item({ text }: { text: string }) {
   return (
-    <List dense sx={{ pl: 2, listStyleType: "disc" }}>
-      {items.map((item, idx) => (
-        <ListItem key={idx} sx={{ display: "list-item", py: 0 }}>
-          <ListItemText
-            primary={<Typography variant="body2">{item}</Typography>}
-          />
-        </ListItem>
-      ))}
-    </List>
+    <li className="list-disc text-sm text-muted-foreground">{text}</li>
   );
 }

@@ -1,12 +1,8 @@
-import createCache from "@emotion/cache";
-import { CacheProvider } from "@emotion/react";
+import { useState } from "react";
 import { createRoot } from "react-dom/client";
 
-import {
-  ensureOverlayContainer,
-  waitForScheduleTable,
-} from "../utils/dom";
-import { AppLogger } from "../utils/logger";
+import extensionCssRaw from "../index.css?inline";
+import { initializeAnalytics, logEvent } from "../analytics/ga4";
 import {
   debouncedScrapePlanner,
   scrapeScheduleTable,
@@ -14,51 +10,60 @@ import {
 import { setupListener } from "../degree-planning/services/siteResponseStorage.ts";
 import SlideOutDrawer from "../ui-system/components/MainPopupCard.tsx";
 import FirstStartDialog from "../user-experience/components/UserGuide/FirstStartDialog.tsx";
+import WhatsNewDialog from "../user-experience/components/UserGuide/WhatsNewDialog.tsx";
+import {
+  attachExtensionShadowTailwindStyleOrderObserver,
+  ensureOverlayContainer,
+  extensionCssForShadowRoot,
+  rewriteCssAssetUrlsForExtension,
+  waitForScheduleTable,
+} from "../utils/dom";
+import { AppLogger } from "../utils/logger";
 
 declare global {
   interface Window {
-    __savedDefine?: any;
+    __savedDefine?: unknown;
     __mypackEnhancerInitialized?: boolean;
   }
 }
 
 AppLogger.info("MyPack Enhancer script started.");
 
-// Is this even needed?
-/**
- * Creates an Emotion cache instance guarded to avoid crashing in hostile environments.
- *
- * @returns {import('@emotion/cache').EmotionCache} Emotion cache instance
- */
-export function createEmotionCache() {
-  try {
-    return createCache({
-      key: "mypack-css",
-    });
-  } catch (error) {
-    AppLogger.error("Error creating emotion cache:", error);
-    return createCache({
-      key: "mypack-css",
-    });
-  }
+const ANALYTICS_BOOTSTRAP_KEY = "mypack.analytics.content_script_loaded";
+const isTopLevelFrame = window.top === window;
+if (
+  isTopLevelFrame &&
+  sessionStorage.getItem(ANALYTICS_BOOTSTRAP_KEY) !== "true"
+) {
+  sessionStorage.setItem(ANALYTICS_BOOTSTRAP_KEY, "true");
+  void initializeAnalytics().then(() => {
+    logEvent("extension_content_script_loaded");
+  });
 }
 
-export const myEmotionCache = createEmotionCache();
+function RootOverlayDialogs() {
+  const [allowFirstStartAutoOpen, setAllowFirstStartAutoOpen] = useState(false);
 
-// Initialize message receiver early to avoid race with hook postings
+  return (
+    <>
+      <WhatsNewDialog onResolved={() => setAllowFirstStartAutoOpen(true)} />
+      <FirstStartDialog suppressAutoOpen={!allowFirstStartAutoOpen} />
+      <SlideOutDrawer />
+    </>
+  );
+}
+
 (async () => {
   try {
     await setupListener();
   } catch (err) {
-    AppLogger.error("Failed to initialize siteResponseStorage listener early:", err);
+    AppLogger.error(
+      "Failed to initialize siteResponseStorage listener early:",
+      err,
+    );
   }
 })();
 
-/**
- * Injects the fetch/XHR hook script into the main document to surface data to the content script.
- *
- * @returns {void}
- */
 function injectXHRHookScript() {
   const script = document.createElement("script");
   script.src = chrome.runtime.getURL("realFetchHook.js");
@@ -66,15 +71,8 @@ function injectXHRHookScript() {
   (document.head || document.documentElement).appendChild(script);
 }
 
-// Track processed iframes to prevent duplicates
 const processedIframes = new WeakSet<HTMLIFrameElement>();
 
-/**
- * Conditionally injects the hook script into qualifying MyPack iframes, once per iframe.
- *
- * @param {HTMLIFrameElement} iframe Target iframe element
- * @returns {void}
- */
 function injectIntoIframe(iframe: HTMLIFrameElement) {
   if (processedIframes.has(iframe)) {
     return;
@@ -89,7 +87,6 @@ function injectIntoIframe(iframe: HTMLIFrameElement) {
       return;
     }
 
-    // Only inject into MyPack-related iframes
     const isMyPackIframe =
       iframe.src.includes("mypack") ||
       iframe.src.includes("enrollment") ||
@@ -121,7 +118,6 @@ function injectIntoIframe(iframe: HTMLIFrameElement) {
   }
 }
 
-// Inject into main document
 injectXHRHookScript();
 
 const iframeObserver = new MutationObserver((mutations) => {
@@ -155,7 +151,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// --- Main Execution Block ---
 (async () => {
   try {
     if (window.__mypackEnhancerInitialized) {
@@ -166,20 +161,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     AppLogger.info("Initializing MyPack Drawer");
 
-    // Wait for elements to appear. This is a bit hacky lol
-
     const scheduleElement = await waitForScheduleTable();
-    const overlayElement = ensureOverlayContainer();
+    const shadowCss = extensionCssForShadowRoot(
+      rewriteCssAssetUrlsForExtension(extensionCssRaw),
+    );
+    const overlayElement = ensureOverlayContainer(shadowCss);
+    const shadowRoot = document
+      .getElementById("extension-overlay-root")
+      ?.shadowRoot;
+    if (!shadowRoot) {
+      throw new Error("Extension overlay shadow root was not created.");
+    }
+    attachExtensionShadowTailwindStyleOrderObserver(shadowRoot);
     const root = createRoot(overlayElement);
     scrapeScheduleTable(scheduleElement);
 
-    // Render root component
-    root.render(
-      <CacheProvider value={myEmotionCache}>
-        <FirstStartDialog />
-        <SlideOutDrawer />
-      </CacheProvider>,
-    );
+    root.render(<RootOverlayDialogs />);
     const initialIframe = document.querySelector<HTMLIFrameElement>(
       '[id$="divPSPAGECONTAINER"] iframe',
     );

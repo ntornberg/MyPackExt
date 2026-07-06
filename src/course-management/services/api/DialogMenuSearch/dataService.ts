@@ -1,5 +1,4 @@
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "../../../../config/supabase";
-import { groupSections } from "../../../../utils/course-search/groupSections";
 import type { MergedCourseData } from "../../../types/Section";
 import { mergeData } from "../../../../utils/course-search/mergeDataUtil";
 import type { CourseData } from "../../../../utils/course-search/parseRegistrarUtil";
@@ -32,9 +31,29 @@ const CACHE_KEYS = {
   GRADE_PROF: "gradeProfData",
   NULL_COURSES: "nullCourses", // Cache for courses that return no data
 };
+const OPEN_COURSES_CACHE_TTL_MS = 2 * 60 * 1000;
 
 function buildNullCourseCacheKey(courseKey: string, term: string): string {
   return `null-${courseKey} ${term}`;
+}
+
+/** Same path as mergeData so lecture rows get `linkedMeetings` (labs/rec only get that in mergeData). */
+function mergeCourseDataWithoutGradeBatch(
+  courseKey: string,
+  courseData: CourseData,
+  course: RequiredCourse,
+): MergedCourseData {
+  const emptyBatch: BatchDataRequestResponse = { courses: [], profs: [] };
+  const merged = mergeData(
+    { [courseKey]: courseData },
+    emptyBatch,
+    { [courseKey]: course },
+  );
+  const result = merged[courseKey];
+  if (!result) {
+    throw new Error(`mergeData missing course key: ${courseKey}`);
+  }
+  return result;
 }
 
 /**
@@ -132,7 +151,7 @@ export async function fetchSingleCourseData(
     await setGenericCache(
       CACHE_KEYS.OPEN_COURSES,
       { [openCoursesHashKey]: JSON.stringify(courseData) },
-      120,
+      OPEN_COURSES_CACHE_TTL_MS,
     );
     onProgress?.(40, `Cached open courses data for ${courseKey}`);
   }
@@ -158,14 +177,11 @@ export async function fetchSingleCourseData(
       instructor_name: section.instructor_name[0],
     }));
 
-  // If no sections with professors, return just the course data
+  // If no sections with professors, still run mergeData so `linkedMeetings` is set on lectures
+  // (e.g. CH 101 "Staff" rows have empty instructor_name[] but many Rec rows per Lec).
   if (courseSectionsWithProfs.length === 0) {
     onProgress?.(100, `Completed processing ${courseKey} (no instructor data)`);
-    const mergedCourse: MergedCourseData = {
-      ...courseData,
-      sections: groupSections(courseData.sections),
-    };
-    return mergedCourse;
+    return mergeCourseDataWithoutGradeBatch(courseKey, courseData, course);
   }
 
   // Generate hash for grade/professor cache lookup
@@ -224,14 +240,7 @@ export async function fetchSingleCourseData(
     } catch (error) {
       AppLogger.error("Error fetching grade/professor data:", error);
       onProgress?.(85, `Error fetching grade/professor data: ${error}`);
-      // Return course data without grade/professor info if fetch fails
-
-      const mergedCourse: MergedCourseData = {
-        ...courseData,
-        sections: groupSections(courseData.sections),
-      };
-
-      return mergedCourse;
+      return mergeCourseDataWithoutGradeBatch(courseKey, courseData, course);
     }
   }
 
@@ -335,8 +344,7 @@ export async function batchFetchCoursesData(
   const openCoursesToFetchCount = Object.keys(openCoursesToFetch).length;
 
   if (openCoursesToFetchCount > 0) {
-    const fetchProgressMessage =
-      `Fetching open courses data for ${openCoursesToFetchCount} courses`;
+    const fetchProgressMessage = `Fetching open courses data for ${openCoursesToFetchCount} courses`;
 
     // Regression guard: this message should always reflect the actual record key count.
     if (courses.length > 1) {
@@ -369,14 +377,17 @@ export async function batchFetchCoursesData(
               await setGenericCache(
                 CACHE_KEYS.OPEN_COURSES,
                 { [hashKey]: cacheData },
-                120,
+                OPEN_COURSES_CACHE_TTL_MS,
               );
               openCoursesCache[course.code] = course;
             }
           } else {
             const filteredCourseData = openCoursesToFetch[`${courseData.code}`];
             if (!filteredCourseData) {
-              const nullCacheKey = buildNullCourseCacheKey(courseData.code, term);
+              const nullCacheKey = buildNullCourseCacheKey(
+                courseData.code,
+                term,
+              );
               const nullHashKey = await generateCacheKey(nullCacheKey);
               await setGenericCache(CACHE_KEYS.NULL_COURSES, {
                 [nullHashKey]: {
@@ -392,7 +403,7 @@ export async function batchFetchCoursesData(
               await setGenericCache(
                 CACHE_KEYS.OPEN_COURSES,
                 { [hashKey]: cacheData },
-                120,
+                OPEN_COURSES_CACHE_TTL_MS,
               );
               openCoursesCache[courseData.code] = courseData;
             }

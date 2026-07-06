@@ -1,242 +1,113 @@
-import {
-  Box,
-  FormControlLabel,
-  ListItem,
-  ListItemText,
-  Typography,
-  Checkbox,
-  Button,
-  TextField,
-  Autocomplete,
-  List,
-} from "@mui/material";
-import { Column } from "primereact/column";
-import {
-  DataTable,
-  type DataTableExpandedRows,
-  type DataTableValueArray,
-  type DataTableRowToggleEvent,
-} from "primereact/datatable";
+import { ChevronRightIcon, ChevronDownIcon } from "lucide-react";
 import React, { useMemo, useCallback, useState } from "react";
 
-import type {
-  GroupedSections,
-  MergedCourseData,
-  ModifiedSection,
-} from "../../types/Section";
-import { AppLogger } from "../../../utils/logger.ts";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox as ShadcnCheckbox, Checkbox } from "@/components/ui/checkbox";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+
+import { logEvent } from "../../../analytics/ga4";
 import { GEP_COURSES } from "../../../degree-planning/DialogAutoCompleteKeys/GEPSearch/gep_courses.typed.ts";
 import { SubjectMenuValues } from "../../../degree-planning/DialogAutoCompleteKeys/SubjectSearchValues";
 import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
 import type { RequiredCourse } from "../../../degree-planning/types/Plans";
 import { CircularProgressWithLabel } from "../../../ui-system/components/shared/CircularProgressWithLabel";
-import { customDataTableStyles } from "../../../ui-system/styles/dataTableStyles.ts";
+import { PlannerFilterCombobox } from "../../../ui-system/components/workbench/PlannerFilterCombobox";
+import { PlannerWorkbenchLayout } from "../../../ui-system/components/workbench/PlannerWorkbenchLayout";
+import { formatSectionInstructors } from "../../../ui-system/components/workbench/sectionCompareUtils";
+import { SectionDensityToggle } from "../../../ui-system/components/workbench/SectionDensityToggle";
+import { useOverlayPortalContainer } from "../../../ui-system/components/workbench/useOverlayPortalContainer";
+import { useScheduleBackgroundEvents } from "../../../ui-system/components/workbench/useScheduleBackgroundEvents";
+import { type PlannerSectionPreview } from "../../../ui-system/components/workbench/workbenchTypes";
+import { AppLogger } from "../../../utils/logger.ts";
 import { fetchGEPCourseData } from "../../services/api/DialogMenuSearch/dataService";
-import { sortSections } from "../../types/DataGridCourse";
-import { CourseInfoCell } from "../DataGridCells/CourseInfoCell";
-import { GradeDistributionCell } from "../DataGridCells/GradeDistributionCell";
-import { InfoCell } from "../DataGridCells/InfoCell";
-import { RateMyProfessorCell } from "../DataGridCells/RateMyProfessorCell";
-import { StatusAndSlotsCell } from "../DataGridCells/StatusAndSlotsCell";
-import { ToCartButtonCell } from "../DataGridCells/ToCartButtonCell";
-import { type GEPData } from "../TabDataStore/TabData";
+import type { ScheduleEvent } from "../../types/Calendar";
+import type { MergedCourseData } from "../../types/Section";
+import { type GEPData, type TabUpdater } from "../TabDataStore/TabData";
+
+import { CourseSectionsCardList } from "./CourseSectionsCardList";
+
+/* eslint-disable react/prop-types -- TypeScript props on memo inner components */
 
 interface AutocompletesProps {
   selectedTerm: string | null;
   searchSubject: string | null;
-  setGepSearchTabData: (key: keyof GEPData, value: any) => void;
+  onTermChange: (value: string | null) => void;
+  onSubjectChange: (value: string | null) => void;
+  portalContainer: HTMLElement | null;
 }
 
-// Memoize the term options to prevent recalculation
 const TERM_OPTIONS = Object.keys(TermIdByName);
 
-// Memoize the subject options to prevent recalculation
-const SUBJECT_OPTIONS = Object.keys(GEP_COURSES);
+type GepSubjectCode = keyof typeof GEP_COURSES;
+
+const GEP_SUBJECTS: { code: GepSubjectCode; label: string }[] = [
+  { code: "FAD", label: "Foundations of American Democracy" },
+  { code: "GLOBAL", label: "Global Knowledge" },
+  { code: "HES", label: "Health and Exercise Studies" },
+  { code: "HUM", label: "Humanities" },
+  { code: "INTERDISC", label: "Interdisciplinary Perspectives" },
+  { code: "MATH", label: "Mathematical Sciences" },
+  { code: "NATSCI", label: "Natural Sciences" },
+  { code: "SOCSCI", label: "Social Sciences" },
+  { code: "USDIV", label: "U.S. Diversity" },
+  { code: "USDEI", label: "U.S. Diversity, Equity, and Inclusion" },
+  { code: "VPA", label: "Visual and Performing Arts" },
+];
+
+const SUBJECT_OPTIONS = GEP_SUBJECTS.map((subject) => subject.label);
+
+function findGepSubject(value: string | null) {
+  if (!value) {
+    return null;
+  }
+  return (
+    GEP_SUBJECTS.find(
+      (subject) => subject.code === value || subject.label === value,
+    ) ?? null
+  );
+}
 
 const MemoizedAutocompletes: React.FC<AutocompletesProps> = React.memo(
-  ({ selectedTerm, searchSubject, setGepSearchTabData }) => {
-    const handleTermChange = useCallback(
-      (_: React.SyntheticEvent, value: string | null) => {
-        setGepSearchTabData("selectedTerm", value);
-      },
-      [setGepSearchTabData],
-    );
-
-    const handleSubjectChange = useCallback(
-      (_: React.SyntheticEvent, value: string | null) => {
-        setGepSearchTabData("searchSubject", value);
-      },
-      [setGepSearchTabData],
-    );
-
+  ({ selectedTerm, searchSubject, onTermChange, onSubjectChange, portalContainer }) => {
     return (
-      <Box
-        sx={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}
-      >
-        <Autocomplete
-          sx={{ width: "100%" }}
-          id="term_selector"
-          options={TERM_OPTIONS}
-          value={selectedTerm}
-          defaultValue={TERM_OPTIONS[0]}
-          onChange={handleTermChange}
-          renderInput={(params: any) => <TextField {...params} label="Term" />}
-        />
-        <Autocomplete
-          sx={{ width: "100%" }}
-          id="subject_selector"
-          options={SUBJECT_OPTIONS}
-          value={searchSubject}
-          onChange={handleSubjectChange}
-          renderInput={(params: any) => (
-            <TextField {...params} label="Subject" />
-          )}
-        />
-      </Box>
-    );
-  },
-);
-
-const MemoizedDataTable = React.memo(
-  ({
-    sections,
-    sortFunc,
-  }: {
-    sections: GroupedSections[];
-    sortFunc: (a: GroupedSections, b: GroupedSections) => number;
-  }) => {
-    const [expandedRows, setExpandedRows] = useState<
-      DataTableExpandedRows | DataTableValueArray | undefined
-    >(undefined);
-
-    const rowExpansionTemplate = (data: GroupedSections) => {
-      AppLogger.info("Row expansion template in GEP Search", { data });
-      if (!data.labs || data.labs.length === 0) return null;
-      return (
-        <Box sx={{ width: "50%", display: "flex", flexDirection: "column" }}>
-          <DataTable
-            value={data.labs}
-            paginator
-            rows={10}
-            rowsPerPageOptions={[10, 25, 50]}
-          >
-            <Column
-              field="id"
-              header="ID"
-              body={(row: ModifiedSection) => row.section}
-            />
-            <Column
-              field="to_cart_button"
-              header=""
-              body={(row: ModifiedSection) =>
-                ToCartButtonCell(row, data.lecture || undefined)
-              }
-            />
-            <Column field="section" header="Section" body={CourseInfoCell} />
-            <Column
-              field="availability"
-              header="Status"
-              body={StatusAndSlotsCell}
-            />
-          </DataTable>
-        </Box>
-      );
-    };
-
-    const processedSections = useMemo(() => {
-      return sections.sort(sortFunc).flatMap((section, index) => {
-        if (section.lecture) {
-          return [
-            {
-              ...section,
-              id: section.lecture.classNumber || `grouped-${index}`,
-            },
-          ];
-        }
-        if (section.labs && section.labs.length > 0) {
-          return section.labs.map((lab, labIndex) => ({
-            lecture: lab,
-            labs: [],
-            id: lab.classNumber || `lab-only-${index}-${labIndex}`,
-          }));
-        }
-        return [];
-      });
-    }, [sections, sortFunc]);
-
-    return (
-      <>
-        <style>{customDataTableStyles}</style>
-        <DataTable
-          dataKey="id"
-          value={processedSections}
-          paginator
-          rows={5}
-          rowsPerPageOptions={[5, 10, 25]}
-          className="custom-datatable"
-          expandedRows={expandedRows}
-          onRowToggle={(e: DataTableRowToggleEvent) => setExpandedRows(e.data)}
-          rowExpansionTemplate={rowExpansionTemplate}
-        >
-          <Column
-            expander={(row: GroupedSections) =>
-              !!row.labs && row.labs.length > 0
-            }
-            style={{ width: "3em" }}
+      <FieldGroup>
+        <Field>
+          <FieldLabel htmlFor="term_selector">Term</FieldLabel>
+          <PlannerFilterCombobox
+            items={TERM_OPTIONS}
+            value={selectedTerm}
+            onValueChange={onTermChange}
+            placeholder="Select term"
+            emptyLabel="No terms found."
+            portalContainer={portalContainer}
           />
-          <Column
-            field="to_cart_button"
-            header=""
-            body={(params: GroupedSections) =>
-              params.lecture && ToCartButtonCell(params.lecture)
-            }
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="subject_selector">GEP Subject</FieldLabel>
+          <PlannerFilterCombobox
+            items={SUBJECT_OPTIONS}
+            value={findGepSubject(searchSubject)?.label ?? searchSubject}
+            onValueChange={onSubjectChange}
+            placeholder="Select GEP subject"
+            emptyLabel="No GEP subjects found."
+            portalContainer={portalContainer}
           />
-          <Column
-            field="availability"
-            header="Status"
-            body={(params: GroupedSections) =>
-              params.lecture && StatusAndSlotsCell(params.lecture)
-            }
-          />
-          <Column
-            field="section"
-            header="Course Info"
-            body={(params: GroupedSections) =>
-              params.lecture && CourseInfoCell(params.lecture)
-            }
-          />
-          <Column
-            field="instructor_name"
-            header="Instructor"
-            body={(row: GroupedSections) =>
-              Array.isArray(row.lecture?.instructor_name)
-                ? row.lecture?.instructor_name.join(", ")
-                : row.lecture?.instructor_name
-            }
-          />
-          <Column
-            field="professor_rating"
-            header="Rating"
-            body={(params: GroupedSections) =>
-              params.lecture && RateMyProfessorCell(params.lecture)
-            }
-          />
-          <Column
-            field="grade_distribution"
-            header="Grades"
-            body={(params: GroupedSections) =>
-              params.lecture && GradeDistributionCell(params.lecture)
-            }
-          />
-          <Column
-            field="info"
-            header="Info"
-            body={(params: GroupedSections) =>
-              params.lecture && InfoCell(params.lecture)
-            }
-          />
-        </DataTable>
-      </>
+          <FieldDescription>
+            Choose a GEP bucket to load matching courses and sections.
+          </FieldDescription>
+        </Field>
+      </FieldGroup>
     );
   },
 );
@@ -244,18 +115,42 @@ const MemoizedDataTable = React.memo(
 export interface GroupedCourse {
   displayTitle: string;
   courses: RequiredCourse[];
-  courseAbr: string; // Keep track of the abbreviation for keys/state
+  courseAbr: string;
 }
 
 interface GEPTreeProps {
   groupedData: GroupedCourse[];
   expandedGroups: Record<string, boolean>;
   onToggleGroup: (courseAbr: string) => void;
-  courseData: Record<string, MergedCourseData> | {}; // For section details
+  courseData: Record<string, MergedCourseData> | {};
+  onPreviewSectionChange: (preview: PlannerSectionPreview | null) => void;
+  selectedPreviewId: string | null;
+  scheduleBackground: ScheduleEvent[];
+  instructorFilter: string | null;
+  scheduleFitOnly: boolean;
+  compactSections: boolean;
 }
 
 const CourseSections = React.memo(
-  ({ courseDataEntry }: { courseDataEntry: MergedCourseData | undefined }) => {
+  ({
+    courseDataEntry,
+    courseKeyPrefix,
+    onPreviewSectionChange,
+    selectedPreviewId,
+    scheduleBackground,
+    instructorFilter,
+    scheduleFitOnly,
+    compactSections,
+  }: {
+    courseDataEntry: MergedCourseData | undefined;
+    courseKeyPrefix: string;
+    onPreviewSectionChange: (preview: PlannerSectionPreview | null) => void;
+    selectedPreviewId: string | null;
+    scheduleBackground: ScheduleEvent[];
+    instructorFilter: string | null;
+    scheduleFitOnly: boolean;
+    compactSections: boolean;
+  }) => {
     const sections = useMemo(() => {
       if (courseDataEntry?.sections) {
         return Object.values(courseDataEntry.sections);
@@ -265,45 +160,62 @@ const CourseSections = React.memo(
 
     if (sections.length > 0) {
       return (
-        <Box sx={{ height: "auto", width: "100%", display: "flex" }}>
-          <MemoizedDataTable sections={sections} sortFunc={sortSections} />
-        </Box>
+        <div className="flex h-auto w-full">
+          <CourseSectionsCardList
+            tab="gep_search"
+            sections={sections}
+            rowKeyPrefix={courseKeyPrefix}
+            selectedPreviewId={selectedPreviewId}
+            onPreviewSectionChange={onPreviewSectionChange}
+            instructorFilter={instructorFilter}
+            scheduleFitOnly={scheduleFitOnly}
+            scheduleBackground={scheduleBackground}
+            compact={compactSections}
+          />
+        </div>
       );
     }
 
     return (
-      <Typography variant="body1" sx={{ p: 2 }}>
-        No sections available for this course.
-      </Typography>
+      <p className="p-2 text-sm italic text-muted-foreground">
+        No sections available
+      </p>
     );
   },
 );
 
 const GEPTree: React.FC<GEPTreeProps> = React.memo(
-  ({ groupedData, expandedGroups, onToggleGroup, courseData }) => {
+  ({
+    groupedData,
+    expandedGroups,
+    onToggleGroup,
+    courseData,
+    onPreviewSectionChange,
+    selectedPreviewId,
+    scheduleBackground,
+    instructorFilter,
+    scheduleFitOnly,
+    compactSections,
+  }) => {
     return (
-      <Box sx={{ width: "100%" }}>
+      <div className="w-full">
         {groupedData.map((group) => (
           <React.Fragment key={`group-fragment-${group.courseAbr}`}>
-            <div
+            <button
+              type="button"
               key={`group-${group.courseAbr}`}
-              style={{
-                borderBottom: "1px solid #ccc",
-                padding: "10px",
-                cursor: "pointer",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
+              className="flex cursor-pointer items-center justify-between border-b border-border px-2 py-[1.25] hover:bg-foreground/[0.06]"
               onClick={() => onToggleGroup(group.courseAbr)}
             >
-              <Typography variant="h6">
+              <h6 className="text-base font-semibold">
                 {group.displayTitle} ({group.courses.length})
-              </Typography>
-              <Typography>
-                {expandedGroups[group.courseAbr] ? "[-]" : "[+]"}
-              </Typography>
-            </div>
+              </h6>
+              {expandedGroups[group.courseAbr] ? (
+                <ChevronDownIcon className="size-4 text-primary" />
+              ) : (
+                <ChevronRightIcon className="size-4 text-muted-foreground" />
+              )}
+            </button>
             {expandedGroups[group.courseAbr] &&
               group.courses.map((course) => {
                 const courseKey = `${course.course_abr} ${course.catalog_num}`;
@@ -311,38 +223,36 @@ const GEPTree: React.FC<GEPTreeProps> = React.memo(
                   courseData as Record<string, MergedCourseData>
                 )[courseKey];
                 return (
-                  <ListItem
+                  <div
                     key={`course-${courseKey}`}
-                    alignItems="flex-start"
-                    sx={{
-                      paddingLeft: "20px",
-                      py: 1,
-                      minHeight: "auto",
-                      display: "flex",
-                      flexDirection: "column",
-                      borderBottom: "1px solid #eee",
-                    }}
+                    className="flex min-h-0 flex-col items-stretch border-b border-border py-2 pl-5"
                   >
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        width: "100%",
-                      }}
-                    >
-                      <ListItemText
-                        primary={`${course.course_descrip} (${course.course_abr} ${parseInt(course.catalog_num)})`}
-                        secondary={courseKey}
-                        sx={{ mb: 1 }}
+                    <div className="flex w-full flex-col">
+                      <div className="mb-2 min-w-0">
+                        <p className="text-sm font-medium text-foreground">
+                          {`${course.course_descrip} (${course.course_abr} ${parseInt(course.catalog_num, 10)})`}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {courseKey}
+                        </p>
+                      </div>
+                      <CourseSections
+                        courseDataEntry={courseDataEntry}
+                        courseKeyPrefix={`${courseKey}-`}
+                        onPreviewSectionChange={onPreviewSectionChange}
+                        selectedPreviewId={selectedPreviewId}
+                        scheduleBackground={scheduleBackground}
+                        instructorFilter={instructorFilter}
+                        scheduleFitOnly={scheduleFitOnly}
+                        compactSections={compactSections}
                       />
-                      <CourseSections courseDataEntry={courseDataEntry} />
-                    </Box>
-                  </ListItem>
+                    </div>
+                  </div>
                 );
               })}
           </React.Fragment>
         ))}
-      </Box>
+      </div>
     );
   },
 );
@@ -351,15 +261,21 @@ const GEPTree: React.FC<GEPTreeProps> = React.memo(
  * GEP Search tab for querying General Education Program courses by subject and term
  * and displaying available sections grouped by subject code.
  *
- * @param {{ setGepSearchTabData: (key: keyof GEPData, value: any) => void; gepSearchData: GEPData }} props Tab state setter and current state
+ * @param props Tab state setter and current state
  * @returns {JSX.Element} GEP Search tab UI
  */
 export default function GEPSearch({
   setGepSearchTabData,
   gepSearchData,
+  onPreviewSectionChange,
+  previewContent,
+  selectedPreviewId,
 }: {
-  setGepSearchTabData: (key: keyof GEPData, value: any) => void;
+  setGepSearchTabData: TabUpdater<GEPData>;
   gepSearchData: GEPData;
+  onPreviewSectionChange: (preview: PlannerSectionPreview | null) => void;
+  previewContent: React.ReactNode;
+  selectedPreviewId: string | null;
 }) {
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     {},
@@ -374,22 +290,63 @@ export default function GEPSearch({
     hideNoSections,
     progress,
     progressLabel,
+    instructorFilter,
+    scheduleFitOnly,
+    compactSections,
   } = gepSearchData;
+  const selectedSubject = findGepSubject(searchSubject);
+  const selectedSubjectCode = selectedSubject?.code ?? null;
+  const selectedSubjectLabel = selectedSubject?.label ?? searchSubject;
+  const isSearchDisabled = !selectedTerm || !selectedSubjectCode;
+  const portalContainer = useOverlayPortalContainer();
+  const scheduleBackground = useScheduleBackgroundEvents();
+
+  const gepInstructorOptions = useMemo(() => {
+    const names = new Set<string>();
+    const data = courseData as Record<string, MergedCourseData>;
+    for (const c of Object.values(data)) {
+      if (!c?.sections) {
+        continue;
+      }
+      for (const g of Object.values(c.sections)) {
+        const lec = g.lecture;
+        if (!lec) {
+          continue;
+        }
+        const s = formatSectionInstructors(lec).trim();
+        if (s) {
+          names.add(s);
+        }
+      }
+    }
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, [courseData]);
 
   const courseSearch = useCallback(async () => {
-    // Reset expanded groups on new search
+    void logEvent("gep_search_clicked", {
+      tab: "gep_search",
+      term: selectedTerm ?? "unknown",
+      subject: selectedSubjectLabel ?? "unknown",
+      subject_code: selectedSubjectCode ?? "unknown",
+    });
     setExpandedGroups({});
-    setGepSearchTabData("progress", 10);
-    setGepSearchTabData("progressLabel", "Initializing GEP course search...");
-    setGepSearchTabData("isLoaded", false);
+    onPreviewSectionChange(null);
+    setGepSearchTabData({
+      progress: 10,
+      progressLabel: "Initializing GEP course search...",
+      isLoaded: false,
+      courses: [],
+      courseData: {},
+    });
     AppLogger.info("Course search clicked with:", {
       selectedTerm,
-      searchSubject,
+      searchSubject: selectedSubjectLabel,
+      searchSubjectCode: selectedSubjectCode,
     });
 
     try {
-      if (searchSubject && selectedTerm) {
-        const courseInfo = (GEP_COURSES as any)[searchSubject];
+      if (selectedSubjectCode && selectedTerm) {
+        const courseInfo = GEP_COURSES[selectedSubjectCode];
         if (courseInfo) {
           const coursesResult = Object.entries(courseInfo).map(
             ([course_title, course_info_val]) => {
@@ -408,20 +365,19 @@ export default function GEPSearch({
             },
           );
 
-          setGepSearchTabData("courses", coursesResult);
-          setGepSearchTabData(
-            "progressLabel",
-            `Processing ${coursesResult.length} GEP courses for ${searchSubject}`,
-          );
+          setGepSearchTabData({
+            courses: coursesResult,
+            progressLabel: `Processing ${coursesResult.length} GEP courses for ${selectedSubjectLabel ?? selectedSubjectCode}`,
+          });
 
           const courseDataResult = await fetchGEPCourseData(
             coursesResult,
             selectedTerm,
             (progressValue, statusMessage) => {
-              setGepSearchTabData("progress", progressValue);
-              if (statusMessage) {
-                setGepSearchTabData("progressLabel", statusMessage);
-              }
+              setGepSearchTabData({
+                progress: progressValue,
+                ...(statusMessage ? { progressLabel: statusMessage } : {}),
+              });
             },
           );
 
@@ -432,13 +388,20 @@ export default function GEPSearch({
       AppLogger.error("Error fetching course data:", error);
       setGepSearchTabData("progressLabel", "Error fetching GEP course data");
     } finally {
-      setGepSearchTabData("progress", 100);
-      setGepSearchTabData("progressLabel", "Complete");
-      setGepSearchTabData("isLoaded", true);
+      setGepSearchTabData({
+        progress: 100,
+        progressLabel: "Complete",
+        isLoaded: true,
+      });
     }
-  }, [selectedTerm, searchSubject, setGepSearchTabData]);
+  }, [
+    onPreviewSectionChange,
+    selectedSubjectCode,
+    selectedSubjectLabel,
+    selectedTerm,
+    setGepSearchTabData,
+  ]);
 
-  // 1. Filter courses first (as before)
   const filteredCourses = useMemo(() => {
     if (!isLoaded || !courses || courses.length === 0) return [];
     if (!hideNoSections || !courseData) return courses;
@@ -455,7 +418,6 @@ export default function GEPSearch({
     });
   }, [courses, hideNoSections, courseData, isLoaded]);
 
-  // 2. Group the filtered courses by course_abr
   const groupedAndFilteredCourses = useMemo(() => {
     if (!filteredCourses || filteredCourses.length === 0) return [];
 
@@ -466,13 +428,12 @@ export default function GEPSearch({
       if (!groups[abr]) {
         groups[abr] = {
           courseAbr: abr,
-          displayTitle: SubjectMenuValues[abr] || `${abr} - Unknown Subject`, // Fallback title
+          displayTitle: SubjectMenuValues[abr] || `${abr} - Unknown Subject`,
           courses: [],
         };
       }
       groups[abr].courses.push(course);
     });
-    // Sort groups by displayTitle or courseAbr
     return Object.values(groups).sort((a, b) =>
       a.displayTitle.localeCompare(b.displayTitle),
     );
@@ -486,63 +447,183 @@ export default function GEPSearch({
   }, []);
 
   const handleHideNoSectionsChange = useCallback(
-    (_: React.SyntheticEvent, checked: boolean) => {
+    (checked: boolean) => {
       setGepSearchTabData("hideNoSections", checked);
     },
     [setGepSearchTabData],
   );
 
-  return (
-    <Box sx={{ width: "100%", p: 2 }}>
-      <List sx={{ width: "100%" }}>
+  const handleTermChange = useCallback(
+    (value: string | null) => {
+      setGepSearchTabData({
+        selectedTerm: value,
+        instructorFilter: null,
+      });
+      setExpandedGroups({});
+      onPreviewSectionChange(null);
+    },
+    [onPreviewSectionChange, setGepSearchTabData],
+  );
+
+  const handleSubjectChange = useCallback(
+    (value: string | null) => {
+      setGepSearchTabData({
+        searchSubject: value,
+        instructorFilter: null,
+      });
+      setExpandedGroups({});
+      onPreviewSectionChange(null);
+    },
+    [onPreviewSectionChange, setGepSearchTabData],
+  );
+
+  const controlsPanel = (
+    <Card className="overflow-visible bg-card/80 shadow-sm">
+      <CardHeader className="gap-1">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-primary/75">
+          GEP Search
+        </div>
+        <CardTitle className="text-base">Parameters</CardTitle>
+        <CardDescription>
+          Browse matching requirement buckets and keep a section preview pinned
+          while you compare.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         <MemoizedAutocompletes
           selectedTerm={selectedTerm}
           searchSubject={searchSubject}
-          setGepSearchTabData={setGepSearchTabData}
+          onTermChange={handleTermChange}
+          onSubjectChange={handleSubjectChange}
+          portalContainer={portalContainer}
         />
-        <Button
-          variant="outlined"
-          sx={{ width: "50%", mt: 2 }}
-          onClick={courseSearch}
-        >
-          Search
-        </Button>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={hideNoSections}
-              onChange={handleHideNoSectionsChange}
+        <FieldGroup className="mt-4">
+          <Field>
+            <FieldLabel htmlFor="gep_instructor_filter">Instructor</FieldLabel>
+            <PlannerFilterCombobox
+              items={gepInstructorOptions}
+              value={instructorFilter}
+              onValueChange={(value) =>
+                setGepSearchTabData("instructorFilter", value)
+              }
+              placeholder="Any instructor"
+              emptyLabel="Run search to load instructors."
+              disabled={gepInstructorOptions.length === 0}
+              portalContainer={portalContainer}
             />
-          }
-          label="Hide courses with no open sections"
-          sx={{ mt: 2, display: "block" }}
-        />
-        {!isLoaded && (
-          <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
+            <FieldDescription>
+              Optional: limit section lists to one instructor.
+            </FieldDescription>
+          </Field>
+          <Field>
+            <div className="flex items-start gap-3 rounded-lg border-2 border-border bg-card p-3.5 shadow-sm dark:bg-card/95">
+              <Checkbox
+                id="gep-schedule-fit"
+                checked={scheduleFitOnly}
+                onCheckedChange={(v) =>
+                  setGepSearchTabData("scheduleFitOnly", v === true)
+                }
+                aria-describedby="gep-schedule-fit-desc"
+                className="mt-0.5 size-5 rounded-md border-2 border-foreground/40 bg-background shadow-sm dark:border-foreground/50 dark:bg-muted/80 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
+              />
+              <div className="min-w-0 space-y-1">
+                <FieldLabel
+                  htmlFor="gep-schedule-fit"
+                  className="cursor-pointer text-sm font-medium text-foreground"
+                >
+                  Fits my schedule
+                </FieldLabel>
+                <FieldDescription id="gep-schedule-fit-desc">
+                  Hide sections that overlap classes in your cart or enrolled
+                  schedule.
+                </FieldDescription>
+              </div>
+            </div>
+          </Field>
+        </FieldGroup>
+        <div className="mt-4 flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={courseSearch}
+            disabled={isSearchDisabled}
+            className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-transparent bg-primary px-2.5 text-sm font-semibold whitespace-nowrap text-primary-foreground transition-colors outline-none select-none hover:brightness-[1.04] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:!transform-none active:![scale:1] active:![translate:none] disabled:pointer-events-none disabled:opacity-50"
+          >
+            Search
+          </button>
+          <Field orientation="horizontal">
+            <ShadcnCheckbox
+              checked={hideNoSections}
+              onCheckedChange={(checked) =>
+                handleHideNoSectionsChange(Boolean(checked))
+              }
+              id="hide-empty-gep"
+              className="size-5 rounded-md border-2 border-foreground/40 bg-background shadow-sm dark:border-foreground/50 dark:bg-muted/80 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
+            />
+            <FieldLabel htmlFor="hide-empty-gep" className="font-normal">
+              Hide courses with no open sections
+            </FieldLabel>
+          </Field>
+        </div>
+        {!isLoaded ? (
+          <div className="mt-4 flex w-full justify-center">
             <CircularProgressWithLabel
               value={progress}
               label={progressLabel || ""}
             />
-          </Box>
-        )}
-      </List>
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
 
-      {isLoaded && groupedAndFilteredCourses.length > 0 && (
-        <GEPTree
-          groupedData={groupedAndFilteredCourses}
-          expandedGroups={expandedGroups}
-          onToggleGroup={handleToggleGroup}
-          courseData={courseData}
-          key={`gep-tree-${hideNoSections}-${groupedAndFilteredCourses.map((g) => g.courseAbr).join("-")}`}
-        />
-      )}
-      {isLoaded && groupedAndFilteredCourses.length === 0 && (
-        <Typography variant="body1" sx={{ p: 4, textAlign: "center" }}>
-          No GEP courses found matching your criteria.{" "}
-          {hideNoSections &&
-            "Try unchecking 'Hide courses with no open sections'."}
-        </Typography>
-      )}
-    </Box>
+  const resultsPanel = (
+    <Card className="min-w-0 overflow-visible bg-card/80 shadow-sm">
+      <CardHeader className="gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Comparison Workspace
+            </div>
+            <CardTitle className="text-base">Requirement Matches</CardTitle>
+          </div>
+          <SectionDensityToggle
+            value={compactSections ? "compact" : "comfy"}
+            onValueChange={(value) =>
+              setGepSearchTabData("compactSections", value === "compact")
+            }
+          />
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoaded && groupedAndFilteredCourses.length > 0 ? (
+          <GEPTree
+            groupedData={groupedAndFilteredCourses}
+            expandedGroups={expandedGroups}
+            onToggleGroup={handleToggleGroup}
+            courseData={courseData}
+            onPreviewSectionChange={onPreviewSectionChange}
+            selectedPreviewId={selectedPreviewId}
+            scheduleBackground={scheduleBackground}
+            instructorFilter={instructorFilter}
+            scheduleFitOnly={scheduleFitOnly}
+            compactSections={compactSections}
+          />
+        ) : (
+          <p className="p-4 text-center text-base text-muted-foreground">
+            No GEP courses found matching your criteria.{" "}
+            {hideNoSections &&
+              "Try unchecking 'Hide courses with no open sections'."}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <PlannerWorkbenchLayout
+      controls={controlsPanel}
+      results={resultsPanel}
+      preview={previewContent}
+    />
   );
 }

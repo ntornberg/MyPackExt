@@ -7,8 +7,9 @@ export interface CacheEntry {
   expiresAt?: number;
 }
 
-// Cache expiration time (24 hours in milliseconds)
-const CACHE_EXPIRATION = 24 * 60 * 60 * 1000;
+// Default persistent cache expiration time (6 hours in milliseconds).
+// Live open-course availability uses a shorter override at the call site.
+const CACHE_EXPIRATION = 6 * 60 * 60 * 1000;
 
 /**
  * Returns whether a cache entry is expired.
@@ -23,7 +24,30 @@ export function isCacheEntryExpired(
     return now > entry.expiresAt;
   }
 
-  return entry.timestamp !== undefined && now - entry.timestamp > CACHE_EXPIRATION;
+  return (
+    entry.timestamp !== undefined && now - entry.timestamp > CACHE_EXPIRATION
+  );
+}
+
+function pruneExpiredCacheEntries(
+  cache: Record<string, CacheEntry>,
+  now = Date.now(),
+): {
+  validEntries: Record<string, CacheEntry>;
+  expiredHashes: string[];
+} {
+  const validEntries: Record<string, CacheEntry> = {};
+  const expiredHashes: string[] = [];
+
+  for (const [hash, entry] of Object.entries(cache)) {
+    if (isCacheEntryExpired(entry, now)) {
+      expiredHashes.push(hash);
+    } else {
+      validEntries[hash] = entry;
+    }
+  }
+
+  return { validEntries, expiredHashes };
 }
 
 // Size threshold in bytes above which to use IndexedDB instead of chrome.storage
@@ -33,6 +57,17 @@ const SIZE_THRESHOLD = 100 * 1024;
 const DB_NAME = "mypack-extension-cache";
 const STORE_NAME = "cache-store";
 const DB_VERSION = 1;
+const EXTENSION_CACHE_CATEGORIES = [
+  "courseList",
+  "openCourses",
+  "gradeProfData",
+  "nullCourses",
+  "scheduleTableData",
+  "shopCartTableData",
+  "planTermTableData",
+  "shopCartCalEventsData",
+  "scheduleCalEventsData",
+];
 
 /**
  * Opens a connection to the IndexedDB database
@@ -51,7 +86,26 @@ async function openDatabase(): Promise<IDBDatabase> {
       try {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
 
+        // Guard against indexedDB.open() never firing (blocked connection,
+        // browser bugs, etc). Without this the promise hangs forever and
+        // every caller memoizing the result (e.g. CalendarView) stays stuck.
+        const openTimeout = setTimeout(() => {
+          AppLogger.error(
+            `[CACHE DB ERROR] Timed out opening IndexedDB after 3s`,
+          );
+          reject(new Error("IndexedDB open timed out"));
+        }, 3000);
+
+        request.onblocked = () => {
+          AppLogger.error(
+            `[CACHE DB ERROR] IndexedDB open blocked by another connection`,
+          );
+          clearTimeout(openTimeout);
+          reject(new Error("IndexedDB open blocked"));
+        };
+
         request.onerror = (_) => {
+          clearTimeout(openTimeout);
           const error =
             request.error || new Error("Unknown error opening database");
           AppLogger.error(
@@ -70,6 +124,7 @@ async function openDatabase(): Promise<IDBDatabase> {
         };
 
         request.onsuccess = (_) => {
+          clearTimeout(openTimeout);
           const db = request.result;
           AppLogger.info(
             `[CACHE DB SUCCESS] Successfully opened database: ${DB_NAME}`,
@@ -195,7 +250,12 @@ export async function getCacheCategory(
     if (isChromeStorageAvailable()) {
       const cached = await chrome.storage.local.get(cacheCategory);
       if (cached && cached[cacheCategory]) {
-        return cached[cacheCategory];
+        const cache = cached[cacheCategory] as Record<string, CacheEntry>;
+        const { validEntries, expiredHashes } = pruneExpiredCacheEntries(cache);
+        if (expiredHashes.length > 0) {
+          await chrome.storage.local.set({ [cacheCategory]: validEntries });
+        }
+        return Object.keys(validEntries).length > 0 ? validEntries : null;
       }
     }
 
@@ -212,7 +272,14 @@ export async function getCacheCategory(
         getAllKeysRequest.onsuccess = () => {
           const keys = getAllKeysRequest.result;
           const result: Record<string, CacheEntry> = {};
+          const expiredKeys: string[] = [];
           let processed = 0;
+          const finish = () => {
+            if (processed === keys.length) {
+              void deleteIndexedDBEntries(expiredKeys);
+              resolve(Object.keys(result).length > 0 ? result : null);
+            }
+          };
 
           // If no keys, resolve immediately
           if (keys.length === 0) {
@@ -230,19 +297,33 @@ export async function getCacheCategory(
               getRequest.onsuccess = () => {
                 if (getRequest.result) {
                   const hash = getRequest.result.hash;
-                  result[hash] = {
+                  const entry = {
                     combinedData: getRequest.result.combinedData,
                     timestamp: getRequest.result.timestamp,
                     expiresAt: getRequest.result.expiresAt,
                   };
+                  if (isCacheEntryExpired(entry)) {
+                    if (typeof key === "string") {
+                      expiredKeys.push(key);
+                    }
+                  } else {
+                    result[hash] = entry;
+                  }
                 }
                 processed++;
-                if (processed === keys.length) {
-                  resolve(Object.keys(result).length > 0 ? result : null);
-                }
+                finish();
+              };
+              getRequest.onerror = () => {
+                AppLogger.error(
+                  `[CACHE ERROR] Failed to get entry from IndexedDB:`,
+                  getRequest.error,
+                );
+                processed++;
+                finish();
               };
             } else {
               processed++;
+              finish();
             }
           }
         };
@@ -452,6 +533,42 @@ async function clearFromIndexedDB(cacheCategory: string): Promise<void> {
   }
 }
 
+async function deleteIndexedDBEntries(keys: string[]): Promise<void> {
+  if (keys.length === 0) {
+    return;
+  }
+
+  try {
+    const db = await openDatabase();
+    await new Promise<void>((resolve) => {
+      const transaction = db.transaction([STORE_NAME], "readwrite");
+      const store = transaction.objectStore(STORE_NAME);
+
+      for (const key of keys) {
+        store.delete(key);
+      }
+
+      transaction.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      transaction.onerror = () => {
+        AppLogger.error(
+          `[CACHE ERROR] Failed to delete expired IndexedDB entries:`,
+          transaction.error,
+        );
+        db.close();
+        resolve();
+      };
+    });
+  } catch (error) {
+    AppLogger.error(
+      `[CACHE ERROR] IndexedDB expired-entry cleanup failed:`,
+      error,
+    );
+  }
+}
+
 /**
  * Estimates the size of a string in bytes
  * @param {string} str - The string to measure
@@ -462,12 +579,27 @@ function estimateSize(str: string): number {
 }
 
 /**
- * Creates a hash from an object's values.
- * @param {Record<string, any>} item - The object to use for the hash.
+ * Generates a cache key from a string.
+ * Uses the string itself for short items or a lightweight fast hash for long strings.
+ * @param {string} item - The string to use for the key.
  * @returns {Promise<string>} - The generated unique key.
  */
 export async function generateCacheKey(item: string): Promise<string> {
-  return hashString(item);
+  // Replace spaces with underscores just to make keys a bit cleaner in storage
+  const sanitized = item.replace(/\s+/g, "_");
+  
+  // If the key is relatively short (up to 64 chars), use it directly 
+  // to avoid hashing overhead entirely
+  if (sanitized.length <= 64) {
+    return sanitized;
+  }
+  
+  // For longer strings, use a fast, lightweight DJB2 hash instead of crypto
+  let hash = 5381;
+  for (let i = 0; i < sanitized.length; i++) {
+    hash = (hash * 33) ^ sanitized.charCodeAt(i);
+  }
+  return "hash_" + (hash >>> 0).toString(16);
 }
 
 /**
@@ -659,18 +791,22 @@ export async function clearCache(): Promise<void> {
   return clearGenericCache("courseList");
 }
 
-// Should have chosen a lighter hash function
-/**
- * Creates a hash from a string.
- * @param {string} message - The string to hash.
- * @returns {Promise<string>} - The hashed string.
- */
-async function hashString(message: string): Promise<string> {
-  const msgBuffer = new TextEncoder().encode(message); // Convert string to bytes
-  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer); // Hash it
-  const hashArray = Array.from(new Uint8Array(hashBuffer)); // Convert buffer to byte array
-  const hashHex = hashArray
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join(""); // Bytes to hex string
-  return hashHex;
+export async function clearAllExtensionCaches(): Promise<void> {
+  try {
+    if (isChromeStorageAvailable()) {
+      await chrome.storage.local.remove([...EXTENSION_CACHE_CATEGORIES]);
+    }
+
+    if (typeof indexedDB !== "undefined") {
+      await Promise.all(
+        EXTENSION_CACHE_CATEGORIES.map((cacheCategory) =>
+          clearFromIndexedDB(cacheCategory),
+        ),
+      );
+    }
+  } catch (error) {
+    AppLogger.error(`[CACHE ERROR] clearAllExtensionCaches failed`, error);
+  }
 }
+
+

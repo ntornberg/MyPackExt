@@ -32,29 +32,29 @@ const defaultTheme = createTheme();
 const customShadows: Shadows = [...defaultTheme.shadows];
 
 export const brand = {
-  50: "hsl(210, 100%, 95%)",
-  100: "hsl(210, 100%, 92%)",
-  200: "hsl(210, 100%, 80%)",
-  300: "hsl(210, 100%, 65%)",
-  400: "hsl(210, 98%, 48%)",
-  500: "hsl(210, 98%, 42%)",
-  600: "hsl(210, 98%, 55%)",
-  700: "hsl(210, 100%, 35%)",
-  800: "hsl(210, 100%, 16%)",
-  900: "hsl(210, 100%, 21%)",
+  50: "hsl(212, 100%, 97%)",
+  100: "hsl(212, 100%, 93%)",
+  200: "hsl(212, 96%, 85%)",
+  300: "hsl(212, 94%, 72%)",
+  400: "hsl(212, 90%, 58%)",
+  500: "hsl(212, 88%, 50%)",
+  600: "hsl(212, 90%, 44%)",
+  700: "hsl(212, 95%, 34%)",
+  800: "hsl(212, 96%, 20%)",
+  900: "hsl(212, 98%, 13%)",
 };
 
 export const gray = {
-  50: "hsl(220, 35%, 97%)",
-  100: "hsl(220, 30%, 94%)",
-  200: "hsl(220, 20%, 88%)",
-  300: "hsl(220, 20%, 80%)",
-  400: "hsl(220, 20%, 65%)",
-  500: "hsl(220, 20%, 42%)",
-  600: "hsl(220, 20%, 35%)",
-  700: "hsl(220, 20%, 25%)",
-  800: "hsl(220, 30%, 6%)",
-  900: "hsl(220, 35%, 3%)",
+  50: "hsl(220, 28%, 98%)",
+  100: "hsl(220, 24%, 95%)",
+  200: "hsl(220, 20%, 90%)",
+  300: "hsl(220, 16%, 80%)",
+  400: "hsl(220, 14%, 66%)",
+  500: "hsl(220, 12%, 48%)",
+  600: "hsl(220, 14%, 36%)",
+  700: "hsl(220, 18%, 24%)",
+  800: "hsl(220, 24%, 14%)",
+  900: "hsl(220, 28%, 9%)",
 };
 
 export const green = {
@@ -164,11 +164,11 @@ export const getDesignTokens = (mode: PaletteMode) => {
       },
       divider: mode === "dark" ? alpha(gray[700], 0.6) : alpha(gray[300], 0.4),
       background: {
-        default: "hsl(0, 0%, 99%)",
-        paper: "hsl(220, 35%, 97%)",
+        default: "hsl(220, 30%, 98%)",
+        paper: "hsl(0, 0%, 100%)",
         ...(mode === "dark" && {
           default: gray[900],
-          paper: "hsl(220, 30%, 7%)",
+          paper: gray[800],
         }),
       },
       text: {
@@ -190,7 +190,7 @@ export const getDesignTokens = (mode: PaletteMode) => {
       },
     },
     typography: {
-      fontFamily: "Inter, sans-serif",
+      fontFamily: "'IBM Plex Sans', Inter, sans-serif",
       h1: {
         fontSize: defaultTheme.typography.pxToRem(48),
         fontWeight: 600,
@@ -280,8 +280,8 @@ export const colorSchemes = {
       },
       divider: alpha(gray[300], 0.4),
       background: {
-        default: "hsl(0, 0%, 99%)",
-        paper: "hsl(220, 35%, 97%)",
+        default: "hsl(220, 30%, 98%)",
+        paper: "hsl(0, 0%, 100%)",
       },
       text: {
         primary: gray[800],
@@ -331,7 +331,7 @@ export const colorSchemes = {
       divider: alpha(gray[700], 0.6),
       background: {
         default: gray[900],
-        paper: "hsl(220, 30%, 7%)",
+        paper: gray[800],
       },
       text: {
         primary: "hsl(0, 0%, 100%)",
@@ -348,7 +348,7 @@ export const colorSchemes = {
 };
 
 export const typography = {
-  fontFamily: "Inter, sans-serif",
+  fontFamily: "'IBM Plex Sans', Inter, sans-serif",
   h1: {
     fontSize: defaultTheme.typography.pxToRem(48),
     fontWeight: 600,
@@ -398,7 +398,7 @@ export const typography = {
 };
 
 export const shape = {
-  borderRadius: 8,
+  borderRadius: 10,
 };
 
 // @ts-ignore

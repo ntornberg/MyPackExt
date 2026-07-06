@@ -10,6 +10,9 @@ import { toggleButtonGroupClasses } from "@mui/material/ToggleButtonGroup";
 
 import { brand, gray } from "../themePrimitives";
 
+const INPUT_TYPE_SELECTOR =
+  '&[type="text"], &[type="url"], &[type="date"], &[type="time"], &[type="number"], &[type="search"], &[type="password"], &[type="datetime"], &[type="datetime-local"], &[type="email"], &[type="tel"]';
+
 export const inputsCustomizations: Components<Theme> = {
   MuiButtonBase: {
     defaultProps: {
@@ -19,7 +22,8 @@ export const inputsCustomizations: Components<Theme> = {
     styleOverrides: {
       root: ({ theme }) => ({
         boxSizing: "border-box",
-        transition: "all 100ms ease-in",
+        transition:
+          "background-color 100ms ease-in, border-color 100ms ease-in, box-shadow 100ms ease-in",
         "&:focus-visible": {
           outline: `3px solid ${alpha(theme.palette.primary.main, 0.5)}`,
           outlineOffset: "2px",
@@ -32,9 +36,7 @@ export const inputsCustomizations: Components<Theme> = {
       root: ({ theme }) => ({
         "& .MuiInputBase-root": {
           backgroundColor: (theme.vars || theme).palette.background.paper,
-          ...theme.applyStyles("dark", {
-            backgroundColor: theme.palette.grey[800],
-          }),
+          borderRadius: (theme.vars || theme).shape.borderRadius,
         },
       }),
     },
@@ -42,11 +44,8 @@ export const inputsCustomizations: Components<Theme> = {
   MuiAutocomplete: {
     styleOverrides: {
       inputRoot: ({ theme }) => ({
-        backgroundColor: `${theme.palette.grey[800]} !important`,
-        color: `${theme.palette.common.white} !important`,
-        ...theme.applyStyles("dark", {
-          backgroundColor: `${theme.palette.grey[800]} !important`,
-        }),
+        backgroundColor: (theme.vars || theme).palette.background.paper,
+        color: (theme.vars || theme).palette.text.primary,
       }),
     },
   },
@@ -66,21 +65,6 @@ export const inputsCustomizations: Components<Theme> = {
       root: {
         "--Paper-overlay": "none",
       },
-    },
-  },
-  MuiDialog: {
-    styleOverrides: {
-      root: () => ({
-        overlay: "none",
-      }),
-    },
-  },
-  MuiDialogContent: {
-    styleOverrides: {
-      root: () => ({
-        backgroundColor: "none",
-        overlay: "none",
-      }),
     },
   },
   MuiButton: {
@@ -104,7 +88,7 @@ export const inputsCustomizations: Components<Theme> = {
               size: "medium",
             },
             style: {
-              height: "2.5rem", // 40px
+              height: "2.75rem",
             },
           },
           {
@@ -437,39 +421,38 @@ export const inputsCustomizations: Components<Theme> = {
         // Selector examples: .MuiInputBase-input[type="text"], .MuiInputBase-input[type="email"], etc.
         // Specificity for each part is 0,2,0 - higher than host's 0,1,1.
         // Add !important ONLY to properties where inspection showed the host rule won AND used !important.
-        '&[type="text"], &[type="url"], &[type="date"], &[type="time"], &[type="number"], &[type="search"], &[type="password"], &[type="datetime"], &[type="datetime-local"], &[type="email"], &[type="tel"]':
-          {
-            // Override properties listed in the host rule that you want to change.
-            // Add !important if necessary based on your browser inspection.
-            fontFamily: "inherit !important", // Example: if host overrides font-family
-            border: "none !important", // Example: if host applies a border directly to input
-            borderRadius: "0px !important", // Example: if host sets border-radius
-            fontWeight: "normal !important", // Example: if host sets font-weight
-            fontSize: "1em !important", // Example: if host sets font-size
-            backgroundImage: "none !important", // Example: if host sets background-image
-            height: "auto !important", // Example: if host sets height
-            padding: "10px 12px !important", // Adjust value and add !important if needed
-            boxSizing: "border-box !important", // Example: if host sets box-sizing
-            backgroundColor: `${(theme.vars || theme).palette.background.default} !important`, // Adjust value and add !important if needed
-            borderColor: `${(theme.vars || theme).palette.divider} !important`, // Example: if host sets border-color directly
-            color: `${(theme.vars || theme).palette.text.primary} !important`, // Adjust value and add !important if needed
+        [INPUT_TYPE_SELECTOR]: {
+          // Override properties listed in the host rule that you want to change.
+          // Add !important if necessary based on your browser inspection.
+          fontFamily: "inherit !important", // Example: if host overrides font-family
+          border: "none !important", // Example: if host applies a border directly to input
+          borderRadius: "0px !important", // Example: if host sets border-radius
+          fontWeight: "normal !important", // Example: if host sets font-weight
+          fontSize: "1em !important", // Example: if host sets font-size
+          backgroundImage: "none !important", // Example: if host sets background-image
+          height: "auto !important", // Example: if host sets height
+          padding: "10px 12px !important", // Adjust value and add !important if needed
+          boxSizing: "border-box !important", // Example: if host sets box-sizing
+          backgroundColor: `${(theme.vars || theme).palette.background.default} !important`, // Adjust value and add !important if needed
+          borderColor: `${(theme.vars || theme).palette.divider} !important`, // Example: if host sets border-color directly
+          color: `${(theme.vars || theme).palette.text.primary} !important`, // Adjust value and add !important if needed
 
+          ...theme.applyStyles("dark", {
+            backgroundColor: `${(theme.vars || theme).palette.background.paper} !important`, // Or grey[800]
+            color: `${(theme.vars || theme).palette.common.white} !important`,
+            // Add dark mode specific overrides for other properties here too if needed
+          }),
+
+          // --- Placeholder styles nested for highest specificity (0,2,1) ---
+          "&::placeholder": {
+            opacity: "0.7 !important",
+            color: `${gray[500]} !important`,
             ...theme.applyStyles("dark", {
-              backgroundColor: `${(theme.vars || theme).palette.background.paper} !important`, // Or grey[800]
-              color: `${(theme.vars || theme).palette.common.white} !important`,
-              // Add dark mode specific overrides for other properties here too if needed
+              color: `${gray[400]} !important`,
             }),
-
-            // --- Placeholder styles nested for highest specificity (0,2,1) ---
-            "&::placeholder": {
-              opacity: "0.7 !important",
-              color: `${gray[500]} !important`,
-              ...theme.applyStyles("dark", {
-                color: `${gray[400]} !important`,
-              }),
-            },
-            // --- End nested placeholder ---
           },
+          // --- End nested placeholder ---
+        },
         // --- End Specificity Boosts ---
 
         // Handle textarea separately if needed. Host rule is just 'textarea' (0,0,1).
@@ -524,39 +507,38 @@ export const inputsCustomizations: Components<Theme> = {
         // Selector examples: .MuiOutlinedInput-input[type="text"], .MuiOutlinedInput-input[type="email"], etc.
         // Specificity for each part is 0,2,0 - higher than host's 0,1,1.
         // Add !important ONLY to properties where inspection showed the host rule won AND used !important.
-        '&[type="text"], &[type="url"], &[type="date"], &[type="time"], &[type="number"], &[type="search"], &[type="password"], &[type="datetime"], &[type="datetime-local"], &[type="email"], &[type="tel"]':
-          {
-            // Override properties listed in the host rule that you want to change.
-            // Add !important if necessary based on your browser inspection.
-            fontFamily: "inherit !important", // Example
-            border: "none !important", // Example
-            borderRadius: "0px !important", // Example
-            fontWeight: "normal !important", // Example
-            fontSize: "1em !important", // Example
-            backgroundImage: "none !important", // Example
-            height: "auto !important", // Example
-            padding: "10px 12px !important", // Adjust value and add !important if needed
-            boxSizing: "border-box !important", // Example
-            backgroundColor: `${(theme.vars || theme).palette.background.default} !important`, // Adjust value and add !important if needed
-            borderColor: `${(theme.vars || theme).palette.divider} !important`, // Example
-            color: `${(theme.vars || theme).palette.text.primary} !important`, // Adjust value and add !important if needed
+        [INPUT_TYPE_SELECTOR]: {
+          // Override properties listed in the host rule that you want to change.
+          // Add !important if necessary based on your browser inspection.
+          fontFamily: "inherit !important", // Example
+          border: "none !important", // Example
+          borderRadius: "0px !important", // Example
+          fontWeight: "normal !important", // Example
+          fontSize: "1em !important", // Example
+          backgroundImage: "none !important", // Example
+          height: "auto !important", // Example
+          padding: "10px 12px !important", // Adjust value and add !important if needed
+          boxSizing: "border-box !important", // Example
+          backgroundColor: `${(theme.vars || theme).palette.background.default} !important`, // Adjust value and add !important if needed
+          borderColor: `${(theme.vars || theme).palette.divider} !important`, // Example
+          color: `${(theme.vars || theme).palette.text.primary} !important`, // Adjust value and add !important if needed
 
+          ...theme.applyStyles("dark", {
+            backgroundColor: `${(theme.vars || theme).palette.background.paper} !important`, // Or grey[800]
+            color: `${(theme.vars || theme).palette.common.white} !important`,
+            // Add dark mode specific overrides for other properties here too if needed
+          }),
+
+          // --- Placeholder styles nested for highest specificity (0,2,1) ---
+          "&::placeholder": {
+            opacity: "0.7 !important",
+            color: `${gray[500]} !important`,
             ...theme.applyStyles("dark", {
-              backgroundColor: `${(theme.vars || theme).palette.background.paper} !important`, // Or grey[800]
-              color: `${(theme.vars || theme).palette.common.white} !important`,
-              // Add dark mode specific overrides for other properties here too if needed
+              color: `${gray[400]} !important`,
             }),
-
-            // --- Placeholder styles nested for highest specificity (0,2,1) ---
-            "&::placeholder": {
-              opacity: "0.7 !important",
-              color: `${gray[500]} !important`,
-              ...theme.applyStyles("dark", {
-                color: `${gray[400]} !important`,
-              }),
-            },
-            // --- End nested placeholder ---
           },
+          // --- End nested placeholder ---
+        },
         // --- End Specificity Boosts ---
 
         // Keep base input styles here that apply to all input types or need lower specificity
@@ -589,42 +571,26 @@ export const inputsCustomizations: Components<Theme> = {
   MuiFormLabel: {
     styleOverrides: {
       root: ({ theme }) => ({
-        color: "white",
+        color: (theme.vars || theme).palette.text.secondary,
         typography: theme.typography.caption,
-        marginBottom: 8,
       }),
     },
   },
 
-  // InputLabel customization to only remove transform for specific states
   MuiInputLabel: {
     styleOverrides: {
       root: ({ theme }) => ({
-        // Only modify transforms when the label is shrunk/focused
-        "&.MuiInputLabel-shrink": {
-          transform: "none",
-          position: "relative",
-          top: 0,
-          left: 0,
-          fontWeight: theme.typography.fontWeightMedium,
-          marginBottom: 4,
-          fontSize: theme.typography.pxToRem(14),
-          color: theme.palette.text.primary,
+        color: (theme.vars || theme).palette.text.secondary,
+        "&.Mui-focused": {
+          color: (theme.vars || theme).palette.text.primary,
         },
+        "&.MuiInputLabel-shrink": {
+          color: (theme.vars || theme).palette.text.primary,
+        },
+        ...theme.applyStyles("dark", {
+          color: (theme.vars || theme).palette.text.secondary,
+        }),
       }),
-      // Override specific variants when shrunk
-      outlined: {
-        "&.MuiInputLabel-shrink": {
-          transform: "none",
-          position: "relative",
-          fontSize: "inherit",
-        },
-      },
-      standard: {
-        "&.MuiInputLabel-shrink": {
-          transform: "none",
-        },
-      },
     },
   },
 };

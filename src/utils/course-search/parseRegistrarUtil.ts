@@ -52,71 +52,75 @@ function ParseCourseElement(
   const description = courseSection.find("p").first().text().trim();
   const prerequisite = courseSection.find("p").eq(1).text().trim();
   const sections: CourseSection[] = [];
-  courseSection.find("table.section-table tbody tr").each((_, element) => {
-    const $row = $(element);
-    const $cells = $row.find("td");
-    if ($cells.length >= 8) {
-      const section = $cells.eq(0).text().trim();
-      const component = $cells.eq(1).text().trim();
-      const classNumber = $cells.eq(2).text().trim();
-      const availabilityHtml = $cells.eq(3).html() || "";
-      const availabilityMatch = availabilityHtml.match(
-        /<span.*?>(.*?)<\/span>/,
-      );
-      const availability = availabilityMatch
-        ? availabilityMatch[1].trim()
-        : $cells.eq(3).text().trim();
-      const enrollmentMatch = $cells
-        .eq(3)
-        .text()
-        .match(/\d+\/\d+/);
-      const enrollment = enrollmentMatch ? enrollmentMatch[0] : "";
-      const dayTimeHtml = $cells.eq(4).html() || "";
-      const $dayTime = $("<div>").html(dayTimeHtml);
-      $dayTime.find(".hidden-xs").remove();
-      $dayTime.find(".screen-reader-only-text").remove();
-      const dayTime = $dayTime.text().replace(/\s+/g, " ").trim();
-      const location = $cells.eq(5).text().trim();
-      const $instructorLink = $cells.eq(6).find("a.instructor-link");
-      const ins_list = [];
-      for (let i = 0; i < $instructorLink.length; i++) {
-        if ($instructorLink[i].children[0].type === "text") {
-          const ins_name = ($instructorLink[i].children[0] as Text).data;
-          ins_list.push(ins_name);
+  // NC State often omits <tbody>; rows sit directly under <table> after <thead>/<tfoot>.
+  courseSection
+    .find("table.section-table tr")
+    .not("thead tr, tfoot tr")
+    .each((_, element) => {
+      const $row = $(element);
+      const $cells = $row.find("td");
+      if ($cells.length >= 8) {
+        const section = $cells.eq(0).text().trim();
+        const component = $cells.eq(1).text().trim();
+        const classNumber = $cells.eq(2).text().trim();
+        const availabilityHtml = $cells.eq(3).html() || "";
+        const availabilityMatch = availabilityHtml.match(
+          /<span.*?>(.*?)<\/span>/,
+        );
+        const availability = availabilityMatch
+          ? availabilityMatch[1].trim()
+          : $cells.eq(3).text().trim();
+        const enrollmentMatch = $cells
+          .eq(3)
+          .text()
+          .match(/\d+\/\d+/);
+        const enrollment = enrollmentMatch ? enrollmentMatch[0] : "";
+        const dayTimeHtml = $cells.eq(4).html() || "";
+        const $dayTime = $("<div>").html(dayTimeHtml);
+        $dayTime.find(".hidden-xs").remove();
+        $dayTime.find(".screen-reader-only-text").remove();
+        const dayTime = $dayTime.text().replace(/\s+/g, " ").trim();
+        const location = $cells.eq(5).text().trim();
+        const $instructorLink = $cells.eq(6).find("a.instructor-link");
+        const ins_list = [];
+        for (let i = 0; i < $instructorLink.length; i++) {
+          if ($instructorLink[i].children[0].type === "text") {
+            const ins_name = ($instructorLink[i].children[0] as Text).data;
+            ins_list.push(ins_name);
+          }
         }
-      }
 
-      const dates = $cells.eq(7).text().trim();
-      const $lastCell = $cells.eq(9);
-      const notesLink = $lastCell.find('[data-toggle="popover"][id^="notes-"]');
-      const notes = notesLink.attr("data-content") || null;
-      const requisitesLink = $lastCell.find(
-        '[data-toggle="popover"][id^="reqs-"]',
-      );
-      const requisites = requisitesLink.attr("data-content") || null;
-      let notes_clean = notes ? notes.replace(/^<p>/, "") : null;
-      const requisites_clean = requisites
-        ? requisites.replace(/^\s*<p>|<\/p>$/g, "")
-        : null;
-      notes_clean = notes_clean
-        ? notes_clean.replace(/^\s*<br>|<\/br>$/g, "")
-        : null;
-      sections.push({
-        id: `${section}-${classNumber}`,
-        section,
-        component,
-        classNumber,
-        availability,
-        enrollment,
-        dayTime,
-        location,
-        instructor_name: ins_list,
-        dates,
-        notes: notes_clean,
-        requisites: requisites_clean,
-      });
-    }
-  });
+        const dates = $cells.eq(7).text().trim();
+        const $lastCell = $cells.eq(9);
+        const notesLink = $lastCell.find('[data-toggle="popover"][id^="notes-"]');
+        const notes = notesLink.attr("data-content") || null;
+        const requisitesLink = $lastCell.find(
+          '[data-toggle="popover"][id^="reqs-"]',
+        );
+        const requisites = requisitesLink.attr("data-content") || null;
+        let notes_clean = notes ? notes.replace(/^<p>/, "") : null;
+        const requisites_clean = requisites
+          ? requisites.replace(/^\s*<p>|<\/p>$/g, "")
+          : null;
+        notes_clean = notes_clean
+          ? notes_clean.replace(/^\s*<br>|<\/br>$/g, "")
+          : null;
+        sections.push({
+          id: `${section}-${classNumber}`,
+          section,
+          component,
+          classNumber,
+          availability,
+          enrollment,
+          dayTime,
+          location,
+          instructor_name: ins_list,
+          dates,
+          notes: notes_clean,
+          requisites: requisites_clean,
+        });
+      }
+    });
   return {
     code,
     title,

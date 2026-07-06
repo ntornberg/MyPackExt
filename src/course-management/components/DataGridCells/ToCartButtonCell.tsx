@@ -1,175 +1,163 @@
-import { Alert, AlertTitle, Button, ButtonBase, Popper } from "@mui/material";
-import { useState, useRef } from "react";
+import { AlertCircle, CheckCircle2, ShoppingCartIcon } from "lucide-react";
+import { useState } from "react";
 
-import type { ModifiedSection } from "../../types/Section";
+import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
 import { AppLogger } from "../../../utils/logger";
-import { generateScriptContentUrl } from "../../services/ToCartService";
-import type { FullToCartPayload, ToCartPayload } from "../../types/Cart";
+import { submitAddSectionToCart } from "../../services/submitAddSectionToCart";
+import type { GroupedSections, ModifiedSection } from "../../types/Section";
+
+const cartButtonClassName =
+  "pointer-events-auto shrink-0 gap-2 rounded-lg border border-primary/35 bg-gradient-to-b from-primary via-primary to-primary/88 px-3.5 font-semibold text-primary-foreground shadow-sm transition-[transform,filter,box-shadow,border-color] duration-150 hover:border-primary/55 hover:brightness-[1.03] hover:shadow-md active:scale-[1.03]";
+
+const disabledCartButtonClassName =
+  "pointer-events-auto shrink-0 gap-2 rounded-lg border border-primary/20 bg-primary/50 px-3.5 font-semibold text-primary-foreground opacity-50";
+
+/**
+ * Shared local toast feedback component. Absolute positioned relative to wrapper.
+ */
+function ToastFeedback({
+  open,
+  message,
+  severity,
+}: {
+  open: boolean;
+  message: string;
+  severity: "success" | "error";
+}) {
+  if (!open) return null;
+  return (
+    <div className="pointer-events-none absolute bottom-full left-1/2 z-[1000] mb-2 flex w-max max-w-[min(280px,calc(100vw-2rem))] -translate-x-1/2 animate-in justify-center fade-in slide-in-from-bottom-2">
+      <Alert
+        variant={severity === "error" ? "destructive" : "default"}
+        className={cn(
+          "flex items-center justify-center gap-2 rounded-lg border bg-popover px-3 py-2 text-center shadow-lg",
+          severity === "error" ? "text-destructive" : "text-green-500",
+        )}
+      >
+        {severity === "success" && <CheckCircle2 className="size-4" />}
+        {severity === "error" && <AlertCircle className="size-4" />}
+        <AlertTitle className="mb-0 text-center text-xs leading-snug text-foreground">
+          {message || "Course added to cart"}
+        </AlertTitle>
+      </Alert>
+    </div>
+  );
+}
 
 /**
  * Renders an Add to Cart button for a section and invokes the MyPack add-to-cart endpoint.
- * If a parent section is provided, will relate the child class number accordingly.
- *
- * @param {ModifiedSection} selectedSection The section to add to cart
- * @param {ModifiedSection} [parent] Optional parent (e.g., lecture) when adding related lab
- * @returns {JSX.Element} Button element with transient alert popper
  */
 export const ToCartButtonCell = (
   selectedSection: ModifiedSection,
   parent?: ModifiedSection,
 ) => {
-  const {
-    course_id,
-    classNumber,
-    catalog_nbr,
-    course_career = "UGRD",
-    session_code = "1",
-    grading_basis = "GRD",
-    rqmnt_designtn = "",
-    wait_list_okay = "N",
-    courseData,
-  } = selectedSection;
+  const { course_id, classNumber, catalog_nbr, courseData } = selectedSection;
 
-  const unt_taken = courseData?.units || "3";
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [severity, setSeverity] = useState<"success" | "error">("success");
-  const anchorRef = useRef<HTMLButtonElement>(null);
 
   if (!course_id || !classNumber || !catalog_nbr || !courseData) {
     AppLogger.warn("Missing required data for section: ", selectedSection);
-    if (!course_id) {
-      AppLogger.warn("Course ID is missing for section: ", selectedSection);
-    }
-    if (!classNumber) {
-      AppLogger.warn("Class number is missing for section: ", selectedSection);
-    }
-    if (!catalog_nbr) {
-      AppLogger.warn(
-        "Catalog number is missing for section: ",
-        selectedSection,
-      );
-    }
-    if (!courseData) {
-      AppLogger.warn("Course data is missing for section: ", selectedSection);
-    }
-    AppLogger.warn("Section: ", selectedSection);
     return (
       <Button
-        variant="contained"
+        type="button"
+        variant="default"
+        size="sm"
         disabled
-        title="Missing required data"
-        sx={{
-          color: "white",
-          backgroundColor: "rgb(11, 14, 20)",
-          borderColor: "rgb(65, 70, 81)",
-          padding: "6px 8px",
-          borderRadius: "2px",
-          backgroundImage: "none",
-          fontSize: {
-            xs: "0.7rem",
-            sm: "0.8rem",
-            md: "0.875rem",
-          },
-          "&:hover": {
-            backgroundColor: "rgb(20, 25, 35)",
-          },
-        }}
+        className={disabledCartButtonClassName}
       >
-        Add to Cart
+        <ShoppingCartIcon className="size-4 opacity-95" strokeWidth={2.25} />
+        Add to cart
       </Button>
     );
   }
 
   const handleAddToCart = async () => {
-    AppLogger.info(
-      "Adding to cart: " + course_id + " " + classNumber + " " + catalog_nbr,
-    );
-    const url = generateScriptContentUrl({
-      record: "WEBLIB_ENROLL",
-      field: "ISCRIPT1",
-      event: "FieldFormula",
-      script: "IScript_addClassToShopCart",
-    });
-    AppLogger.info("URL: " + url);
-    const payload: ToCartPayload = {
-      course_career: course_career,
-      session_code: session_code,
-      crse_id: course_id,
-      class_nbr: classNumber,
-      catalog_nbr: catalog_nbr,
-      unt_taken: unt_taken,
-      grading_basis: grading_basis,
-      rqmnt_designtn: rqmnt_designtn,
-      wait_list_okay: wait_list_okay,
-    };
-    if (parent) {
-      (payload as FullToCartPayload).class_nbr = parent.classNumber;
-      (payload as FullToCartPayload).relate_class_nbr_1 =
-        selectedSection.classNumber;
-    }
-
-    // fire it without worrying about p_row
-    const fullURL = `${url}?${new URLSearchParams(payload)}`;
-    AppLogger.info("Full URL: " + fullURL);
-    const res = await fetch(fullURL, { credentials: "include" });
-    const data = await res.json();
-
-    if (data.status === "success") {
-      AppLogger.info("Data: ", data);
+    const data = await submitAddSectionToCart(selectedSection, parent);
+    if (data.ok) {
       AppLogger.info("Added to cart! " + data.message);
       setMessage(data.message);
       setSeverity("success");
       setOpen(true);
     } else {
-      AppLogger.warn("Server returned:", data);
-      if (data.title && data.message) {
-        setMessage(data.message);
-        setSeverity("error");
-        setOpen(true);
-      } else if (data.message) {
-        setMessage(data.message);
-        setSeverity("error");
-        setOpen(true);
-      } else {
-        setMessage("Error adding course to cart");
-        setSeverity("error");
-        setOpen(true);
-      }
+      AppLogger.warn("Add to cart failed:", data.message);
+      setMessage(data.message);
+      setSeverity("error");
+      setOpen(true);
     }
-
-    setTimeout(() => {
-      setOpen(false);
-    }, 3000);
+    setTimeout(() => setOpen(false), 3000);
   };
 
   return (
-    <>
-      <ButtonBase
-        ref={anchorRef}
-        onClick={handleAddToCart}
-        sx={{
-          color: "white",
-          backgroundColor: "rgb(11, 14, 20) !important",
-          borderColor: "rgb(51, 60, 77) !important",
-          backgroundImage: "none !important",
-          fontSize: {
-            xs: "0.7rem",
-            sm: "0.8rem",
-            md: "0.875rem",
-          },
-          "&:hover": {
-            backgroundColor: "rgb(20, 25, 35) !important",
-          },
+    <div className="relative inline-block w-full text-right" onClick={(e) => e.stopPropagation()}>
+      <Button
+        type="button"
+        variant="default"
+        size="sm"
+        onClick={(e: React.MouseEvent) => {
+          e.stopPropagation();
+          void handleAddToCart();
         }}
+        className={cartButtonClassName}
       >
-        Add to Cart
-      </ButtonBase>
-      <Popper anchorEl={anchorRef.current} sx={{ zIndex: 10000 }} open={open}>
-        <Alert severity={severity}>
-          <AlertTitle>{message || "Course added to cart"}</AlertTitle>
-        </Alert>
-      </Popper>
-    </>
+        <ShoppingCartIcon className="size-4 opacity-95" strokeWidth={2.25} />
+        Add to cart
+      </Button>
+      <ToastFeedback open={open} message={message} severity={severity} />
+    </div>
   );
 };
+
+/**
+ * Picks which lab to pair with the lecture for add-to-cart.
+ * Prefers the externally controlled selection (from the card's lab picker);
+ * falls back to the first lab when none is chosen yet.
+ */
+function resolveSelectedLab(
+  labs: ModifiedSection[],
+  selectedLabClassNumber: string | undefined,
+): ModifiedSection {
+  if (selectedLabClassNumber) {
+    const match = labs.find(
+      (lab) => String(lab.classNumber) === String(selectedLabClassNumber),
+    );
+    if (match) {
+      return match;
+    }
+  }
+  return labs[0]!;
+}
+
+export type ToCartGroupedSectionCellProps = GroupedSections & {
+  /**
+   * Class number of the lab currently selected in the parent card's lab picker.
+   * When provided, the cart submission uses this lab; otherwise the first lab is used.
+   */
+  selectedLabClassNumber?: string;
+};
+
+/**
+ * Main course row: adds lecture alone if there are no labs, else adds the currently
+ * selected lab paired with its lecture. The lab selection is driven by the parent
+ * card's lab picker (via {@link ToCartGroupedSectionCellProps.selectedLabClassNumber}),
+ * so this cell never renders its own lab dropdown.
+ */
+export function ToCartGroupedSectionCell({
+  lecture,
+  labs: rawLabs,
+  selectedLabClassNumber,
+}: ToCartGroupedSectionCellProps) {
+  if (!lecture) {
+    return null;
+  }
+  const labs = (rawLabs ?? []).filter(Boolean) as ModifiedSection[];
+  if (labs.length === 0) {
+    return ToCartButtonCell(lecture);
+  }
+  const selectedLab = resolveSelectedLab(labs, selectedLabClassNumber);
+  return ToCartButtonCell(selectedLab, lecture);
+}

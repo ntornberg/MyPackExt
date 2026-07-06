@@ -12,4 +12,3 @@ export interface ToCartPayload {
 }
 
 export type FullToCartPayload = ToCartPayload & { relate_class_nbr_1: string };
-

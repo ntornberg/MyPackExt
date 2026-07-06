@@ -20,11 +20,11 @@ export function createProfessorCard(
 ): HTMLDivElement {
   const wrapper = document.createElement("div");
   wrapper.id = "mypack-extension-data-prof";
-  wrapper.style.marginTop = "0.5rem";
   wrapper.style.overflow = "visible";
-  wrapper.style.maxWidth = "400px";
-  wrapper.style.display = "inline-block";
-  wrapper.style.verticalAlign = "top";
+  wrapper.style.width = "100%";
+  wrapper.style.maxWidth = "100%";
+  wrapper.style.boxSizing = "border-box";
+  wrapper.style.display = "block";
 
   const profInfo = data.RateMyProfInfo;
 
