@@ -327,7 +327,7 @@
   color: var(--foreground);
 }
 
-/* Native <details> plan requirement groups (PlanSearch): rotate chevron when open. */
+/* Native <details> plan requirement groups (MajorPlanSearch): rotate chevron when open. */
 #extension-overlay-root .plan-req-disclosure[open] > summary .plan-req-chevron {
   transform: rotate(90deg);
 }

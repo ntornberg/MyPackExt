@@ -1,9 +1,9 @@
-﻿import { AppLogger } from "../../utils/logger.ts";
 import {
   generateCacheKey,
   setGenericCache,
-} from "../../course-management/cache/CourseRetrieval";
-import { invalidateScheduleCache } from "../../course-management/components/DataGridCells/CalendarView";
+} from "../../course-management/cache/courseRetrieval";
+import { invalidateScheduleCache } from "../../course-management/components/calendar/CalendarView";
+import { AppLogger } from "../../utils/logger";
 
 function cacheKeyFromItem(
   item: Record<string, unknown>,

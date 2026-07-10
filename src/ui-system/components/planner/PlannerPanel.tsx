@@ -31,7 +31,9 @@ export function PlannerPanel({
   headerClassName,
 }: PlannerPanelProps) {
   return (
-    <Card className={cn("min-w-0 overflow-visible bg-card/80 shadow-sm", className)}>
+    <Card
+      className={cn("min-w-0 overflow-visible bg-card/80 shadow-sm", className)}
+    >
       <CardHeader className={cn(actions ? "gap-3" : "gap-1", headerClassName)}>
         {actions ? (
           <div className="flex flex-wrap items-start justify-between gap-3">

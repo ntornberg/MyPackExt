@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Creates a debounced version of a no-arg function.
  * Subsequent calls within the window reset the timer.
  *

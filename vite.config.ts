@@ -4,13 +4,18 @@ import { crx } from "@crxjs/vite-plugin";
 import type { ManifestV3Export } from "@crxjs/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig } from "vite";
+import type { PluginOption } from "vite";
 
 import manifestJson from "./public/manifest.json";
 
 declare const process: { env?: Record<string, string | undefined> };
 
 export default defineConfig(({ mode }) => {
+  const isAnalyzeBuild =
+    (process && process.env && process.env.npm_lifecycle_event) ===
+    "build:analyze";
   const isProduction = mode === "production";
   const isStaging = mode === "staging";
   const isDevelopment = mode === "development" || (!isProduction && !isStaging);
@@ -26,6 +31,15 @@ export default defineConfig(({ mode }) => {
             manifest: manifestJson as ManifestV3Export,
           }),
         ]),
+    ...(isAnalyzeBuild
+      ? [
+          visualizer({
+            filename: "dist/stats.html",
+            gzipSize: true,
+            brotliSize: true,
+          }) as PluginOption,
+        ]
+      : []),
   ];
 
   return {
@@ -36,11 +50,13 @@ export default defineConfig(({ mode }) => {
       minify: isProduction ? "terser" : false,
       target: "es2020",
       rollupOptions: {
+        input: isStaging
+          ? path.resolve(__dirname, "planner-staging.html")
+          : undefined,
         output: {
           manualChunks: isProduction
             ? {
                 vendor: ["react", "react-dom"],
-                mui: ["@mui/material", "@mui/x-charts"],
                 utils: ["cheerio"],
               }
             : undefined,

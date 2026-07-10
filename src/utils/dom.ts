@@ -1,4 +1,4 @@
-﻿import { AppLogger } from "./logger";
+import { AppLogger } from "./logger";
 
 /**
  * Creates a shadow DOM host element with a container div inside.
@@ -155,7 +155,7 @@ function ensureExtensionOverlayHostReset(): void {
  */
 export function extensionCssForShadowRoot(compiledCss: string): string {
   let css = compiledCss;
-  // Longer selectors first — naive `#id` → `:host` would produce invalid `:host[data-…]`.
+  // Longer selectors first � naive `#id` ? `:host` would produce invalid `:host[data-�]`.
   css = css.replace(
     /#extension-overlay-root\[data-mpp-theme="light"\]/g,
     ':host([data-mpp-theme="light"])',
@@ -170,7 +170,7 @@ export function extensionCssForShadowRoot(compiledCss: string): string {
 
 /**
  * Inlined Vite CSS uses `url(/assets/...)` which resolves against the MyPack page
- * origin (404). Rewrite to `chrome-extension://…/assets/…` so @font-face and
+ * origin (404). Rewrite to `chrome-extension://�/assets/�` so @font-face and
  * images load from the extension package.
  */
 export function rewriteCssAssetUrlsForExtension(css: string): string {
@@ -274,7 +274,8 @@ export function ensureOverlayContainer(shadowCss: string): HTMLDivElement {
     const styleEl =
       shadow.querySelector<HTMLStyleElement>(
         `style[${SHADOW_THEME_STYLE_ATTR}]`,
-      ) ?? (() => {
+      ) ??
+      (() => {
         const el = document.createElement("style");
         el.setAttribute(SHADOW_THEME_STYLE_ATTR, "");
         shadow.insertBefore(el, shadow.firstChild);

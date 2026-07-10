@@ -1,6 +1,6 @@
-import { parseDayTimeEvent } from "../components/DataGridCells/parseScheduleDayTime";
-import type { ScheduleEvent } from "../types/Calendar";
-import type { ModifiedSection } from "../types/Section";
+import { parseDayTimeEvent } from "../schedule/parseScheduleDayTime";
+import type { ScheduleEvent } from "../types/calendar";
+import type { ModifiedSection } from "../types/section";
 
 /**
  * Parses lecture `dayTime` plus `linkedMeetings` into calendar events for overlap checks.
@@ -12,7 +12,11 @@ export function modifiedSectionToScheduleEvents(
   let nextId = 1;
   const out: ScheduleEvent[] = [];
 
-  const primary = parseDayTimeEvent(section.dayTime, code || undefined, nextId++);
+  const primary = parseDayTimeEvent(
+    section.dayTime,
+    code || undefined,
+    nextId++,
+  );
   if (primary) {
     out.push(primary);
   }

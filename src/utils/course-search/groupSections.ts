@@ -1,9 +1,9 @@
-import { AppLogger } from "../logger";
-
 import type {
   GroupedSections,
   ModifiedSection,
-} from "../../course-management/types/Section";
+} from "../../course-management/types/section";
+import { AppLogger } from "../logger";
+
 import type { CourseSection } from "./parseRegistrarUtil";
 
 /** Registrar / PeopleSoft vary casing and wording ("Lec", "LEC", "Lecture"). */
@@ -95,16 +95,12 @@ export function groupSections(
         if (groupedSections[groupKey].lecture != null) {
           AppLogger.warn("Lecture already exists for", groupKey);
         }
-        const resolved = courseSections
-          ? courseSections[section.id]
-          : section;
+        const resolved = courseSections ? courseSections[section.id] : section;
         if (resolved) {
           groupedSections[groupKey].lecture = resolved;
         }
       } else {
-        const resolved = courseSections
-          ? courseSections[section.id]
-          : section;
+        const resolved = courseSections ? courseSections[section.id] : section;
         if (resolved) {
           groupedSections[groupKey].labs?.push(resolved);
         }

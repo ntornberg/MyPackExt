@@ -1,6 +1,9 @@
-import type { ModifiedSection } from "../../../course-management/types/Section";
+import type { ModifiedSection } from "../../../course-management/types/section";
 
-export type PlannerWorkbenchTab = "course_search" | "gep_search" | "plan_search";
+export type PlannerWorkbenchTab =
+  | "course_search"
+  | "gep_search"
+  | "major_plan_search";
 
 export type PlannerSectionPreview = {
   id: string;

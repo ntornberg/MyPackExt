@@ -1,5 +1,5 @@
-import { toMinutes } from "../components/DataGridCells/CalendarResizeListener";
-import type { ScheduleEvent } from "../types/Calendar";
+import { toMinutes } from "../components/calendar/CalendarGrid";
+import type { ScheduleEvent } from "../types/calendar";
 
 /** O(n·m) on tiny day lists — no Set allocation (≤5 weekdays each). */
 function hasSharedDayArrays(

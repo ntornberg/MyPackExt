@@ -1,5 +1,5 @@
 import { trackExtensionInstalled } from "../analytics/gaBackground";
-import { clearAllExtensionCaches } from "../course-management/cache/CourseRetrieval";
+import { clearAllExtensionCaches } from "../course-management/cache/courseRetrieval";
 import {
   fetchStatusWorkerStatusDirect,
   isStatusWorkerFetchMessage,

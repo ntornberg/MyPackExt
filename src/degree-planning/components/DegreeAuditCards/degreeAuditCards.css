@@ -85,6 +85,12 @@
   font-size: 13px;
 }
 
+.mpp-grade-chart-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 0.25rem 0;
+}
+
 .mpp-degree-stars {
   display: flex;
   align-items: center;
@@ -128,6 +134,3 @@
   line-height: 1.2;
 }
 
-.mpp-degree-card .MuiPieArcLabel-root {
-  font-weight: 700;
-}

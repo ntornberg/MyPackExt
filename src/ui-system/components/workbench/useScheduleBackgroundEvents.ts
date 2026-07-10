@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import {
   loadCartScheduleEvents,
   loadScheduleEvents,
-} from "../../../course-management/components/DataGridCells/CalendarView";
-import type { ScheduleEvent } from "../../../course-management/types/Calendar";
+} from "../../../course-management/components/calendar/CalendarView";
+import type { ScheduleEvent } from "../../../course-management/types/calendar";
 
 /**
  * Cart + enrolled blocks from the extension cache (same source as {@link CalendarView} background).

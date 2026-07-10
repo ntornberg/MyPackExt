@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 
-import extensionCssRaw from "../index.css?inline";
 import {
   debouncedScrapePlanner,
   scrapeScheduleTable,
 } from "../course-management/services/scraper";
-import { setupListener } from "../degree-planning/services/siteResponseStorage.ts";
-import SlideOutDrawer from "../ui-system/components/MainPopupCard.tsx";
-import FirstStartDialog from "../user-experience/components/UserGuide/FirstStartDialog.tsx";
-import WhatsNewDialog from "../user-experience/components/UserGuide/WhatsNewDialog.tsx";
+import { setupListener } from "../degree-planning/services/siteResponseStorage";
+import extensionCssRaw from "../index.css?inline";
+import SlideOutDrawer from "../ui-system/components/SlideOutDrawer";
+import FirstStartDialog from "../user-experience/components/UserGuide/FirstStartDialog";
+import WhatsNewDialog from "../user-experience/components/UserGuide/WhatsNewDialog";
 import {
   attachExtensionShadowTailwindStyleOrderObserver,
   ensureOverlayContainer,
@@ -153,9 +153,9 @@ document.addEventListener("DOMContentLoaded", () => {
       rewriteCssAssetUrlsForExtension(extensionCssRaw),
     );
     const overlayElement = ensureOverlayContainer(shadowCss);
-    const shadowRoot = document
-      .getElementById("extension-overlay-root")
-      ?.shadowRoot;
+    const shadowRoot = document.getElementById(
+      "extension-overlay-root",
+    )?.shadowRoot;
     if (!shadowRoot) {
       throw new Error("Extension overlay shadow root was not created.");
     }

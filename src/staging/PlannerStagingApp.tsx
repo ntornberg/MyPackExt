@@ -34,7 +34,7 @@ import {
   type PlannerSectionPreview,
 } from "@/ui-system/components/workbench/workbenchTypes";
 
-import type { ScheduleEvent } from "../course-management/types/Calendar";
+import type { ScheduleEvent } from "../course-management/types/calendar";
 import { sectionFitsSchedule } from "../course-management/utils/scheduleFitFilter";
 
 import {
@@ -137,7 +137,7 @@ function filterStagingResults(
         }
       }
     }
-    if (applySubjectFilters && tabId === "plan_search" && tertiary) {
+    if (applySubjectFilters && tabId === "major_plan_search" && tertiary) {
       const t = tertiary.toLowerCase();
       if (
         !r.tags.some((tag) => tag.toLowerCase().includes(t)) &&
@@ -199,7 +199,7 @@ export function PlannerStagingApp() {
   >({});
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-pp-mode", themeMode);
+    document.documentElement.setAttribute("data-mpp-theme", themeMode);
     const overlayRoot = document.getElementById("extension-overlay-root");
     if (!overlayRoot) {
       return;

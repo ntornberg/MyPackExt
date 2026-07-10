@@ -8,17 +8,14 @@ const mocks = vi.hoisted(() => ({
   invalidateScheduleCache: vi.fn(),
 }));
 
-vi.mock("../../course-management/cache/CourseRetrieval", () => ({
+vi.mock("../../course-management/cache/courseRetrieval", () => ({
   generateCacheKey: mocks.generateCacheKey,
   setGenericCache: mocks.setGenericCache,
 }));
 
-vi.mock(
-  "../../course-management/components/DataGridCells/CalendarView",
-  () => ({
-    invalidateScheduleCache: mocks.invalidateScheduleCache,
-  }),
-);
+vi.mock("../../course-management/components/calendar/CalendarView", () => ({
+  invalidateScheduleCache: mocks.invalidateScheduleCache,
+}));
 
 describe("siteResponseStorage listener", () => {
   let messageHandler: ((event: { data: unknown }) => Promise<void>) | null;

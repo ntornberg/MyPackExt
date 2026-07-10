@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
 
-import { cn } from "@/lib/utils";
-
 import {
   Pagination,
   PaginationContent,
@@ -11,6 +9,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { cn } from "@/lib/utils";
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -37,10 +36,7 @@ function buildPageWindow(page: number, pageCount: number): PageWindowEntry[] {
 
   for (const currentPage of normalizedPages) {
     const previousEntry = windowEntries[windowEntries.length - 1];
-    if (
-      typeof previousEntry === "number" &&
-      currentPage - previousEntry > 1
-    ) {
+    if (typeof previousEntry === "number" && currentPage - previousEntry > 1) {
       windowEntries.push("ellipsis");
     }
     windowEntries.push(currentPage);
@@ -87,8 +83,14 @@ export function PaginationControls({
           <PaginationPrevious
             href="#"
             aria-disabled={isPreviousDisabled}
-            className={cn(isPreviousDisabled && "pointer-events-none opacity-50")}
-            onClick={createPageLinkHandler(page - 1, onPageChange, isPreviousDisabled)}
+            className={cn(
+              isPreviousDisabled && "pointer-events-none opacity-50",
+            )}
+            onClick={createPageLinkHandler(
+              page - 1,
+              onPageChange,
+              isPreviousDisabled,
+            )}
           />
         </PaginationItem>
         {pageWindow.map((entry, index) =>
@@ -113,7 +115,11 @@ export function PaginationControls({
             href="#"
             aria-disabled={isNextDisabled}
             className={cn(isNextDisabled && "pointer-events-none opacity-50")}
-            onClick={createPageLinkHandler(page + 1, onPageChange, isNextDisabled)}
+            onClick={createPageLinkHandler(
+              page + 1,
+              onPageChange,
+              isNextDisabled,
+            )}
           />
         </PaginationItem>
       </PaginationContent>

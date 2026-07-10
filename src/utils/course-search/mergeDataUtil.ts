@@ -1,13 +1,13 @@
-import type { BatchDataRequestResponse, GradeData } from "../../types/api.ts";
 import type {
   MergedCourseData,
   ModifiedSection,
-} from "../../course-management/types/Section";
-import type { RequiredCourse } from "../../degree-planning/types/Plans.ts";
-import type { CourseData } from "./parseRegistrarUtil";
-
+} from "../../course-management/types/section";
+import type { RequiredCourse } from "../../degree-planning/types/Plans";
+import type { BatchDataRequestResponse, GradeData } from "../../types/api";
 import { AppLogger } from "../logger";
+
 import { groupSections } from "./groupSections";
+import type { CourseData } from "./parseRegistrarUtil";
 
 /**
  * Merges open course sections with grade distributions and professor ratings.

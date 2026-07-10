@@ -2,7 +2,7 @@ import type {
   GroupedSections,
   ModifiedSection,
   SectionLinkedMeeting,
-} from "../../../course-management/types/Section";
+} from "../../../course-management/types/section";
 import type { GradeData } from "../../../types/api";
 
 import { getPreviewSectionId } from "./workbenchTypes";
