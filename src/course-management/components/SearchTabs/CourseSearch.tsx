@@ -8,7 +8,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 
-import { logEvent } from "../../../analytics/ga4";
 import { DEPT_COURSES } from "../../../degree-planning/DialogAutoCompleteKeys/CourseSearch/department_courses.typed";
 import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
 import { CircularProgressWithLabel } from "../../../ui-system/components/shared/CircularProgressWithLabel.tsx";
@@ -203,12 +202,6 @@ export default function CourseSearch({
   );
 
   const courseSearch = async () => {
-    void logEvent("course_search_clicked", {
-      tab: "course_search",
-      term: courseSearchData.selectedTerm ?? "unknown",
-      subject: courseSearchData.searchSubject ?? "unknown",
-      catalog_num: courseSearchData.selectedCourseInfo?.catalogNum ?? "unknown",
-    });
     AppLogger.info("Course search clicked with:", {
       selectedTerm: courseSearchData.selectedTerm,
       searchSubject: courseSearchData.searchSubject,

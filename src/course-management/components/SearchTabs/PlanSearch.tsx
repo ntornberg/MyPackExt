@@ -8,7 +8,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 
-import { logEvent } from "../../../analytics/ga4";
 import { majorPlans } from "../../../degree-planning/DialogAutoCompleteKeys/PlanSearch/MajorPlans";
 import { minorPlans } from "../../../degree-planning/DialogAutoCompleteKeys/PlanSearch/MinorPlans";
 import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID";
@@ -203,15 +202,6 @@ export default function PlanSearch({
   );
 
   const planSearch = async () => {
-    logEvent("plan_search_clicked", {
-      tab: "plan_search",
-      term: planSearchData.selectedTerm ?? "unknown",
-      major: planSearchData.selectedMajor ?? "unknown",
-      minor: planSearchData.selectedMinor ?? "unknown",
-      subplan: planSearchData.selectedSubplan ?? "unknown",
-    }).catch(() => {
-      // Silently ignore analytics errors
-    });
     onPreviewSectionChange(null);
     setPlanSearchTabData({
       progress: 10,

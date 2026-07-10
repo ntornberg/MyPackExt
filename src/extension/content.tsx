@@ -2,7 +2,6 @@ import { useState } from "react";
 import { createRoot } from "react-dom/client";
 
 import extensionCssRaw from "../index.css?inline";
-import { initializeAnalytics, logEvent } from "../analytics/ga4";
 import {
   debouncedScrapePlanner,
   scrapeScheduleTable,
@@ -28,18 +27,6 @@ declare global {
 }
 
 AppLogger.info("MyPack Enhancer script started.");
-
-const ANALYTICS_BOOTSTRAP_KEY = "mypack.analytics.content_script_loaded";
-const isTopLevelFrame = window.top === window;
-if (
-  isTopLevelFrame &&
-  sessionStorage.getItem(ANALYTICS_BOOTSTRAP_KEY) !== "true"
-) {
-  sessionStorage.setItem(ANALYTICS_BOOTSTRAP_KEY, "true");
-  void initializeAnalytics().then(() => {
-    logEvent("extension_content_script_loaded");
-  });
-}
 
 function RootOverlayDialogs() {
   const [allowFirstStartAutoOpen, setAllowFirstStartAutoOpen] = useState(false);

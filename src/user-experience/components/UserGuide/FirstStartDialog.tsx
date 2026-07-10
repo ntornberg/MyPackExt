@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
-import { logEvent } from "../../../analytics/ga4";
 
 const LS_KEY = "firstStartDismissed";
 
@@ -43,7 +42,6 @@ export default function FirstStartDialog({
     if (dontShowAgain) {
       localStorage.setItem(LS_KEY, "true");
     }
-    void logEvent("first_start_dismissed", { dont_show_again: dontShowAgain });
     setOpen(false);
   };
 

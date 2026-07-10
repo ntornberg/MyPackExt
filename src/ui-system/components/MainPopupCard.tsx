@@ -12,7 +12,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-import { logEvent } from "../../analytics/ga4";
 import CourseSearch from "../../course-management/components/SearchTabs/CourseSearch";
 import GEPSearch from "../../course-management/components/SearchTabs/GEPSearch";
 import PlanSearch from "../../course-management/components/SearchTabs/PlanSearch";
@@ -264,9 +263,6 @@ export default function SlideOutDrawer() {
       return;
     }
     setDrawerOpen(true);
-    void logEvent("drawer_opened", {
-      source: "toolbar",
-    });
   }, [drawerOpen]);
 
   const handleDrawerClose = useCallback(() => {

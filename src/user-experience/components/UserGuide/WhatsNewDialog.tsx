@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 
-import { logEvent } from "../../../analytics/ga4";
 import { whatsNewByVersion } from "../../content/whatsNewByVersion";
 
 const LS_KEY = "mypack.whatsNewSeenVersion";
@@ -64,7 +63,6 @@ export default function WhatsNewDialog({ onResolved }: WhatsNewDialogProps) {
       localStorage.setItem(LS_KEY, currentVersion);
     }
     setOpen(false);
-    void logEvent("whats_new_dismissed", { version: currentVersion });
     resolve();
   }, [currentVersion, resolve]);
 

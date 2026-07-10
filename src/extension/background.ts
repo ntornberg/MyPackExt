@@ -1,9 +1,4 @@
-import {
-  handleAnalyticsEvent,
-  handleAnalyticsInitialize,
-  handleAnalyticsSetOptOut,
-  isAnalyticsMessage,
-} from "../analytics/gaBackground";
+import { trackExtensionInstalled } from "../analytics/gaBackground";
 import { clearAllExtensionCaches } from "../course-management/cache/CourseRetrieval";
 import {
   fetchStatusWorkerStatusDirect,
@@ -52,39 +47,6 @@ function setupMessageListener() {
       return true;
     }
 
-    if (isAnalyticsMessage(message)) {
-      if (message.type === "analytics_initialize") {
-        sendResponse(handleAnalyticsInitialize());
-        return false;
-      }
-
-      if (message.type === "analytics_event") {
-        handleAnalyticsEvent(message, _sender)
-          .then((response) => sendResponse(response))
-          .catch((error) => {
-            AppLogger.error("[Analytics] Failed to process message:", error);
-            sendResponse({
-              success: false,
-              error: error instanceof Error ? error.message : String(error),
-            });
-          });
-
-        return true;
-      }
-
-      handleAnalyticsSetOptOut(message)
-        .then((response) => sendResponse(response))
-        .catch((error) => {
-          AppLogger.error("[Analytics] Failed to process message:", error);
-          sendResponse({
-            success: false,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        });
-
-      return true;
-    }
-
     if (isStatusWorkerFetchMessage(message)) {
       fetchStatusWorkerStatusDirect()
         .then((status) => {
@@ -122,14 +84,7 @@ async function handleInstalled(
 ): Promise<void> {
   AppLogger.info("[Background] Extension installed/updated:", details.reason);
   if (details.reason === "install") {
-    void handleAnalyticsEvent({
-      type: "analytics_event",
-      name: "extension_installed",
-      params: {
-        install_reason: details.reason,
-        previous_version: details.previousVersion ?? "none",
-      },
-    });
+    void trackExtensionInstalled();
   }
   if (details.reason === "update") {
     AppLogger.info("[Background] Extension updated; clearing local caches");

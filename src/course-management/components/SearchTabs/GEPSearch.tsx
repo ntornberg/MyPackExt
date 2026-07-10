@@ -8,7 +8,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 
-import { logEvent } from "../../../analytics/ga4";
 import { GEP_COURSES } from "../../../degree-planning/DialogAutoCompleteKeys/GEPSearch/gep_courses.typed.ts";
 import { SubjectMenuValues } from "../../../degree-planning/DialogAutoCompleteKeys/SubjectSearchValues";
 import { TermIdByName } from "../../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
@@ -321,12 +320,6 @@ export default function GEPSearch({
   }, [courseData]);
 
   const courseSearch = useCallback(async () => {
-    void logEvent("gep_search_clicked", {
-      tab: "gep_search",
-      term: selectedTerm ?? "unknown",
-      subject: selectedSubjectLabel ?? "unknown",
-      subject_code: selectedSubjectCode ?? "unknown",
-    });
     setExpandedGroups({});
     onPreviewSectionChange(null);
     setGepSearchTabData({
