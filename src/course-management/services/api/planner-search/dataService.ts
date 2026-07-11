@@ -387,9 +387,8 @@ export async function batchFetchCoursesData(
                 },
               });
             } else {
-              const cacheKey = openCoursesHashKeys[courseData.code];
+              const hashKey = openCoursesHashKeys[courseData.code];
               const cacheData = JSON.stringify(courseData);
-              const hashKey = await generateCacheKey(cacheKey);
               await setGenericCache(
                 CACHE_KEYS.OPEN_COURSES,
                 { [hashKey]: cacheData },
