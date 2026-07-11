@@ -668,7 +668,7 @@ export const CalendarView = (params: CalendarViewProps) => {
   if (isLoading) {
     return (
       <div
-        className={`flex h-full min-h-[400px] items-center justify-center rounded-2xl border border-border/60 bg-muted/30 text-sm text-muted-foreground ${plannerPreview ? "min-w-[560px]" : ""}`}
+        className={`flex h-full min-h-[400px] items-center justify-center rounded-2xl border border-border/60 bg-muted/30 text-sm text-muted-foreground ${plannerPreview ? "min-w-[460px] sm:min-w-[560px]" : ""}`}
       >
         Loading schedule...
       </div>
@@ -679,7 +679,7 @@ export const CalendarView = (params: CalendarViewProps) => {
     <div
       className={
         plannerPreview
-          ? "h-full w-full min-w-[560px] max-w-[1400px] shrink-0"
+          ? "h-full w-full min-w-[460px] max-w-[1400px] shrink-0 sm:min-w-[560px]"
           : "h-full w-full"
       }
     >

@@ -30,7 +30,7 @@ const tabsListVariants = cva(
         default: "bg-muted",
         line: "gap-1 bg-transparent",
         segmented:
-          "flex h-auto w-full min-w-0 gap-1 rounded-xl border-2 border-border bg-background/40 p-1 shadow-sm group-data-horizontal/tabs:h-auto max-sm:flex-col max-sm:items-stretch dark:bg-white/[0.05]",
+          "flex h-auto w-full min-w-0 gap-1 rounded-xl border-2 border-border bg-background/40 p-1 shadow-sm group-data-horizontal/tabs:h-auto max-sm:flex-row max-sm:items-stretch dark:bg-white/[0.05]",
       },
     },
     defaultVariants: {

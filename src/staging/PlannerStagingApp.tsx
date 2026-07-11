@@ -524,16 +524,16 @@ export function PlannerStagingApp() {
   return (
     <div
       id="extension-overlay-root"
-      className={`planner-staging-root min-h-screen w-full px-4 py-6 sm:px-6 sm:py-8 ${themeMode === "dark" ? "dark" : ""}`}
+      className={`planner-staging-root min-h-screen w-full px-0 py-0 sm:px-6 sm:py-8 ${themeMode === "dark" ? "dark" : ""}`}
     >
       <div
-        className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-[1680px] flex-col overflow-hidden rounded-2xl border-2 border-border bg-card text-card-foreground shadow-lg ring-1 ring-border/50 dark:shadow-[0_24px_80px_rgba(0,0,0,0.35)] dark:ring-white/12 sm:rounded-[28px]"
+        className="mx-auto flex min-h-screen w-full max-w-[1680px] flex-col overflow-hidden border-2 border-border bg-card text-card-foreground shadow-lg ring-1 ring-border/50 dark:shadow-[0_24px_80px_rgba(0,0,0,0.35)] dark:ring-white/12 sm:min-h-[calc(100vh-3rem)] sm:rounded-[28px]"
         data-mpp-theme={themeMode}
       >
         <div
           className={`flex min-h-0 flex-1 flex-col ${themeMode === "dark" ? "dark" : ""}`}
         >
-          <header className="shrink-0 border-b border-border/60 bg-muted/25 px-4 py-4 sm:px-6 sm:py-5 dark:bg-background/40">
+          <header className="shrink-0 border-b border-border/60 bg-muted/25 px-3 py-3 sm:px-6 sm:py-5 dark:bg-background/40">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
@@ -568,7 +568,7 @@ export function PlannerStagingApp() {
               >
                 <TabsList
                   variant="segmented"
-                  className="w-full min-w-0 sm:min-h-12 sm:max-w-2xl"
+                  className="w-full min-w-0 max-sm:min-h-10 sm:min-h-12 sm:max-w-2xl"
                   aria-label="Planner search tabs"
                 >
                   {plannerStagingTabs.map((tab) => (

@@ -393,7 +393,7 @@ export default function SlideOutDrawer() {
               }}
               className="flex min-h-0 max-h-full flex-1 flex-col gap-0 overflow-hidden"
             >
-              <div className="shrink-0 border-b border-border/60 bg-muted/25 px-4 py-4 sm:px-6 sm:py-5 dark:bg-background/40">
+              <div className="shrink-0 border-b border-border/60 bg-muted/25 px-3 py-3 sm:px-6 sm:py-5 dark:bg-background/40">
                 <div className="mb-3 flex min-h-7 flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
@@ -405,7 +405,7 @@ export default function SlideOutDrawer() {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
                     <StatusBanner className="shrink-0" />
                     <Button
                       asChild
@@ -453,7 +453,7 @@ export default function SlideOutDrawer() {
 
                 <TabsList
                   variant="segmented"
-                  className="w-full min-w-0 sm:min-h-12 sm:max-w-2xl"
+                  className="w-full min-w-0 max-sm:min-h-10 sm:min-h-12 sm:max-w-2xl"
                   aria-label="Planner search tabs"
                 >
                   <TabsTrigger
