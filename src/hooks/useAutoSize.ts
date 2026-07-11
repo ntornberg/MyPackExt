@@ -1,4 +1,4 @@
-﻿import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 /**
  * Measures the width of a container and derives a height using a fixed aspect ratio.
@@ -20,7 +20,7 @@ export function useAutoSize(min = 180, aspect = 0.75) {
     });
     obs.observe(ref.current);
     return () => obs.disconnect();
-  }, []);
+  }, [aspect, min]);
 
   return [ref, size] as const;
 }

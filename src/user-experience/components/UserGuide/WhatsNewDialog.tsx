@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 
-import { logEvent } from "../../../analytics/ga4";
 import { whatsNewByVersion } from "../../content/whatsNewByVersion";
 
 const LS_KEY = "mypack.whatsNewSeenVersion";
@@ -37,7 +36,9 @@ export default function WhatsNewDialog({ onResolved }: WhatsNewDialogProps) {
     }
   }, []);
 
-  const release = currentVersion ? whatsNewByVersion[currentVersion] : undefined;
+  const release = currentVersion
+    ? whatsNewByVersion[currentVersion]
+    : undefined;
   const resolvedRef = useRef(false);
 
   const resolve = useCallback(() => {
@@ -64,14 +65,18 @@ export default function WhatsNewDialog({ onResolved }: WhatsNewDialogProps) {
       localStorage.setItem(LS_KEY, currentVersion);
     }
     setOpen(false);
-    void logEvent("whats_new_dismissed", { version: currentVersion });
     resolve();
   }, [currentVersion, resolve]);
 
   if (!release) return null;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) handleClose();
+      }}
+    >
       <DialogContent
         showCloseButton={false}
         className="max-w-lg gap-0 overflow-hidden p-0"
@@ -82,13 +87,15 @@ export default function WhatsNewDialog({ onResolved }: WhatsNewDialogProps) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary/80">
                 <SparklesIcon className="size-3.5" />
-                What's New
+                What&apos;s New
               </div>
               <Badge variant="secondary" className="font-mono text-[0.65rem]">
                 v{currentVersion}
               </Badge>
             </div>
-            <DialogTitle className="text-xl font-bold">{release.title}</DialogTitle>
+            <DialogTitle className="text-xl font-bold">
+              {release.title}
+            </DialogTitle>
             <DialogDescription>{release.subtitle}</DialogDescription>
           </DialogHeader>
         </div>

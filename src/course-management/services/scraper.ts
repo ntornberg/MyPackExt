@@ -1,10 +1,10 @@
-﻿import { debounce } from "../../utils/debounce";
+import type { Course } from "../../types/api";
+import { debounce } from "../../utils/debounce";
 import { ensureExtensionCell, waitForCart, waitForRows } from "../../utils/dom";
 import { AppLogger } from "../../utils/logger";
 import { DEBUG } from "../../utils/settings";
-import type { Course } from "../../types/api.ts";
 
-import { getCourseAndProfessorDetails } from "./api/PackPlannerAPI/courseDetail/courseDetailService";
+import { getCourseAndProfessorDetails } from "./api/pack-planner/course-detail/courseDetailService";
 
 // Arrays to store course data
 export const courses: Course[] = []; // Stores courses from the main schedule table
@@ -231,7 +231,7 @@ const EXT_TOGGLE_ID = "mypack-extension-master-toggle";
  * hidden, and the `max-width` cap keeps it from growing past the viewport.
  *
  * Each entry is `[cssProperty, value, priority]` so we can apply `!important`
- * — jQuery UI also writes inline styles on these elements and without the
+ * � jQuery UI also writes inline styles on these elements and without the
  * priority flag our values lose the cascade.
  */
 type InlineStyleEntry = [string, string, "important" | ""];
@@ -287,10 +287,7 @@ function clearStyleKeys(el: HTMLElement, keys: string[]): void {
   }
 }
 
-function applyInlineStyles(
-  el: HTMLElement,
-  entries: InlineStyleEntry[],
-): void {
+function applyInlineStyles(el: HTMLElement, entries: InlineStyleEntry[]): void {
   for (const [prop, value, priority] of entries) {
     el.style.setProperty(prop, value, priority);
   }
@@ -404,7 +401,7 @@ export async function applyIframeStyles(
     }
     /*
      * jQuery UI's title bar uses white-space: nowrap, so a long offering title
-     * forces the whole dialog to be at least that wide — which is why dead
+     * forces the whole dialog to be at least that wide � which is why dead
      * space reappears when course info is hidden. Let the title wrap so the
      * dialog can fit-content down to the actual table + extension cell width.
      */

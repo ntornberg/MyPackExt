@@ -12,8 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
-import { logEvent } from "../../../analytics/ga4";
-
 const LS_KEY = "firstStartDismissed";
 
 type FirstStartDialogProps = {
@@ -43,20 +41,27 @@ export default function FirstStartDialog({
     if (dontShowAgain) {
       localStorage.setItem(LS_KEY, "true");
     }
-    void logEvent("first_start_dismissed", { dont_show_again: dontShowAgain });
     setOpen(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
-      <DialogContent showCloseButton={false} className="max-w-lg gap-0 overflow-hidden p-0">
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) handleClose();
+      }}
+    >
+      <DialogContent
+        showCloseButton={false}
+        className="max-w-lg gap-0 overflow-hidden p-0"
+      >
         {/* Header */}
         <div className="border-b border-border px-5 py-4">
           <DialogHeader>
             <DialogTitle>Extension Quick-Start Guide</DialogTitle>
             <DialogDescription>
-              Learn how to use MyPack Plus course search, plan search, GEP search,
-              and schedule tools.
+              Learn how to use MyPack Plus course search, plan search, GEP
+              search, and schedule tools.
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -97,11 +102,14 @@ export default function FirstStartDialog({
               checked={dontShowAgain}
               onCheckedChange={(v) => setDontShowAgain(!!v)}
             />
-            <Label htmlFor="dont-show-again" className="cursor-pointer text-sm font-normal">
-              Don't show again
+            <Label
+              htmlFor="dont-show-again"
+              className="cursor-pointer text-sm font-normal"
+            >
+              Don&apos;t show again
             </Label>
           </div>
-          <Button size="sm" onClick={handleClose} autoFocus>
+          <Button size="sm" onClick={handleClose}>
             Close
           </Button>
         </DialogFooter>
@@ -110,7 +118,13 @@ export default function FirstStartDialog({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <h3 className="mb-2 text-sm font-bold">{title}</h3>
@@ -120,7 +134,5 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function Item({ text }: { text: string }) {
-  return (
-    <li className="list-disc text-sm text-muted-foreground">{text}</li>
-  );
+  return <li className="list-disc text-sm text-muted-foreground">{text}</li>;
 }

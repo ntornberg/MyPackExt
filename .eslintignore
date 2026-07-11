@@ -6,4 +6,4 @@ public
 *.config.ts
 *.config.cjs
 coverage
-src/degree-planning/DialogAutoCompleteKeys
+src/generated/catalogs

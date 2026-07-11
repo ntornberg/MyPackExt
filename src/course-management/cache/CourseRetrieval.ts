@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { AppLogger } from "../../utils/logger";
 
 // Define the structure of the cache entry
@@ -587,13 +588,13 @@ function estimateSize(str: string): number {
 export async function generateCacheKey(item: string): Promise<string> {
   // Replace spaces with underscores just to make keys a bit cleaner in storage
   const sanitized = item.replace(/\s+/g, "_");
-  
-  // If the key is relatively short (up to 64 chars), use it directly 
+
+  // If the key is relatively short (up to 64 chars), use it directly
   // to avoid hashing overhead entirely
   if (sanitized.length <= 64) {
     return sanitized;
   }
-  
+
   // For longer strings, use a fast, lightweight DJB2 hash instead of crypto
   let hash = 5381;
   for (let i = 0; i < sanitized.length; i++) {
@@ -808,5 +809,3 @@ export async function clearAllExtensionCaches(): Promise<void> {
     AppLogger.error(`[CACHE ERROR] clearAllExtensionCaches failed`, error);
   }
 }
-
-

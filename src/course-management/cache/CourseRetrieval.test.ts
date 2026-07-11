@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -7,7 +8,7 @@ import {
   isCacheEntryExpired,
   setGenericCache,
   type CacheEntry,
-} from "./CourseRetrieval.js";
+} from "./courseRetrieval.js";
 
 type ChromeStorageMock = {
   storage: {
@@ -20,9 +21,7 @@ type ChromeStorageMock = {
   };
 };
 
-function installChromeStorageMock(
-  storageState: Record<string, any>,
-): {
+function installChromeStorageMock(storageState: Record<string, any>): {
   chromeMock: ChromeStorageMock;
   setCalls: unknown[];
 } {
@@ -31,14 +30,12 @@ function installChromeStorageMock(
     storage: {
       local: {
         get: vi.fn(async (key: string) => ({ [key]: storageState[key] })),
-        set: vi.fn(
-          async (payload: Record<string, any>) => {
-            setCalls.push(payload);
-            for (const [key, value] of Object.entries(payload)) {
-              storageState[key] = value;
-            }
-          },
-        ),
+        set: vi.fn(async (payload: Record<string, any>) => {
+          setCalls.push(payload);
+          for (const [key, value] of Object.entries(payload)) {
+            storageState[key] = value;
+          }
+        }),
         remove: vi.fn(async (key: string | string[]) => {
           const keys = Array.isArray(key) ? key : [key];
           for (const storageKey of keys) {
@@ -172,8 +169,6 @@ describe("CourseRetrieval cache expiration", () => {
           expiresAt: 2,
         },
       },
-      mypackAnalyticsClientId: "analytics-client-id",
-      mypackAnalyticsOptOut: true,
     };
     const { chromeMock } = installChromeStorageMock(storageState);
 
@@ -185,7 +180,5 @@ describe("CourseRetrieval cache expiration", () => {
     );
     expect(storageState.openCourses).toBeUndefined();
     expect(storageState.scheduleTableData).toBeUndefined();
-    expect(storageState.mypackAnalyticsClientId).toBe("analytics-client-id");
-    expect(storageState.mypackAnalyticsOptOut).toBe(true);
   });
 });

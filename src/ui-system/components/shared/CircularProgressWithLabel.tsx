@@ -46,9 +46,7 @@ export function CircularProgressWithLabel({
         </span>
       </div>
       {label && (
-        <p className="max-w-[200px] text-xs text-muted-foreground">
-          {label}
-        </p>
+        <p className="max-w-[200px] text-xs text-muted-foreground">{label}</p>
       )}
     </div>
   );

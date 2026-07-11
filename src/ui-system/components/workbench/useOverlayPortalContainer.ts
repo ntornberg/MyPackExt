@@ -9,7 +9,7 @@ import { getExtensionOverlayPortalContainer } from "@/utils/dom";
 export function useOverlayPortalContainer(): HTMLElement | null {
   const [container] = useState(() =>
     typeof document !== "undefined"
-      ? getExtensionOverlayPortalContainer() ?? null
+      ? (getExtensionOverlayPortalContainer() ?? null)
       : null,
   );
 

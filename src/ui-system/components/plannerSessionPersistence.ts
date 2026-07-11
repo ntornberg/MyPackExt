@@ -1,8 +1,9 @@
 import type {
   CourseSearchData,
-  GEPData,
-  PlanSearchData,
-} from "../../course-management/components/TabDataStore/TabData";
+  GepSearchData,
+  MajorPlanSearchData,
+} from "../../course-management/components/tab-state/tabState";
+
 import type { PlannerWorkbenchTab } from "./workbench/workbenchTypes";
 
 const STORAGE_KEY = "mypack-pack-planner-session-v1";
@@ -13,16 +14,35 @@ export type PersistedPlannerSession = {
   version: 1;
   selectedTab: PlannerWorkbenchTab;
   courseSearchData: CourseSearchData;
-  planSearchData: PlanSearchData;
-  gepSearchData: GEPData;
+  majorPlanSearchData: MajorPlanSearchData;
+  GepSearchData: GepSearchData;
 };
 
-function isPlannerWorkbenchTab(value: string): value is PlannerWorkbenchTab {
-  return (
+type LegacyPlannerWorkbenchTab = PlannerWorkbenchTab | "plan_search";
+
+type LegacyPersistedPlannerSession = Omit<
+  PersistedPlannerSession,
+  "majorPlanSearchData" | "selectedTab"
+> & {
+  selectedTab: LegacyPlannerWorkbenchTab;
+  majorPlanSearchData?: MajorPlanSearchData;
+  planSearchData?: MajorPlanSearchData;
+};
+
+function normalizePlannerWorkbenchTab(
+  value: string,
+): PlannerWorkbenchTab | null {
+  if (value === "plan_search") {
+    return "major_plan_search";
+  }
+  if (
     value === "course_search" ||
     value === "gep_search" ||
-    value === "plan_search"
-  );
+    value === "major_plan_search"
+  ) {
+    return value;
+  }
+  return null;
 }
 
 export function loadPlannerSelectedTab(): PlannerWorkbenchTab | null {
@@ -31,10 +51,10 @@ export function loadPlannerSelectedTab(): PlannerWorkbenchTab | null {
   }
   try {
     const raw = localStorage.getItem(SELECTED_TAB_KEY);
-    if (!raw || !isPlannerWorkbenchTab(raw)) {
+    if (!raw) {
       return null;
     }
-    return raw;
+    return normalizePlannerWorkbenchTab(raw);
   } catch {
     return null;
   }
@@ -74,22 +94,31 @@ export function loadPersistedPlannerSession(): PersistedPlannerSession | null {
     if (!raw) {
       return null;
     }
-    const parsed = JSON.parse(raw) as PersistedPlannerSession;
+    const parsed = JSON.parse(raw) as LegacyPersistedPlannerSession;
     if (parsed?.version !== 1 || typeof parsed.selectedTab !== "string") {
       return null;
     }
-    if (!isPlannerWorkbenchTab(parsed.selectedTab)) {
+    const selectedTab = normalizePlannerWorkbenchTab(parsed.selectedTab);
+    if (!selectedTab) {
       return null;
     }
+    const normalized: PersistedPlannerSession = {
+      ...parsed,
+      selectedTab,
+      majorPlanSearchData:
+        parsed.majorPlanSearchData ??
+        parsed.planSearchData ??
+        ({} as MajorPlanSearchData),
+    };
     if (source === "session") {
       try {
-        localStorage.setItem(STORAGE_KEY, raw);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
         sessionStorage.removeItem(STORAGE_KEY);
       } catch {
         /* ignore migration failure */
       }
     }
-    return parsed;
+    return normalized;
   } catch {
     return null;
   }

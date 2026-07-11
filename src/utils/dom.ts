@@ -1,4 +1,4 @@
-﻿import { AppLogger } from "./logger";
+import { AppLogger } from "./logger";
 
 /**
  * Creates a shadow DOM host element with a container div inside.
@@ -18,6 +18,25 @@ export function createShadowHost(id: string): {
   shadow.appendChild(container);
 
   return { host, container };
+}
+
+export function injectCssOnce(
+  root: Document | ShadowRoot,
+  id: string,
+  css: string,
+): void {
+  if (root.getElementById(id)) {
+    return;
+  }
+  const ownerDocument = "head" in root ? root : root.ownerDocument;
+  const style = ownerDocument.createElement("style");
+  style.id = id;
+  style.textContent = css;
+  if ("head" in root) {
+    root.head.appendChild(style);
+    return;
+  }
+  root.appendChild(style);
 }
 
 /**
@@ -111,6 +130,13 @@ function ensureExtensionOverlayHostReset(): void {
   el.id = HOST_RESET_STYLE_ID;
   el.textContent = `
 #extension-overlay-root {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 1000 !important;
+  pointer-events: none !important;
   font-size: 16px !important;
   line-height: 1.5 !important;
   font-family: "Geist Variable", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
@@ -129,7 +155,7 @@ function ensureExtensionOverlayHostReset(): void {
  */
 export function extensionCssForShadowRoot(compiledCss: string): string {
   let css = compiledCss;
-  // Longer selectors first — naive `#id` → `:host` would produce invalid `:host[data-…]`.
+  // Longer selectors first � naive `#id` ? `:host` would produce invalid `:host[data-�]`.
   css = css.replace(
     /#extension-overlay-root\[data-mpp-theme="light"\]/g,
     ':host([data-mpp-theme="light"])',
@@ -144,7 +170,7 @@ export function extensionCssForShadowRoot(compiledCss: string): string {
 
 /**
  * Inlined Vite CSS uses `url(/assets/...)` which resolves against the MyPack page
- * origin (404). Rewrite to `chrome-extension://…/assets/…` so @font-face and
+ * origin (404). Rewrite to `chrome-extension://�/assets/�` so @font-face and
  * images load from the extension package.
  */
 export function rewriteCssAssetUrlsForExtension(css: string): string {
@@ -179,19 +205,7 @@ export function rewriteCssAssetUrlsForExtension(css: string): string {
 }
 
 function applySlideOutDrawerChrome(drawer: HTMLDivElement) {
-  // Compact, non-intrusive launcher pinned to the bottom-right corner of the
-  // viewport. Previously this was a full-height 300px-wide column that covered
-  // the right edge of the MyPack UI.
-  drawer.style.position = "fixed";
-  drawer.style.bottom = "20px";
-  drawer.style.right = "20px";
-  drawer.style.top = "auto";
-  drawer.style.left = "auto";
-  drawer.style.width = "auto";
-  drawer.style.height = "auto";
-  drawer.style.transition = "opacity 0.2s ease, transform 0.2s ease";
-  drawer.style.zIndex = "1001";
-  drawer.style.pointerEvents = "auto";
+  drawer.classList.add("planner-drawer-container");
 }
 
 /**
@@ -228,13 +242,6 @@ export function ensureOverlayContainer(shadowCss: string): HTMLDivElement {
   if (!host) {
     host = document.createElement("div");
     host.id = "extension-overlay-root";
-    host.style.position = "fixed";
-    host.style.top = "0";
-    host.style.left = "0";
-    host.style.width = "100%";
-    host.style.height = "100%";
-    host.style.zIndex = "1000";
-    host.style.pointerEvents = "none";
     document.body.appendChild(host);
   }
 
@@ -262,13 +269,13 @@ export function ensureOverlayContainer(shadowCss: string): HTMLDivElement {
     const portalRoot = document.createElement("div");
     portalRoot.id = "extension-portal-root";
     portalRoot.className = "mypack-shell";
-    portalRoot.style.pointerEvents = "auto";
     shadow.appendChild(portalRoot);
   } else {
     const styleEl =
       shadow.querySelector<HTMLStyleElement>(
         `style[${SHADOW_THEME_STYLE_ATTR}]`,
-      ) ?? (() => {
+      ) ??
+      (() => {
         const el = document.createElement("style");
         el.setAttribute(SHADOW_THEME_STYLE_ATTR, "");
         shadow.insertBefore(el, shadow.firstChild);
@@ -280,7 +287,6 @@ export function ensureOverlayContainer(shadowCss: string): HTMLDivElement {
       const portalRoot = document.createElement("div");
       portalRoot.id = "extension-portal-root";
       portalRoot.className = "mypack-shell";
-      portalRoot.style.pointerEvents = "auto";
       shadow.appendChild(portalRoot);
     }
   }

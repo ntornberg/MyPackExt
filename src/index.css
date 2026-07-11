@@ -3,6 +3,7 @@
 @import "tailwindcss/preflight.css" layer(base);
 @import "tw-animate-css";
 @import "@fontsource-variable/geist";
+@import "./ui-system/styles/planner.css";
 
 /* Shadow extension: theme lives on the host via `data-mpp-theme`; `.dark` covers staging/MUI. */
 @custom-variant dark (&:is(.dark *, #extension-overlay-root[data-mpp-theme="dark"] *));
@@ -326,7 +327,7 @@
   color: var(--foreground);
 }
 
-/* Native <details> plan requirement groups (PlanSearch): rotate chevron when open. */
+/* Native <details> plan requirement groups (MajorPlanSearch): rotate chevron when open. */
 #extension-overlay-root .plan-req-disclosure[open] > summary .plan-req-chevron {
   transform: rotate(90deg);
 }

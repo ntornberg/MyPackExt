@@ -1,14 +1,14 @@
-import type { GradeData, MatchedRateMyProf } from "../types/api";
 import {
   type ScheduleEvent,
   CALENDAR_COLOR_CART_CLASS,
   CALENDAR_COLOR_CONFLICT_SWATCH,
   CALENDAR_COLOR_ENROLLED_CLASS,
   CALENDAR_COLOR_PINNED_SECTION,
-} from "../course-management/types/Calendar";
-import type { SectionLinkedMeeting } from "../course-management/types/Section";
+} from "../course-management/types/calendar";
+import type { SectionLinkedMeeting } from "../course-management/types/section";
+import type { GradeData, MatchedRateMyProf } from "../types/api";
 
-export type StagingTabId = "course_search" | "gep_search" | "plan_search";
+export type StagingTabId = "course_search" | "gep_search" | "major_plan_search";
 
 export type StagingResult = {
   id: string;
@@ -101,7 +101,8 @@ const courseResults: StagingResult[] = [
     component: "Lecture",
     rating: 4.6,
     tags: ["Core", "Popular", "Afternoon"],
-    notes: "Strong fit for the compare-card layout because it has clear lecture details and a stable compare workflow.",
+    notes:
+      "Strong fit for the compare-card layout because it has clear lecture details and a stable compare workflow.",
     requisites: "CSC 216 or equivalent programming experience.",
     professor_rating: mockRmp("Jason Tyler King", 4.6, "Computer Science"),
     grade_distribution: mockGrade(
@@ -210,7 +211,8 @@ const courseResults: StagingResult[] = [
     component: "Lecture",
     rating: 4.4,
     tags: ["Core", "Compare", "Late afternoon"],
-    notes: "Useful for exploring denser comparison cards and alternate spacing decisions.",
+    notes:
+      "Useful for exploring denser comparison cards and alternate spacing decisions.",
     requisites: "CSC 216 or equivalent programming experience.",
     professor_rating: mockRmp("Jason Tyler King", 4.4, "Computer Science"),
     grade_distribution: mockGrade(
@@ -247,7 +249,8 @@ const courseResults: StagingResult[] = [
     component: "Lecture",
     rating: 4.1,
     tags: ["Waitlist", "Alt slot"],
-    notes: "Keeps a less ideal result in the dataset so empty/negative states are easy to inspect.",
+    notes:
+      "Keeps a less ideal result in the dataset so empty/negative states are easy to inspect.",
     requisites: "CSC 216 or equivalent programming experience.",
     professor_rating: mockRmp("Staff", null, "Computer Science"),
     grade_distribution: mockGrade(
@@ -375,7 +378,11 @@ const planResults: StagingResult[] = [
     component: "Lecture",
     rating: 4.2,
     tags: ["Major core", "Math-heavy"],
-    professor_rating: mockRmp("Matt Grayson", 4.1, "Electrical & Computer Engineering"),
+    professor_rating: mockRmp(
+      "Matt Grayson",
+      4.1,
+      "Electrical & Computer Engineering",
+    ),
     grade_distribution: mockGrade(
       "ECE 309 — Analytical Foundations of EE",
       "ECE",
@@ -412,7 +419,11 @@ const planResults: StagingResult[] = [
     component: "Lecture",
     rating: 4.5,
     tags: ["Major core", "Signals"],
-    professor_rating: mockRmp("Priya Davis", 4.7, "Electrical & Computer Engineering"),
+    professor_rating: mockRmp(
+      "Priya Davis",
+      4.7,
+      "Electrical & Computer Engineering",
+    ),
     grade_distribution: mockGrade(
       "ECE 302 — Linear Systems",
       "ECE",
@@ -445,7 +456,11 @@ export const plannerStagingTabs: StagingTabData[] = [
     description: "Sample sections for card-based comparison.",
     filters: {
       term: ["2026 Fall Term", "2027 Spring Term", "2027 Summer I"],
-      primary: ["CSC - Computer Science", "ECE - Electrical Engineering", "MA - Mathematics"],
+      primary: [
+        "CSC - Computer Science",
+        "ECE - Electrical Engineering",
+        "MA - Mathematics",
+      ],
       secondary: [
         "CSC 316 Data Structures and Algorithms",
         "PY 208 Physics for Engineers and Scientists I",
@@ -459,23 +474,37 @@ export const plannerStagingTabs: StagingTabData[] = [
     id: "gep_search",
     label: "GEP Search",
     eyebrow: "GEP Search",
-    description: "Mock grouped requirement results for wider layout experiments.",
+    description:
+      "Mock grouped requirement results for wider layout experiments.",
     filters: {
       term: ["2026 Fall Term", "2027 Spring Term"],
       primary: ["Communication", "Humanities", "Social Sciences"],
-      secondary: ["Speaking and Writing", "Visual and Performing Arts", "U.S. Diversity"],
+      secondary: [
+        "Speaking and Writing",
+        "Visual and Performing Arts",
+        "U.S. Diversity",
+      ],
     },
     results: gepResults,
   },
   {
-    id: "plan_search",
-    label: "Major Search",
-    eyebrow: "Major Search",
-    description: "Major and minor planning results for tree and rail iteration.",
+    id: "major_plan_search",
+    label: "Major Plan Search",
+    eyebrow: "Major Plan Search",
+    description:
+      "Major and minor planning results for tree and rail iteration.",
     filters: {
       term: ["2026 Fall Term", "2027 Spring Term"],
-      primary: ["Electrical Engineering", "Computer Science", "Mechanical Engineering"],
-      secondary: ["Computer Engineering", "Minor in Mathematics", "Minor in Statistics"],
+      primary: [
+        "Electrical Engineering",
+        "Computer Science",
+        "Mechanical Engineering",
+      ],
+      secondary: [
+        "Computer Engineering",
+        "Minor in Mathematics",
+        "Minor in Statistics",
+      ],
       tertiary: ["Systems", "Power", "Communications"],
     },
     results: planResults,

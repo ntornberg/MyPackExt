@@ -4,42 +4,20 @@
 [![Built with React](https://img.shields.io/badge/React-19-61dafb.svg)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178c6.svg)](https://www.typescriptlang.org/)
 
-MyPack Plus is a browser extension that brings faster course search, section comparison, schedule preview, grade context, professor ratings, and live availability checks into NC State's MyPack Portal.
+MyPack Plus is a browser extension for NC State students using MyPack Portal. It brings course search, section comparison, grade history, professor ratings, schedule previews, live availability checks, and cart helpers directly into the registration workflow.
 
 Visit [mypackplus.me](https://mypackplus.me) for the project site.
 
-## What It Does
+The extension is independent and is not affiliated with, endorsed by, or sponsored by NC State University.
 
-MyPack Plus helps students compare registration options without jumping between MyPack, planner notes, grade data, and professor-rating pages.
+## Features
 
-- Search by subject, course number, GEP requirement, major, minor, plan, and concentration.
-- Compare sections with meeting times, locations, instructors, notes, prerequisites, seats, and status.
-- Preview sections against enrolled and carted classes before adding them.
-- Review historical grade distributions and professor-rating context in the planning flow.
-- Handle linked labs and recitations alongside their lectures.
-- Use caching and batched lookups to keep repeat searches fast.
-
-## Core Features
-
-### Course Search
-
-Find classes by course, GEP requirement, major, minor, or degree plan. Results are organized for registration decisions, with the details students need close to the section they are reviewing.
-
-### Section Comparison
-
-Section cards surface availability, instructor, schedule, location, linked components, grade context, professor information, notes, prerequisites, and cart actions where available.
-
-### Schedule Preview
-
-Preview selected sections alongside enrolled and carted classes. MyPack Plus highlights schedule fit and helps catch conflicts before students commit time to manual cart work.
-
-### Live Availability
-
-Availability checks pull current section status so students can see open, closed, waitlist, reserved, and capacity information before digging through MyPack manually.
-
-### Linked Components
-
-Lectures, labs, and recitations are grouped together when a course requires linked sections, making it easier to choose a complete class combination.
+- Search by term, subject, course number, GEP requirement, major, minor, plan, and concentration.
+- Compare sections with meeting times, locations, instructors, notes, prerequisites, seats, availability, grades, and professor ratings.
+- Preview selected sections alongside enrolled and carted classes, including schedule-conflict context.
+- Handle linked lectures, labs, and recitations as complete registration combinations.
+- Add compatible combinations to the MyPack cart where available.
+- Use light and dark mode, local caching, and batched lookups for faster repeat searches.
 
 ## How It Works
 
@@ -53,22 +31,49 @@ MyPack Plus runs as a Manifest V3 browser extension.
 
 ## Tech Stack
 
-- React 19
-- TypeScript
-- Vite
-- Material UI
-- Chrome Extension Manifest V3
-- Supabase Edge Functions
-- Cloudflare Workers
+- React 19, TypeScript, Vite, and Chrome Extension Manifest V3.
+- Tailwind CSS v4 and shadcn-style UI primitives.
+- MUI X Charts for grade-distribution charts.
+- Supabase Edge Functions and Cloudflare/registrar lookup infrastructure.
 
-## Local Development
+## Project Layout
+
+- `src/extension` contains the content script and background service worker.
+- `src/ui-system/components` contains shared planner UI, workbench components, and reusable controls.
+- `src/course-management` contains section search, registrar data, cart actions, and result rendering.
+- `src/degree-planning` contains plan/GEP data and injected grade/professor cards.
+- `src/staging` contains the planner staging app used for visual and interaction checks outside MyPack.
+
+## Development
+
+Install dependencies:
 
 ```bash
 npm install
+```
+
+Run the Vite dev server:
+
+```bash
 npm run dev
 ```
 
-For a production extension build:
+Run the planner staging app:
+
+```bash
+npm run dev:planner-staging
+```
+
+Run project checks:
+
+```bash
+npm run type-check
+npm run lint
+npm test -- --run
+npm run test:smoke
+```
+
+Build the extension:
 
 ```bash
 npm run build:prod
@@ -76,27 +81,19 @@ npm run build:prod
 
 The production build outputs extension assets to `dist/` and packages them as `dist.zip`.
 
-Useful project checks:
-
-```bash
-npm run type-check
-npm run lint
-npm run build
-```
-
 ## Privacy And Data
 
-MyPack Plus is designed to support course planning inside the browser. It reads supported MyPack Portal pages, requests course and availability data needed for planning features, and stores cached course data locally to improve performance.
+MyPack Plus reads supported MyPack Portal pages, requests course and availability data needed for planning features, and stores cached course data locally to improve performance. Students should verify official course availability, enrollment requirements, and registration decisions through NC State's official systems before enrolling.
 
-Students should verify official course availability, enrollment requirements, and registration decisions through NC State's official systems before enrolling.
+## Notes
 
-## Disclaimer
-
-MyPack Plus is an independent project and is not affiliated with, endorsed by, or sponsored by NC State University.
+- The main planner UI renders inside a shadow-root overlay so host MyPack styles do not leak into the extension.
+- Injected grade/professor cards use their own small stylesheet because they render inside MyPack rows and, in one case, a separate shadow root.
+- Some inline styles remain intentionally for dynamic geometry and data-driven color values, such as calendar event placement and fractional star fills.
 
 ## Contributing
 
-Issues and pull requests are welcome. Please keep changes focused, include a short explanation of the user-facing impact, and run the relevant checks before opening a PR.
+Issues and pull requests are welcome. Keep changes focused, include a short explanation of their user-facing impact, and run the relevant checks before opening a PR.
 
 ## License
 

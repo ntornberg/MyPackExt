@@ -1,4 +1,4 @@
-import type { GradeData, MatchedRateMyProf } from "../../types/api.ts";
+import type { GradeData, MatchedRateMyProf } from "../../types/api";
 import type {
   CourseData,
   CourseSection,

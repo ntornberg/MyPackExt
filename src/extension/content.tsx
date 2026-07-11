@@ -1,16 +1,15 @@
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 
-import extensionCssRaw from "../index.css?inline";
-import { initializeAnalytics, logEvent } from "../analytics/ga4";
 import {
   debouncedScrapePlanner,
   scrapeScheduleTable,
 } from "../course-management/services/scraper";
-import { setupListener } from "../degree-planning/services/siteResponseStorage.ts";
-import SlideOutDrawer from "../ui-system/components/MainPopupCard.tsx";
-import FirstStartDialog from "../user-experience/components/UserGuide/FirstStartDialog.tsx";
-import WhatsNewDialog from "../user-experience/components/UserGuide/WhatsNewDialog.tsx";
+import { setupListener } from "../degree-planning/services/siteResponseStorage";
+import extensionCssRaw from "../index.css?inline";
+import SlideOutDrawer from "../ui-system/components/SlideOutDrawer";
+import FirstStartDialog from "../user-experience/components/UserGuide/FirstStartDialog";
+import WhatsNewDialog from "../user-experience/components/UserGuide/WhatsNewDialog";
 import {
   attachExtensionShadowTailwindStyleOrderObserver,
   ensureOverlayContainer,
@@ -28,18 +27,6 @@ declare global {
 }
 
 AppLogger.info("MyPack Enhancer script started.");
-
-const ANALYTICS_BOOTSTRAP_KEY = "mypack.analytics.content_script_loaded";
-const isTopLevelFrame = window.top === window;
-if (
-  isTopLevelFrame &&
-  sessionStorage.getItem(ANALYTICS_BOOTSTRAP_KEY) !== "true"
-) {
-  sessionStorage.setItem(ANALYTICS_BOOTSTRAP_KEY, "true");
-  void initializeAnalytics().then(() => {
-    logEvent("extension_content_script_loaded");
-  });
-}
 
 function RootOverlayDialogs() {
   const [allowFirstStartAutoOpen, setAllowFirstStartAutoOpen] = useState(false);
@@ -166,9 +153,9 @@ document.addEventListener("DOMContentLoaded", () => {
       rewriteCssAssetUrlsForExtension(extensionCssRaw),
     );
     const overlayElement = ensureOverlayContainer(shadowCss);
-    const shadowRoot = document
-      .getElementById("extension-overlay-root")
-      ?.shadowRoot;
+    const shadowRoot = document.getElementById(
+      "extension-overlay-root",
+    )?.shadowRoot;
     if (!shadowRoot) {
       throw new Error("Extension overlay shadow root was not created.");
     }

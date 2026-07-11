@@ -3,7 +3,7 @@ export interface ScheduleEvent {
   subj: string;
   start: string;
   end: string;
-  days: { day: string; isOverlapping: boolean }[];
+  days: { day: string; isOverlapping: boolean; conflictsWith?: string[] }[];
   color: string;
 }
 
@@ -60,8 +60,7 @@ export function calendarBlockShellStyle(
 
 /** Shell for overlap / conflict blocks — same as the week grid. */
 export const CALENDAR_CONFLICT_BLOCK_SHELL: CalendarBlockShellStyle = {
-  background:
-    "linear-gradient(145deg, #fb923c 0%, #ea580c 55%, #c2410c 100%)",
+  background: "linear-gradient(145deg, #fb923c 0%, #ea580c 55%, #c2410c 100%)",
   boxShadow: "none",
   border: "1px solid rgba(124, 45, 18, 0.7)",
 };

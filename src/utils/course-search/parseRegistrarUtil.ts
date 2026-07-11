@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Utility functions and types for course parsing and URL formation
 import type { CheerioAPI } from "cheerio";
 import * as cheerio from "cheerio";
 import type { Element as DomHandlerElement, Text } from "domhandler";
 
-import { TermIdByName } from "../../degree-planning/DialogAutoCompleteKeys/TermID.ts";
+import { TermIdByName } from "../../generated/catalogs/termIds";
 import { AppLogger } from "../logger";
 
 export interface CourseSection {
@@ -92,7 +93,9 @@ function ParseCourseElement(
 
         const dates = $cells.eq(7).text().trim();
         const $lastCell = $cells.eq(9);
-        const notesLink = $lastCell.find('[data-toggle="popover"][id^="notes-"]');
+        const notesLink = $lastCell.find(
+          '[data-toggle="popover"][id^="notes-"]',
+        );
         const notes = notesLink.attr("data-content") || null;
         const requisitesLink = $lastCell.find(
           '[data-toggle="popover"][id^="reqs-"]',

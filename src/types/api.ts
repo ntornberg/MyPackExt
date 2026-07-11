@@ -77,13 +77,4 @@ export interface CourseElements {
   professorElement: HTMLDivElement;
 }
 
-/**
- * Response payload for cart actions.
- */
-export interface ToCartResponse {
-  status?: string;
-  message?: string;
-  title?: string;
-}
-
 export {};

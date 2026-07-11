@@ -1,14 +1,9 @@
 import { useMemo } from "react";
 
-import { CalendarView } from "../../../course-management/components/DataGridCells/CalendarView";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
+import { CalendarView } from "../../../course-management/components/calendar/CalendarView";
 import {
   type ScheduleEvent,
   CALENDAR_COLOR_CART_CLASS,
@@ -16,7 +11,8 @@ import {
   CALENDAR_COLOR_PINNED_SECTION,
   CALENDAR_CONFLICT_BLOCK_SHELL,
   calendarBlockShellStyle,
-} from "../../../course-management/types/Calendar";
+} from "../../../course-management/types/calendar";
+
 import type { PlannerSectionPreview } from "./workbenchTypes";
 
 type PlannerPreviewRailProps = {
@@ -33,7 +29,10 @@ const normalizeRichText = (value: string | null | undefined): string | null => {
     return null;
   }
 
-  const normalized = value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  const normalized = value
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   return normalized || null;
 };
 

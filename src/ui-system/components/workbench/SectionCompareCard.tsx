@@ -18,13 +18,15 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-import type { ModifiedSection } from "../../../course-management/types/Section";
+import type { ModifiedSection } from "../../../course-management/types/section";
+import {
+  GradeDistributionChart,
+  gradeDistributionPercents,
+} from "../shared/GradeDistributionChart";
 
 import {
   emptyGradeData,
-  gradeDistributionPercents,
   GradeDistributionPercentList,
-  GradeDistributionPieChart,
   RmpStarsWithScore,
   seatTallyHeatBackground,
 } from "./PlannerSectionInsights";
@@ -59,7 +61,9 @@ function SectionGradeDistributionBlock({
   const averageGradePercent =
     averageGradePoint != null ? gradePointToPercent(averageGradePoint) : null;
   const averageGradeLetter =
-    averageGradePoint != null ? formatGradePointAsLetter(averageGradePoint) : null;
+    averageGradePoint != null
+      ? formatGradePointAsLetter(averageGradePoint)
+      : null;
 
   const detailRows = useMemo(() => {
     if (!hasSample || !g) {
@@ -105,7 +109,7 @@ function SectionGradeDistributionBlock({
           className="max-w-none rounded-xl border border-border bg-card px-3 py-2 text-card-foreground shadow-lg"
         >
           <div className="flex items-start gap-3">
-            <GradeDistributionPieChart
+            <GradeDistributionChart
               data={g!}
               size={COMPACT_GRADE_PIE_SIZE}
               className="drop-shadow-sm"
@@ -154,7 +158,7 @@ function SectionGradeDistributionBlock({
     >
       {!hasSample ? (
         <div className="flex flex-col items-center gap-1">
-          <GradeDistributionPieChart
+          <GradeDistributionChart
             data={chartData}
             size={CARD_GRADE_PIE_SIZE_EMPTY}
             className="text-muted-foreground/35"
@@ -166,7 +170,7 @@ function SectionGradeDistributionBlock({
       ) : (
         <div className="flex items-start gap-2.5 sm:gap-3">
           <div className="shrink-0 rounded-lg border border-border/50 bg-background/40 p-1 sm:p-1.5">
-            <GradeDistributionPieChart
+            <GradeDistributionChart
               data={g!}
               size={CARD_GRADE_PIE_SIZE}
               className="drop-shadow-sm"

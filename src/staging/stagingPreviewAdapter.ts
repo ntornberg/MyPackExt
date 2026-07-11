@@ -1,7 +1,7 @@
 import type {
   ModifiedSection,
   SectionLinkedMeeting,
-} from "../course-management/types/Section";
+} from "../course-management/types/section";
 
 import type { StagingResult } from "./plannerDebugData";
 
