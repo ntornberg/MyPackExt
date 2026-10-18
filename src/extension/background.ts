@@ -36,6 +36,16 @@ function setupMessageListener() {
       })
         .then(async (res) => {
           const data = await res.text();
+          if (!res.ok) {
+            AppLogger.error(
+              `[Background] Fetch failed with status ${res.status}`,
+            );
+            sendResponse({
+              success: false,
+              error: `HTTP ${res.status} ${res.statusText}`,
+            });
+            return;
+          }
           AppLogger.info(`[Background] Fetch response text for course:`, data);
           sendResponse({ success: true, data });
         })

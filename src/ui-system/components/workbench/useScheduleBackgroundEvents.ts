@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   loadCartScheduleEvents,
   loadScheduleEvents,
+  useScheduleCacheVersion,
 } from "../../../course-management/components/calendar/CalendarView";
 import type { ScheduleEvent } from "../../../course-management/types/calendar";
 
@@ -11,6 +12,7 @@ import type { ScheduleEvent } from "../../../course-management/types/calendar";
  */
 export function useScheduleBackgroundEvents(): ScheduleEvent[] {
   const [events, setEvents] = useState<ScheduleEvent[]>([]);
+  const scheduleCacheVersion = useScheduleCacheVersion();
 
   useEffect(() => {
     let cancelled = false;
@@ -32,7 +34,7 @@ export function useScheduleBackgroundEvents(): ScheduleEvent[] {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [scheduleCacheVersion]);
 
   return events;
 }

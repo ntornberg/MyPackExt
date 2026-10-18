@@ -172,6 +172,9 @@ export function scrapeScheduleTable(scheduleTableElement: Element): void {
   );
 }
 
+// Incremented per scrapePlanner call so overlapping runs don't interleave.
+let plannerScrapeRun = 0;
+
 /**
  * Scrapes course data from the planner/cart table.
  *
@@ -182,6 +185,7 @@ export async function scrapePlanner(
   plannerTableElement: Element,
 ): Promise<void> {
   AppLogger.info("Scraping planner/cart table...");
+  const run = ++plannerScrapeRun;
   planner_courses.length = 0; // Clear previous planner courses
   let scrapedCount = 0;
   try {
@@ -193,6 +197,8 @@ export async function scrapePlanner(
       el.classList.contains("child"),
     );
     for (const classDetailRow of filteredClassDetailRows) {
+      // A newer scrape started; let it own planner_courses and the rows.
+      if (run !== plannerScrapeRun) return;
       const course = extractPlannerCourseInfo(classDetailRow);
       planner_courses.push(course);
       AppLogger.info("Detected planner course:", course.abr, course.instructor);
@@ -231,7 +237,7 @@ const EXT_TOGGLE_ID = "mypack-extension-master-toggle";
  * hidden, and the `max-width` cap keeps it from growing past the viewport.
  *
  * Each entry is `[cssProperty, value, priority]` so we can apply `!important`
- * � jQuery UI also writes inline styles on these elements and without the
+ * — jQuery UI also writes inline styles on these elements and without the
  * priority flag our values lose the cascade.
  */
 type InlineStyleEntry = [string, string, "important" | ""];

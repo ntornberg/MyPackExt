@@ -85,9 +85,9 @@ function ParseCourseElement(
         const $instructorLink = $cells.eq(6).find("a.instructor-link");
         const ins_list = [];
         for (let i = 0; i < $instructorLink.length; i++) {
-          if ($instructorLink[i].children[0].type === "text") {
-            const ins_name = ($instructorLink[i].children[0] as Text).data;
-            ins_list.push(ins_name);
+          const firstChild = $instructorLink[i].children[0];
+          if (firstChild?.type === "text") {
+            ins_list.push((firstChild as Text).data);
           }
         }
 
@@ -184,13 +184,21 @@ export function formCourseURL(
     AppLogger.error("No subject found for course_abr", { course_abr });
     return null;
   }
+  if (!term_id) {
+    AppLogger.error("Unknown term", { term });
+    return null;
+  }
+  const parsedCatalogNum = catalog_num ? parseInt(catalog_num, 10) : 0;
+  if (Number.isNaN(parsedCatalogNum)) {
+    AppLogger.error("Invalid catalog number", { catalog_num });
+    return null;
+  }
   const formData = new URLSearchParams();
   formData.append("term", term_id);
   formData.append("subject", course_abr);
   const inequality = catalog_num ? "=" : ">=";
   formData.append("course-inequality", inequality);
-  const course_number = catalog_num ? parseInt(catalog_num!).toString() : "0";
-  formData.append("course-number", course_number);
+  formData.append("course-number", parsedCatalogNum.toString());
   formData.append("course-career", "");
   formData.append("session", "");
   formData.append("start-time-inequality", "<=");

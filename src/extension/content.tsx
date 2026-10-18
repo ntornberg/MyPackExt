@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 
+import { watchScheduleCacheChanges } from "../course-management/components/calendar/CalendarView";
 import {
   debouncedScrapePlanner,
   scrapeScheduleTable,
@@ -139,12 +140,17 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 (async () => {
+  // The drawer only lives in the top frame; subframes just relay site data.
+  if (window !== window.top) {
+    return;
+  }
   try {
     if (window.__mypackEnhancerInitialized) {
       AppLogger.warn("MyPack Enhancer already initialized. Skipping...");
       return;
     }
     window.__mypackEnhancerInitialized = true;
+    watchScheduleCacheChanges();
 
     AppLogger.info("Initializing MyPack Drawer");
 

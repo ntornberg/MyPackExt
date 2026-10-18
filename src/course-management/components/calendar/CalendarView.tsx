@@ -121,11 +121,61 @@ let cachedScheduleEventsPromise: Promise<ScheduleEvent[]> | null = null;
 let cachedCartEvents: ScheduleEvent[] | null = null;
 let cachedCartEventsPromise: Promise<ScheduleEvent[]> | null = null;
 
+// Bumped on every invalidation so a load that started before it can't
+// repopulate the cache with stale data.
+let scheduleCacheGeneration = 0;
+const scheduleCacheListeners = new Set<() => void>();
+
+/**
+ * chrome.storage key bumped whenever site responses update schedule/cart data.
+ * Responses are captured by the content script in the PeopleSoft iframe, while
+ * the drawer lives in the top frame, so module state alone can't signal them.
+ */
+export const SCHEDULE_DATA_VERSION_KEY = "scheduleDataVersion";
+
 export const invalidateScheduleCache = (): void => {
+  scheduleCacheGeneration++;
   cachedScheduleEvents = null;
   cachedScheduleEventsPromise = null;
   cachedCartEvents = null;
   cachedCartEventsPromise = null;
+  for (const listener of scheduleCacheListeners) {
+    listener();
+  }
+};
+
+/** Registers a callback for schedule cache invalidations; returns an unsubscribe. */
+export const subscribeScheduleCache = (listener: () => void): (() => void) => {
+  scheduleCacheListeners.add(listener);
+  return () => {
+    scheduleCacheListeners.delete(listener);
+  };
+};
+
+let isWatchingScheduleCache = false;
+
+/** Invalidates this frame's schedule cache when another frame stores new data. */
+export const watchScheduleCacheChanges = (): void => {
+  if (
+    isWatchingScheduleCache ||
+    typeof chrome === "undefined" ||
+    !chrome.storage?.onChanged
+  ) {
+    return;
+  }
+  isWatchingScheduleCache = true;
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === "local" && SCHEDULE_DATA_VERSION_KEY in changes) {
+      invalidateScheduleCache();
+    }
+  });
+};
+
+/** Re-renders the caller whenever the schedule cache is invalidated. */
+export const useScheduleCacheVersion = (): number => {
+  const [version, setVersion] = useState(0);
+  useEffect(() => subscribeScheduleCache(() => setVersion((v) => v + 1)), []);
+  return version;
 };
 
 const hasSharedDay = (
@@ -521,7 +571,8 @@ export const loadScheduleEvents = async (): Promise<ScheduleEvent[]> => {
     return cachedScheduleEventsPromise;
   }
 
-  cachedScheduleEventsPromise = (async () => {
+  const generation = scheduleCacheGeneration;
+  const promise = (async () => {
     try {
       const calendarEntries = await getCacheCategory("scheduleCalEventsData");
       const calendarEvents = buildEventsFromCalendarEntries(
@@ -536,15 +587,21 @@ export const loadScheduleEvents = async (): Promise<ScheduleEvent[]> => {
         CALENDAR_COLOR_ENROLLED_CLASS,
         1 + calendarEvents.length,
       );
-      cachedScheduleEvents = mergeScheduleSources(tableEvents, calendarEvents);
-      return cachedScheduleEvents;
+      const events = mergeScheduleSources(tableEvents, calendarEvents);
+      if (generation === scheduleCacheGeneration) {
+        cachedScheduleEvents = events;
+      }
+      return events;
     } catch {
-      cachedScheduleEventsPromise = null;
+      if (generation === scheduleCacheGeneration) {
+        cachedScheduleEventsPromise = null;
+      }
       return [];
     }
   })();
+  cachedScheduleEventsPromise = promise;
 
-  return cachedScheduleEventsPromise;
+  return promise;
 };
 
 export const loadCartScheduleEvents = async (): Promise<ScheduleEvent[]> => {
@@ -555,7 +612,8 @@ export const loadCartScheduleEvents = async (): Promise<ScheduleEvent[]> => {
     return cachedCartEventsPromise;
   }
 
-  cachedCartEventsPromise = (async () => {
+  const generation = scheduleCacheGeneration;
+  const promise = (async () => {
     try {
       const calendarEntries = await getCacheCategory("shopCartCalEventsData");
       const calendarEvents = buildEventsFromCalendarEntries(
@@ -570,15 +628,21 @@ export const loadCartScheduleEvents = async (): Promise<ScheduleEvent[]> => {
         CALENDAR_COLOR_CART_CLASS,
         10_000 + calendarEvents.length,
       );
-      cachedCartEvents = mergeScheduleSources(tableEvents, calendarEvents);
-      return cachedCartEvents;
+      const events = mergeScheduleSources(tableEvents, calendarEvents);
+      if (generation === scheduleCacheGeneration) {
+        cachedCartEvents = events;
+      }
+      return events;
     } catch {
-      cachedCartEventsPromise = null;
+      if (generation === scheduleCacheGeneration) {
+        cachedCartEventsPromise = null;
+      }
       return [];
     }
   })();
+  cachedCartEventsPromise = promise;
 
-  return cachedCartEventsPromise;
+  return promise;
 };
 
 /**
@@ -599,6 +663,7 @@ export const CalendarView = (params: CalendarViewProps) => {
 
   const [eventData, setEventData] = useState<ScheduleEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const scheduleCacheVersion = useScheduleCacheVersion();
 
   useEffect(() => {
     if (staticBackgroundEvents !== undefined) {
@@ -663,7 +728,13 @@ export const CalendarView = (params: CalendarViewProps) => {
       mounted = false;
       window.clearTimeout(safetyTimeout);
     };
-  }, [dayTime, courseData?.code, staticBackgroundEvents, linkedMeetings]);
+  }, [
+    dayTime,
+    courseData?.code,
+    staticBackgroundEvents,
+    linkedMeetings,
+    scheduleCacheVersion,
+  ]);
 
   if (isLoading) {
     return (

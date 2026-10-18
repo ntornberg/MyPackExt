@@ -60,7 +60,7 @@ describe("dataService null-course cache keys", () => {
     expect(mocks.searchOpenCoursesByParams).toHaveBeenCalledTimes(1);
   });
 
-  it("uses the same null-key convention (including term) in batch reads and writes", async () => {
+  it("does not null-cache courses based on a subject search", async () => {
     const term = "Spring 2025";
     const course = {
       course_abr: "CSC",
@@ -71,27 +71,55 @@ describe("dataService null-course cache keys", () => {
 
     mocks.getGenericCache.mockResolvedValueOnce(null); // null cache miss in phase 1
     mocks.getGenericCache.mockResolvedValueOnce(null); // open courses miss
-    mocks.batchSearchOpenCourses.mockResolvedValueOnce({
-      code: "MTH 999", // unrelated returned singleton -> writes null cache
-      sections: [],
-    });
+    mocks.batchSearchOpenCourses.mockResolvedValueOnce([
+      { code: "MTH 999", sections: [] }, // unrelated returned course
+    ]);
 
     await batchFetchCoursesData([course], term);
 
     expect(mocks.generateCacheKey).toHaveBeenCalledWith(
       "null-CSC 246 Spring 2025",
-    );
-    expect(mocks.generateCacheKey).toHaveBeenCalledWith(
-      "null-MTH 999 Spring 2025",
-    );
-    expect(mocks.setGenericCache).toHaveBeenCalledWith(
+    ); // read side still checks the null cache
+    expect(mocks.setGenericCache).not.toHaveBeenCalledWith(
       "nullCourses",
-      expect.objectContaining({
-        ["hash:null-MTH 999 Spring 2025"]: expect.objectContaining({
-          term,
-        }),
-      }),
+      expect.anything(),
     );
+  });
+
+  it("does not null-cache courses when the subject search fails", async () => {
+    const course = {
+      course_abr: "CSC",
+      catalog_num: "246",
+      course_descrip: "",
+      course_id: "id-2",
+    };
+
+    mocks.getGenericCache.mockResolvedValue(null);
+    mocks.batchSearchOpenCourses.mockRejectedValueOnce(new Error("HTTP 503"));
+
+    await batchFetchCoursesData([course], "Spring 2025");
+
+    expect(mocks.setGenericCache).not.toHaveBeenCalledWith(
+      "nullCourses",
+      expect.anything(),
+    );
+  });
+
+  it("does not null-cache a course when the single search fails", async () => {
+    mocks.getGenericCache.mockResolvedValue(null);
+    mocks.searchOpenCoursesByParams.mockRejectedValueOnce(
+      new Error("Received null response from background fetch"),
+    );
+
+    const result = await fetchPlannerCourseSections(
+      "CSC",
+      "316",
+      "id-1",
+      "Fall 2024",
+    );
+
+    expect(result).toBeNull();
+    expect(mocks.setGenericCache).not.toHaveBeenCalled();
   });
 
   it("caches open course data for two minutes", async () => {

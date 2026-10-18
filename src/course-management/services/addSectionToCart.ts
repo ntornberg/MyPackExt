@@ -62,12 +62,24 @@ export async function addSectionToCart(
   }
 
   const fullURL = `${url}?${new URLSearchParams(payload)}`;
-  const res = await fetch(fullURL, { credentials: "include" });
-  const data = (await res.json()) as {
-    status?: string;
-    title?: string;
-    message?: string;
-  };
+  let data: { status?: string; title?: string; message?: string };
+  try {
+    const res = await fetch(fullURL, { credentials: "include" });
+    if (!res.ok) {
+      return {
+        ok: false,
+        message: `MyPack returned an error (${res.status}). Try again.`,
+      };
+    }
+    data = await res.json();
+  } catch {
+    // Network failure, or an HTML page (e.g. expired session) instead of JSON.
+    return {
+      ok: false,
+      message:
+        "Couldn't reach MyPack. Your session may have expired; refresh the page and try again.",
+    };
+  }
 
   if (data.status === "success") {
     return { ok: true, message: data.message || "Added to cart." };

@@ -51,6 +51,28 @@ function pruneExpiredCacheEntries(
   return { validEntries, expiredHashes };
 }
 
+const categoryLocks = new Map<string, Promise<unknown>>();
+
+/**
+ * Serializes read-modify-write cycles on a chrome.storage category within this
+ * JS context so concurrent writers don't overwrite each other's entries.
+ */
+function withCategoryLock<T>(
+  cacheCategory: string,
+  task: () => Promise<T>,
+): Promise<T> {
+  const previous = categoryLocks.get(cacheCategory) ?? Promise.resolve();
+  const run = previous.then(task, task);
+  const settled = run.catch(() => undefined);
+  categoryLocks.set(cacheCategory, settled);
+  void settled.then(() => {
+    if (categoryLocks.get(cacheCategory) === settled) {
+      categoryLocks.delete(cacheCategory);
+    }
+  });
+  return run;
+}
+
 // Size threshold in bytes above which to use IndexedDB instead of chrome.storage
 const SIZE_THRESHOLD = 100 * 1024;
 
@@ -90,7 +112,9 @@ async function openDatabase(): Promise<IDBDatabase> {
         // Guard against indexedDB.open() never firing (blocked connection,
         // browser bugs, etc). Without this the promise hangs forever and
         // every caller memoizing the result (e.g. CalendarView) stays stuck.
+        let timedOut = false;
         const openTimeout = setTimeout(() => {
+          timedOut = true;
           AppLogger.error(
             `[CACHE DB ERROR] Timed out opening IndexedDB after 3s`,
           );
@@ -127,6 +151,11 @@ async function openDatabase(): Promise<IDBDatabase> {
         request.onsuccess = (_) => {
           clearTimeout(openTimeout);
           const db = request.result;
+          if (timedOut) {
+            // The caller already gave up on this connection; don't leak it.
+            db.close();
+            return;
+          }
           AppLogger.info(
             `[CACHE DB SUCCESS] Successfully opened database: ${DB_NAME}`,
           );
@@ -239,7 +268,103 @@ async function storeInIndexedDB(
 }
 
 /**
+ * Reads every non-expired entry for a category from IndexedDB, deleting expired ones.
+ * @param {string} cacheCategory - The cache category to retrieve
+ * @returns {Promise<Record<string, CacheEntry> | null>} - Entries or null when none
+ */
+async function getCategoryFromIndexedDB(
+  cacheCategory: string,
+): Promise<Record<string, CacheEntry> | null> {
+  if (typeof indexedDB === "undefined") {
+    return null;
+  }
+  try {
+    const db = await openDatabase();
+    return await new Promise((resolve, reject) => {
+      const transaction = db.transaction([STORE_NAME], "readonly");
+      const store = transaction.objectStore(STORE_NAME);
+
+      // Get all entries for this category
+      const getAllKeysRequest = store.getAllKeys();
+
+      getAllKeysRequest.onsuccess = () => {
+        const keys = getAllKeysRequest.result;
+        const result: Record<string, CacheEntry> = {};
+        const expiredKeys: string[] = [];
+        let processed = 0;
+        const finish = () => {
+          if (processed === keys.length) {
+            void deleteIndexedDBEntries(expiredKeys);
+            resolve(Object.keys(result).length > 0 ? result : null);
+          }
+        };
+
+        // If no keys, resolve immediately
+        if (keys.length === 0) {
+          resolve(null);
+          return;
+        }
+
+        // Get all entries that start with the category prefix
+        for (const key of keys) {
+          if (typeof key === "string" && key.startsWith(`${cacheCategory}:`)) {
+            const getRequest = store.get(key);
+            getRequest.onsuccess = () => {
+              if (getRequest.result) {
+                const hash = getRequest.result.hash;
+                const entry = {
+                  combinedData: getRequest.result.combinedData,
+                  timestamp: getRequest.result.timestamp,
+                  expiresAt: getRequest.result.expiresAt,
+                };
+                if (isCacheEntryExpired(entry)) {
+                  if (typeof key === "string") {
+                    expiredKeys.push(key);
+                  }
+                } else {
+                  result[hash] = entry;
+                }
+              }
+              processed++;
+              finish();
+            };
+            getRequest.onerror = () => {
+              AppLogger.error(
+                `[CACHE ERROR] Failed to get entry from IndexedDB:`,
+                getRequest.error,
+              );
+              processed++;
+              finish();
+            };
+          } else {
+            processed++;
+            finish();
+          }
+        }
+      };
+
+      getAllKeysRequest.onerror = () => {
+        AppLogger.error(
+          `[CACHE ERROR] Failed to get keys from IndexedDB:`,
+          getAllKeysRequest.error,
+        );
+        reject(getAllKeysRequest.error);
+      };
+
+      transaction.oncomplete = () => {
+        db.close();
+      };
+    });
+  } catch (error) {
+    AppLogger.error(`[CACHE ERROR] IndexedDB get category error:`, error);
+    return null;
+  }
+}
+
+/**
  * Retrieves all entries for a category from both Chrome storage and IndexedDB.
+ * Entries can live in either backend (large writes go to IndexedDB), so both are
+ * read and merged; when a hash exists in both, the newer entry wins.
  * @param {string} cacheCategory - The cache category to retrieve
  * @returns {Promise<Record<string, CacheEntry> | null>} - All cache entries or null
  */
@@ -247,104 +372,41 @@ export async function getCacheCategory(
   cacheCategory: string,
 ): Promise<Record<string, CacheEntry> | null> {
   try {
-    // First try Chrome storage
+    let chromeEntries: Record<string, CacheEntry> = {};
     if (isChromeStorageAvailable()) {
       const cached = await chrome.storage.local.get(cacheCategory);
       if (cached && cached[cacheCategory]) {
         const cache = cached[cacheCategory] as Record<string, CacheEntry>;
         const { validEntries, expiredHashes } = pruneExpiredCacheEntries(cache);
         if (expiredHashes.length > 0) {
-          await chrome.storage.local.set({ [cacheCategory]: validEntries });
+          await withCategoryLock(cacheCategory, async () => {
+            const latest =
+              ((await chrome.storage.local.get(cacheCategory))[
+                cacheCategory
+              ] as Record<string, CacheEntry> | undefined) ?? {};
+            for (const hash of expiredHashes) {
+              if (latest[hash] && isCacheEntryExpired(latest[hash])) {
+                delete latest[hash];
+              }
+            }
+            await chrome.storage.local.set({ [cacheCategory]: latest });
+          });
         }
-        return Object.keys(validEntries).length > 0 ? validEntries : null;
+        chromeEntries = validEntries;
       }
     }
 
-    // Then try IndexedDB
-    try {
-      const db = await openDatabase();
-      return new Promise((resolve, reject) => {
-        const transaction = db.transaction([STORE_NAME], "readonly");
-        const store = transaction.objectStore(STORE_NAME);
+    const indexedEntries =
+      (await getCategoryFromIndexedDB(cacheCategory)) ?? {};
 
-        // Get all entries for this category
-        const getAllKeysRequest = store.getAllKeys();
-
-        getAllKeysRequest.onsuccess = () => {
-          const keys = getAllKeysRequest.result;
-          const result: Record<string, CacheEntry> = {};
-          const expiredKeys: string[] = [];
-          let processed = 0;
-          const finish = () => {
-            if (processed === keys.length) {
-              void deleteIndexedDBEntries(expiredKeys);
-              resolve(Object.keys(result).length > 0 ? result : null);
-            }
-          };
-
-          // If no keys, resolve immediately
-          if (keys.length === 0) {
-            resolve(null);
-            return;
-          }
-
-          // Get all entries that start with the category prefix
-          for (const key of keys) {
-            if (
-              typeof key === "string" &&
-              key.startsWith(`${cacheCategory}:`)
-            ) {
-              const getRequest = store.get(key);
-              getRequest.onsuccess = () => {
-                if (getRequest.result) {
-                  const hash = getRequest.result.hash;
-                  const entry = {
-                    combinedData: getRequest.result.combinedData,
-                    timestamp: getRequest.result.timestamp,
-                    expiresAt: getRequest.result.expiresAt,
-                  };
-                  if (isCacheEntryExpired(entry)) {
-                    if (typeof key === "string") {
-                      expiredKeys.push(key);
-                    }
-                  } else {
-                    result[hash] = entry;
-                  }
-                }
-                processed++;
-                finish();
-              };
-              getRequest.onerror = () => {
-                AppLogger.error(
-                  `[CACHE ERROR] Failed to get entry from IndexedDB:`,
-                  getRequest.error,
-                );
-                processed++;
-                finish();
-              };
-            } else {
-              processed++;
-              finish();
-            }
-          }
-        };
-
-        getAllKeysRequest.onerror = () => {
-          AppLogger.error(
-            `[CACHE ERROR] Failed to get keys from IndexedDB:`,
-            getAllKeysRequest.error,
-          );
-          reject(getAllKeysRequest.error);
-        };
-
-        transaction.oncomplete = () => {
-          db.close();
-        };
-      });
-    } catch (error) {
-      AppLogger.error(`[CACHE ERROR] IndexedDB get category error:`, error);
-      return null;
+    const merged: Record<string, CacheEntry> = { ...indexedEntries };
+    for (const [hash, entry] of Object.entries(chromeEntries)) {
+      const other = merged[hash];
+      if (!other || (entry.timestamp ?? 0) >= (other.timestamp ?? 0)) {
+        merged[hash] = entry;
+      }
     }
+    return Object.keys(merged).length > 0 ? merged : null;
   } catch (error) {
     AppLogger.error(`[CACHE ERROR] getCacheCategory: ${cacheCategory}`, error);
     return null;
@@ -464,7 +526,7 @@ async function getFromIndexedDB(
 async function clearFromIndexedDB(cacheCategory: string): Promise<void> {
   try {
     const db = await openDatabase();
-    return new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
       const transaction = db.transaction([STORE_NAME], "readwrite");
       const store = transaction.objectStore(STORE_NAME);
 
@@ -535,7 +597,7 @@ async function clearFromIndexedDB(cacheCategory: string): Promise<void> {
 }
 
 async function deleteIndexedDBEntries(keys: string[]): Promise<void> {
-  if (keys.length === 0) {
+  if (keys.length === 0 || typeof indexedDB === "undefined") {
     return;
   }
 
@@ -642,8 +704,7 @@ export async function getGenericCache(
               AppLogger.info(
                 `[CACHE EXPIRED] ${cacheCategory} cache expired for hash: ${hash}...`,
               );
-              delete cache[hash];
-              await chrome.storage.local.set({ [cacheCategory]: cache });
+              await removeChromeStorageEntries(cacheCategory, [hash], true);
               return null;
             }
 
@@ -682,11 +743,45 @@ export async function getGenericCache(
 }
 
 /**
+ * Removes hashes from a chrome.storage category.
+ * @param {boolean} onlyIfExpired - Skip entries that were refreshed since the caller looked
+ */
+async function removeChromeStorageEntries(
+  cacheCategory: string,
+  hashes: string[],
+  onlyIfExpired = false,
+): Promise<void> {
+  if (hashes.length === 0 || !isChromeStorageAvailable()) {
+    return;
+  }
+  await withCategoryLock(cacheCategory, async () => {
+    const current: Record<string, CacheEntry> | undefined = (
+      await chrome.storage.local.get(cacheCategory)
+    )[cacheCategory];
+    if (!current) {
+      return;
+    }
+    let changed = false;
+    for (const hash of hashes) {
+      const entry = current[hash];
+      if (entry && (!onlyIfExpired || isCacheEntryExpired(entry))) {
+        delete current[hash];
+        changed = true;
+      }
+    }
+    if (changed) {
+      await chrome.storage.local.set({ [cacheCategory]: current });
+    }
+  });
+}
+
+/**
  * Stores data in the appropriate cache storage based on size.
- * Uses IndexedDB for large items, chrome.storage for smaller ones.
+ * Uses IndexedDB for large items, chrome.storage for smaller ones. The same
+ * hashes are removed from the other backend so reads never see a stale copy.
  * @param {string} cacheCategory - The name of the cache category.
- * @param {string} hash - The precomputed hash key.
- * @param {string} jsonData - The JSON data to store.
+ * @param {Record<string, any>} cacheEntries - Map of hash key to data to store.
+ * @param {number} [cacheExpirationOverride] - Optional TTL in milliseconds.
  * @returns {Promise<void>}
  */
 export async function setGenericCache(
@@ -695,47 +790,46 @@ export async function setGenericCache(
   cacheExpirationOverride?: number,
 ): Promise<void> {
   try {
-    const dataAsString =
-      typeof cacheEntries === "string"
-        ? cacheEntries
-        : JSON.stringify(cacheEntries);
-
-    const dataSize = estimateSize(dataAsString);
-    const cacheEntryList: Record<string, CacheEntry> = {};
-    for (const [hash, item] of Object.entries(cacheEntries)) {
-      const cacheEntry: CacheEntry = {
-        combinedData: item,
-        timestamp: Date.now(),
-        expiresAt: Date.now() + (cacheExpirationOverride || CACHE_EXPIRATION),
-      };
-      cacheEntryList[hash] = cacheEntry;
+    const hashes = Object.keys(cacheEntries);
+    if (hashes.length === 0) {
+      return;
     }
 
+    const dataSize = estimateSize(JSON.stringify(cacheEntries));
+    const now = Date.now();
+    const ttl = cacheExpirationOverride ?? CACHE_EXPIRATION;
+    const cacheEntryList: Record<string, CacheEntry> = {};
+    for (const [hash, item] of Object.entries(cacheEntries)) {
+      cacheEntryList[hash] = {
+        combinedData: item,
+        timestamp: now,
+        expiresAt: now + ttl,
+      };
+    }
+
+    const writeToIndexedDB = async () => {
+      await storeInIndexedDB(cacheCategory, cacheEntryList);
+      await removeChromeStorageEntries(cacheCategory, hashes);
+    };
+
     if (dataSize > SIZE_THRESHOLD || !isChromeStorageAvailable()) {
-      try {
-        await storeInIndexedDB(cacheCategory, cacheEntryList);
-      } catch (indexedDBError) {
-        AppLogger.error(
-          `[CACHE ERROR] IndexedDB storage failed: ${indexedDBError}`,
-          indexedDBError,
-        );
-        throw indexedDBError;
-      }
+      await writeToIndexedDB();
       return;
     }
 
     // Use chrome.storage for smaller items
     try {
-      const currentCache: Record<string, CacheEntry> =
-        (await chrome.storage.local.get(cacheCategory))[cacheCategory] || {};
-      for (const [hash, cacheEntry] of Object.entries(cacheEntryList)) {
-        currentCache[hash] = cacheEntry;
-      }
-      await chrome.storage.local.set({ [cacheCategory]: { ...currentCache } });
-      AppLogger.info("Current Cache: ", currentCache);
-      AppLogger.info("Cache Entry List: ", cacheEntryList);
+      await withCategoryLock(cacheCategory, async () => {
+        const currentCache: Record<string, CacheEntry> =
+          (await chrome.storage.local.get(cacheCategory))[cacheCategory] || {};
+        Object.assign(currentCache, cacheEntryList);
+        await chrome.storage.local.set({ [cacheCategory]: currentCache });
+      });
+      await deleteIndexedDBEntries(
+        hashes.map((hash) => `${cacheCategory}:${hash}`),
+      );
       AppLogger.info(
-        `[CACHE SUCCESS] Successfully stored in Chrome storage: ${cacheCategory}:${Object.keys(cacheEntryList)}...`,
+        `[CACHE SUCCESS] Successfully stored in Chrome storage: ${cacheCategory}:${hashes}...`,
       );
     } catch (chromeStorageError) {
       AppLogger.error(
@@ -743,15 +837,7 @@ export async function setGenericCache(
         chromeStorageError,
       );
       // Fall back to IndexedDB if Chrome storage fails
-      try {
-        await storeInIndexedDB(cacheCategory, cacheEntryList);
-      } catch (fallbackError) {
-        AppLogger.error(
-          `[CACHE ERROR] Fallback to IndexedDB also failed: ${fallbackError}`,
-          fallbackError,
-        );
-        throw fallbackError;
-      }
+      await writeToIndexedDB();
     }
   } catch (error) {
     AppLogger.error(
@@ -763,6 +849,19 @@ export async function setGenericCache(
 }
 
 /**
+ * Replaces every entry in a category with `cacheEntries`, so items missing from
+ * the latest snapshot (e.g. a dropped class) don't linger until they expire.
+ */
+export async function replaceGenericCache(
+  cacheCategory: string,
+  cacheEntries: Record<string, any>,
+  cacheExpirationOverride?: number,
+): Promise<void> {
+  await clearGenericCache(cacheCategory);
+  await setGenericCache(cacheCategory, cacheEntries, cacheExpirationOverride);
+}
+
+/**
  * Clears all cached data for a given cache category from all storage mechanisms.
  * @param {string} cacheCategory - The cache category to clear.
  * @returns {Promise<void>}
@@ -771,7 +870,9 @@ export async function clearGenericCache(cacheCategory: string): Promise<void> {
   try {
     // Clear from chrome.storage if available
     if (isChromeStorageAvailable()) {
-      await chrome.storage.local.remove(cacheCategory);
+      await withCategoryLock(cacheCategory, () =>
+        chrome.storage.local.remove(cacheCategory),
+      );
     }
 
     // Clear from IndexedDB
@@ -792,10 +893,20 @@ export async function clearCache(): Promise<void> {
   return clearGenericCache("courseList");
 }
 
+/**
+ * chrome.storage key holding the time caches were last cleared. IndexedDB used
+ * from a content script belongs to the host page's origin, so the background
+ * worker can't clear it directly; content scripts compare this epoch with the
+ * one recorded in their own IndexedDB and clear it when they differ.
+ */
+const CACHE_EPOCH_STORAGE_KEY = "cacheEpoch";
+const INDEXED_DB_EPOCH_KEY = "__meta:cacheEpoch";
+
 export async function clearAllExtensionCaches(): Promise<void> {
   try {
     if (isChromeStorageAvailable()) {
       await chrome.storage.local.remove([...EXTENSION_CACHE_CATEGORIES]);
+      await chrome.storage.local.set({ [CACHE_EPOCH_STORAGE_KEY]: Date.now() });
     }
 
     if (typeof indexedDB !== "undefined") {
@@ -807,5 +918,55 @@ export async function clearAllExtensionCaches(): Promise<void> {
     }
   } catch (error) {
     AppLogger.error(`[CACHE ERROR] clearAllExtensionCaches failed`, error);
+  }
+}
+
+/**
+ * Clears this origin's IndexedDB cache if the extension cleared its caches
+ * (e.g. on update) since this origin last synced. Call from content scripts.
+ */
+export async function syncIndexedDBCacheEpoch(): Promise<void> {
+  if (!isChromeStorageAvailable() || typeof indexedDB === "undefined") {
+    return;
+  }
+  try {
+    const epoch = (await chrome.storage.local.get(CACHE_EPOCH_STORAGE_KEY))[
+      CACHE_EPOCH_STORAGE_KEY
+    ];
+    if (typeof epoch !== "number") {
+      return;
+    }
+    const db = await openDatabase();
+    const recorded = await new Promise<unknown>((resolve) => {
+      const request = db
+        .transaction([STORE_NAME], "readonly")
+        .objectStore(STORE_NAME)
+        .get(INDEXED_DB_EPOCH_KEY);
+      request.onsuccess = () => resolve(request.result?.epoch);
+      request.onerror = () => resolve(undefined);
+    });
+    db.close();
+    if (recorded === epoch) {
+      return;
+    }
+
+    await Promise.all(
+      EXTENSION_CACHE_CATEGORIES.map((cacheCategory) =>
+        clearFromIndexedDB(cacheCategory),
+      ),
+    );
+
+    const writeDb = await openDatabase();
+    await new Promise<void>((resolve) => {
+      const transaction = writeDb.transaction([STORE_NAME], "readwrite");
+      transaction
+        .objectStore(STORE_NAME)
+        .put({ key: INDEXED_DB_EPOCH_KEY, epoch });
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => resolve();
+    });
+    writeDb.close();
+  } catch (error) {
+    AppLogger.error(`[CACHE ERROR] syncIndexedDBCacheEpoch failed`, error);
   }
 }
