@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   clearAllExtensionCaches,
+  generateCacheKey,
   getCacheCategory,
   getGenericCache,
   isCacheEntryExpired,
@@ -180,5 +181,20 @@ describe("CourseRetrieval cache expiration", () => {
     );
     expect(storageState.openCourses).toBeUndefined();
     expect(storageState.scheduleTableData).toBeUndefined();
+  });
+});
+
+describe("generateCacheKey", () => {
+  it("keeps short keys readable", async () => {
+    expect(await generateCacheKey("CSC 216 Spring 2026")).toBe(
+      "CSC_216_Spring_2026",
+    );
+  });
+
+  it("hashes long keys to a 64-bit value", async () => {
+    const key = await generateCacheKey("x".repeat(100));
+    expect(key).toMatch(/^hash_[0-9a-f]{16}$/);
+    expect(await generateCacheKey("x".repeat(100))).toBe(key);
+    expect(await generateCacheKey(`${"x".repeat(99)}y`)).not.toBe(key);
   });
 });

@@ -1,26 +1,13 @@
 import {
   generateCacheKey,
+  getCacheCategory,
+  removeGenericCacheEntries,
   replaceGenericCache,
+  setGenericCache,
   syncIndexedDBCacheEpoch,
 } from "../../course-management/cache/courseRetrieval";
-import {
-  SCHEDULE_DATA_VERSION_KEY,
-  invalidateScheduleCache,
-} from "../../course-management/components/calendar/CalendarView";
+import { notifyScheduleDataChanged } from "../../course-management/cache/scheduleCacheSignal";
 import { AppLogger } from "../../utils/logger";
-
-function cacheKeyFromItem(
-  item: Record<string, unknown>,
-  preferredKeys: string[],
-): string {
-  for (const key of preferredKeys) {
-    const value = item[key];
-    if (value != null && String(value).trim()) {
-      return String(value);
-    }
-  }
-  return JSON.stringify(item);
-}
 
 function compositeCacheKeyFromItem(
   item: Record<string, unknown>,
@@ -34,6 +21,8 @@ function compositeCacheKeyFromItem(
   return parts.length ? parts.join("|") : JSON.stringify(item);
 }
 
+// Composite so two rows for the same course (e.g. different class numbers)
+// don't share one cache entry.
 const TABLE_KEY_FIELDS = ["crse_id", "class_nbr", "id"];
 const CALENDAR_KEY_FIELDS = [
   "class_nbr",
@@ -47,68 +36,107 @@ const CALENDAR_KEY_FIELDS = [
   "end_date",
   "endDate",
 ];
+const CALENDAR_DATE_FIELDS = ["start", "start_date", "startDate"];
 
 type ResponseStorageRule = {
   category: string;
   keyFields: string[];
-  composite: boolean;
   /** Whether cart/schedule calendar views read this category. */
   affectsSchedule: boolean;
   /**
-   * Calendar responses cover one visible range; an empty one (e.g. a week with
-   * no meetings) shouldn't wipe the stored weekly pattern.
+   * Calendar responses cover only the visible date range, so they replace the
+   * stored events in that range and keep other weeks. Table responses are the
+   * full current list and replace the whole category.
    */
-  skipEmpty: boolean;
+  rangeScoped: boolean;
 };
 
 const RESPONSE_STORAGE_RULES: Record<string, ResponseStorageRule> = {
   _getScheduleTableData: {
     category: "scheduleTableData",
     keyFields: TABLE_KEY_FIELDS,
-    composite: false,
     affectsSchedule: true,
-    skipEmpty: false,
+    rangeScoped: false,
   },
   _getShopCartTableData: {
     category: "shopCartTableData",
     keyFields: TABLE_KEY_FIELDS,
-    composite: false,
     affectsSchedule: true,
-    skipEmpty: false,
+    rangeScoped: false,
   },
   _getPlanTermTableData: {
     category: "planTermTableData",
     keyFields: TABLE_KEY_FIELDS,
-    composite: false,
     affectsSchedule: false,
-    skipEmpty: false,
+    rangeScoped: false,
   },
   _getShopCartCalEvents: {
     category: "shopCartCalEventsData",
     keyFields: CALENDAR_KEY_FIELDS,
-    composite: true,
     affectsSchedule: true,
-    skipEmpty: true,
+    rangeScoped: true,
   },
   _getScheduleCalEvents: {
     category: "scheduleCalEventsData",
     keyFields: CALENDAR_KEY_FIELDS,
-    composite: true,
     affectsSchedule: true,
-    skipEmpty: true,
+    rangeScoped: true,
   },
 };
 
 function itemsFromPayloadData(data: unknown): Record<string, unknown>[] {
-  const items = Array.isArray(data)
-    ? data
-    : data && typeof data === "object"
-      ? Object.values(data)
-      : [];
+  const items = Array.isArray(data) ? data : Object.values(data as object);
   return items.filter(
     (item): item is Record<string, unknown> =>
       Boolean(item) && typeof item === "object",
   );
+}
+
+/** The `YYYY-MM-DD` date an event starts on, if it has one. */
+function eventDate(item: unknown): string | null {
+  if (!item || typeof item !== "object") {
+    return null;
+  }
+  for (const field of CALENDAR_DATE_FIELDS) {
+    const value = (item as Record<string, unknown>)[field];
+    const match =
+      typeof value === "string" ? value.match(/^\d{4}-\d{2}-\d{2}/) : null;
+    if (match) {
+      return match[0];
+    }
+  }
+  return null;
+}
+
+/**
+ * Stores calendar events for the response's date range. Stored events inside
+ * that range (or without a date) are replaced; other weeks are kept, so viewing
+ * a week where a class doesn't meet doesn't drop it from the weekly pattern.
+ */
+async function storeCalendarRange(
+  category: string,
+  items: Record<string, unknown>[],
+  entries: Record<string, unknown>,
+): Promise<void> {
+  const dates = items.map(eventDate);
+  if (dates.some((date) => date === null)) {
+    // No reliable range to scope to: treat the response as the full list.
+    await replaceGenericCache(category, entries);
+    return;
+  }
+  const sorted = (dates as string[]).sort();
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+
+  const stored = (await getCacheCategory(category)) ?? {};
+  const staleHashes = Object.entries(stored)
+    .filter(([, entry]) => {
+      const date = eventDate(entry.combinedData);
+      return date === null || (date >= first && date <= last);
+    })
+    .map(([hash]) => hash);
+  await removeGenericCacheEntries(category, staleHashes);
+  await setGenericCache(category, entries);
 }
 
 async function storeResponse(responseType: string, data: unknown) {
@@ -116,31 +144,35 @@ async function storeResponse(responseType: string, data: unknown) {
   if (!rule) {
     return;
   }
+  if (!data || typeof data !== "object") {
+    // A response without a data list (e.g. an error body) isn't an empty
+    // snapshot; storing it would wipe the cart or schedule.
+    AppLogger.warn(`Ignoring ${responseType} response without data`);
+    return;
+  }
 
   const items = itemsFromPayloadData(data);
-  if (rule.skipEmpty && items.length === 0) {
+  if (rule.rangeScoped && items.length === 0) {
+    // A week with no meetings has nothing to replace.
     return;
   }
 
   const entries: Record<string, unknown> = {};
   for (const item of items) {
-    const key = rule.composite
-      ? compositeCacheKeyFromItem(item, rule.keyFields)
-      : cacheKeyFromItem(item, rule.keyFields);
+    const key = compositeCacheKeyFromItem(item, rule.keyFields);
     entries[await generateCacheKey(key)] = item;
   }
 
-  // Each response is the full current list, so replace rather than merge:
-  // classes dropped from the cart/schedule must disappear.
-  await replaceGenericCache(rule.category, entries);
+  if (rule.rangeScoped) {
+    await storeCalendarRange(rule.category, items, entries);
+  } else {
+    // Each table response is the full current list, so replace rather than
+    // merge: classes dropped from the cart/schedule must disappear.
+    await replaceGenericCache(rule.category, entries);
+  }
 
   if (rule.affectsSchedule) {
-    invalidateScheduleCache();
-    if (typeof chrome !== "undefined" && chrome.storage?.local) {
-      await chrome.storage.local.set({
-        [SCHEDULE_DATA_VERSION_KEY]: Date.now(),
-      });
-    }
+    await notifyScheduleDataChanged();
   }
 }
 

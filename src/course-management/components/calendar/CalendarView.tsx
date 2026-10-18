@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 
 import { getCacheCategory } from "../../cache/courseRetrieval";
+import {
+  getScheduleCacheGeneration,
+  subscribeScheduleCache,
+} from "../../cache/scheduleCacheSignal";
 import { parseDayTimeEvent } from "../../schedule/parseScheduleDayTime";
 import {
   type ScheduleEvent,
@@ -121,55 +125,14 @@ let cachedScheduleEventsPromise: Promise<ScheduleEvent[]> | null = null;
 let cachedCartEvents: ScheduleEvent[] | null = null;
 let cachedCartEventsPromise: Promise<ScheduleEvent[]> | null = null;
 
-// Bumped on every invalidation so a load that started before it can't
-// repopulate the cache with stale data.
-let scheduleCacheGeneration = 0;
-const scheduleCacheListeners = new Set<() => void>();
-
-/**
- * chrome.storage key bumped whenever site responses update schedule/cart data.
- * Responses are captured by the content script in the PeopleSoft iframe, while
- * the drawer lives in the top frame, so module state alone can't signal them.
- */
-export const SCHEDULE_DATA_VERSION_KEY = "scheduleDataVersion";
-
-export const invalidateScheduleCache = (): void => {
-  scheduleCacheGeneration++;
+// Drop memoized events whenever stored schedule/cart data changes. Registered
+// at module load, so it runs before components re-render on the same signal.
+subscribeScheduleCache(() => {
   cachedScheduleEvents = null;
   cachedScheduleEventsPromise = null;
   cachedCartEvents = null;
   cachedCartEventsPromise = null;
-  for (const listener of scheduleCacheListeners) {
-    listener();
-  }
-};
-
-/** Registers a callback for schedule cache invalidations; returns an unsubscribe. */
-export const subscribeScheduleCache = (listener: () => void): (() => void) => {
-  scheduleCacheListeners.add(listener);
-  return () => {
-    scheduleCacheListeners.delete(listener);
-  };
-};
-
-let isWatchingScheduleCache = false;
-
-/** Invalidates this frame's schedule cache when another frame stores new data. */
-export const watchScheduleCacheChanges = (): void => {
-  if (
-    isWatchingScheduleCache ||
-    typeof chrome === "undefined" ||
-    !chrome.storage?.onChanged
-  ) {
-    return;
-  }
-  isWatchingScheduleCache = true;
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === "local" && SCHEDULE_DATA_VERSION_KEY in changes) {
-      invalidateScheduleCache();
-    }
-  });
-};
+});
 
 /** Re-renders the caller whenever the schedule cache is invalidated. */
 export const useScheduleCacheVersion = (): number => {
@@ -571,7 +534,7 @@ export const loadScheduleEvents = async (): Promise<ScheduleEvent[]> => {
     return cachedScheduleEventsPromise;
   }
 
-  const generation = scheduleCacheGeneration;
+  const generation = getScheduleCacheGeneration();
   const promise = (async () => {
     try {
       const calendarEntries = await getCacheCategory("scheduleCalEventsData");
@@ -588,12 +551,12 @@ export const loadScheduleEvents = async (): Promise<ScheduleEvent[]> => {
         1 + calendarEvents.length,
       );
       const events = mergeScheduleSources(tableEvents, calendarEvents);
-      if (generation === scheduleCacheGeneration) {
+      if (generation === getScheduleCacheGeneration()) {
         cachedScheduleEvents = events;
       }
       return events;
     } catch {
-      if (generation === scheduleCacheGeneration) {
+      if (generation === getScheduleCacheGeneration()) {
         cachedScheduleEventsPromise = null;
       }
       return [];
@@ -612,7 +575,7 @@ export const loadCartScheduleEvents = async (): Promise<ScheduleEvent[]> => {
     return cachedCartEventsPromise;
   }
 
-  const generation = scheduleCacheGeneration;
+  const generation = getScheduleCacheGeneration();
   const promise = (async () => {
     try {
       const calendarEntries = await getCacheCategory("shopCartCalEventsData");
@@ -629,12 +592,12 @@ export const loadCartScheduleEvents = async (): Promise<ScheduleEvent[]> => {
         10_000 + calendarEvents.length,
       );
       const events = mergeScheduleSources(tableEvents, calendarEvents);
-      if (generation === scheduleCacheGeneration) {
+      if (generation === getScheduleCacheGeneration()) {
         cachedCartEvents = events;
       }
       return events;
     } catch {
-      if (generation === scheduleCacheGeneration) {
+      if (generation === getScheduleCacheGeneration()) {
         cachedCartEventsPromise = null;
       }
       return [];

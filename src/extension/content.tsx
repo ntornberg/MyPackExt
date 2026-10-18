@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 
-import { watchScheduleCacheChanges } from "../course-management/components/calendar/CalendarView";
+import { watchScheduleCacheChanges } from "../course-management/cache/scheduleCacheSignal";
 import {
   debouncedScrapePlanner,
   scrapeScheduleTable,
