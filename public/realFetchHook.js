@@ -25,6 +25,7 @@
             window.addEventListener("message", (ev) => {
                 try {
                     if (
+                        ev.source === window &&
                         ev.data?.type === "RECEIVER_READY" &&
                         ev.data.source === "content-script"
                     ) {
@@ -71,14 +72,17 @@
                             data = data.data;
                         }
 
-                        const ok = await receiverPromise;
+                        await receiverPromise;
                         window.postMessage(
                             {
                                 source: "realFetchHook",
                                 type: "CLASS_DATA",
                                 payload: { data: data, responseType: matchedKeyword },
                             },
-                            "*"
+                            // "null" origins (sandboxed/about:blank) can't be targeted.
+                            window.location.origin !== "null"
+                                ? window.location.origin
+                                : "*"
                         );
                     }
                 } catch (err) {

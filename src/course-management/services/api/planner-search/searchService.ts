@@ -7,118 +7,93 @@ import type { CourseData } from "../../../../utils/course-search/parseRegistrarU
 import { AppLogger } from "../../../../utils/logger";
 
 /**
+ * Sends a registrar search through the background worker and returns the raw
+ * response. Throws on transport or HTTP failures so callers can tell them
+ * apart from a search that genuinely found nothing.
+ */
+function fetchViaBackground(url: string, formData: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(
+      { type: "fetchData", url, formData },
+      (response) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+          return;
+        }
+        if (response == null) {
+          reject(new Error("Received null response from background fetch"));
+          return;
+        }
+        if (!response.success || response.error) {
+          reject(new Error(`Background fetch failed: ${response.error}`));
+          return;
+        }
+        resolve(response);
+      },
+    );
+  });
+}
+
+/**
  * Searches for open course sections based on term and course abbreviation/catalog number
  *
  * @param {string} term The academic term to search in
  * @param {string} courseAbr Course abbreviation (e.g., "CSC")
  * @param {string} catalogNum Catalog number (e.g., "316")
- * @returns {Promise<CourseData | null>} CourseData or null if not found or error
+ * @returns {Promise<CourseData | null>} CourseData, or null when the search found no course
+ * @throws When the request fails or the response can't be parsed
  */
 export async function searchOpenCoursesByParams(
   term: string,
   courseAbr: string,
   catalogNum: string,
 ): Promise<CourseData | null> {
-  try {
-    AppLogger.info("Searching open courses for", {
-      term,
-      courseAbr,
-      catalogNum,
-    });
-    const formData = formCourseURL(term, courseAbr, catalogNum);
-
-    if (!formData) {
-      AppLogger.warn(
-        "Aborting searchOpenCourses: formData is null (subject missing)",
-        { term, courseAbr, catalogNum },
-      );
-      return null;
-    }
-
-    function sendMessage(): Promise<any> {
-      return new Promise((resolve, _) => {
-        chrome.runtime.sendMessage(
-          {
-            type: "fetchData",
-            url: "https://webappprd.acs.ncsu.edu/php/coursecat/search.php",
-            formData: formData,
-          },
-          (response) => {
-            resolve(response);
-          },
-        );
-      });
-    }
-
-    const response_string = await sendMessage();
-
-    if (response_string == null) {
-      AppLogger.warn("Received null response from background fetch");
-    } else if (response_string && response_string.error) {
-      AppLogger.error("Error in background fetch:", response_string.error);
-    }
-
-    if (response_string != null && !response_string.error) {
-      const parsed = parseHTMLContent(response_string);
-      if (Array.isArray(parsed)) {
-        return parsed[0];
-      } else if (parsed) {
-        return parsed;
-      } else {
-        return null;
-      }
-    }
-  } catch (error) {
-    AppLogger.error("Error in searchOpenCourses", error);
+  AppLogger.info("Searching open courses for", {
+    term,
+    courseAbr,
+    catalogNum,
+  });
+  const formData = formCourseURL(term, courseAbr, catalogNum);
+  if (!formData) {
+    throw new Error(
+      `Invalid search parameters: ${courseAbr} ${catalogNum} ${term}`,
+    );
   }
 
-  return null;
+  const response = await fetchViaBackground(
+    "https://webappprd.acs.ncsu.edu/php/coursecat/search.php",
+    formData,
+  );
+  const parsed = parseHTMLContent(response);
+  if (Array.isArray(parsed)) {
+    return parsed[0] ?? null;
+  }
+  return parsed;
 }
+
+/**
+ * Searches every course in a subject for a term.
+ *
+ * @returns {Promise<CourseData[]>} Courses found (empty when none)
+ * @throws When the request fails or the response can't be parsed
+ */
 export async function batchSearchOpenCourses(
   term: string,
   subject: string,
-): Promise<CourseData[] | CourseData | null> {
-  try {
-    AppLogger.info("Searching open courses for", { term, subject });
-    const formData = formCourseURL(term, subject, null);
-
-    if (!formData) {
-      AppLogger.warn(
-        "Aborting searchOpenCourses: formData is null (subject missing)",
-        { term, subject },
-      );
-      return null;
-    }
-
-    function sendMessage(): Promise<any> {
-      return new Promise((resolve, _) => {
-        chrome.runtime.sendMessage(
-          {
-            type: "fetchData",
-            url: "https://cloudflareworker.nicktornberg12.workers.dev/",
-            formData: formData,
-          },
-          (response) => {
-            resolve(response);
-          },
-        );
-      });
-    }
-
-    const response_string = await sendMessage();
-
-    if (response_string == null) {
-      AppLogger.warn("Received null response from background fetch");
-    } else if (response_string && response_string.error) {
-      AppLogger.error("Error in background fetch:", response_string.error);
-    }
-
-    if (response_string != null && !response_string.error) {
-      return parseHTMLContent(response_string);
-    }
-  } catch (error) {
-    AppLogger.error("Error in searchOpenCourses", error);
+): Promise<CourseData[]> {
+  AppLogger.info("Searching open courses for", { term, subject });
+  const formData = formCourseURL(term, subject, null);
+  if (!formData) {
+    throw new Error(`Invalid search parameters: ${subject} ${term}`);
   }
 
-  return null;
+  const response = await fetchViaBackground(
+    "https://cloudflareworker.nicktornberg12.workers.dev/",
+    formData,
+  );
+  const parsed = parseHTMLContent(response);
+  if (!parsed) {
+    return [];
+  }
+  return Array.isArray(parsed) ? parsed : [parsed];
 }

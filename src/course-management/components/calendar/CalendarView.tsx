@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 
 import { getCacheCategory } from "../../cache/courseRetrieval";
+import {
+  getScheduleCacheGeneration,
+  subscribeScheduleCache,
+} from "../../cache/scheduleCacheSignal";
 import { parseDayTimeEvent } from "../../schedule/parseScheduleDayTime";
 import {
   type ScheduleEvent,
@@ -121,11 +125,20 @@ let cachedScheduleEventsPromise: Promise<ScheduleEvent[]> | null = null;
 let cachedCartEvents: ScheduleEvent[] | null = null;
 let cachedCartEventsPromise: Promise<ScheduleEvent[]> | null = null;
 
-export const invalidateScheduleCache = (): void => {
+// Drop memoized events whenever stored schedule/cart data changes. Registered
+// at module load, so it runs before components re-render on the same signal.
+subscribeScheduleCache(() => {
   cachedScheduleEvents = null;
   cachedScheduleEventsPromise = null;
   cachedCartEvents = null;
   cachedCartEventsPromise = null;
+});
+
+/** Re-renders the caller whenever the schedule cache is invalidated. */
+export const useScheduleCacheVersion = (): number => {
+  const [version, setVersion] = useState(0);
+  useEffect(() => subscribeScheduleCache(() => setVersion((v) => v + 1)), []);
+  return version;
 };
 
 const hasSharedDay = (
@@ -521,7 +534,8 @@ export const loadScheduleEvents = async (): Promise<ScheduleEvent[]> => {
     return cachedScheduleEventsPromise;
   }
 
-  cachedScheduleEventsPromise = (async () => {
+  const generation = getScheduleCacheGeneration();
+  const promise = (async () => {
     try {
       const calendarEntries = await getCacheCategory("scheduleCalEventsData");
       const calendarEvents = buildEventsFromCalendarEntries(
@@ -536,15 +550,21 @@ export const loadScheduleEvents = async (): Promise<ScheduleEvent[]> => {
         CALENDAR_COLOR_ENROLLED_CLASS,
         1 + calendarEvents.length,
       );
-      cachedScheduleEvents = mergeScheduleSources(tableEvents, calendarEvents);
-      return cachedScheduleEvents;
+      const events = mergeScheduleSources(tableEvents, calendarEvents);
+      if (generation === getScheduleCacheGeneration()) {
+        cachedScheduleEvents = events;
+      }
+      return events;
     } catch {
-      cachedScheduleEventsPromise = null;
+      if (generation === getScheduleCacheGeneration()) {
+        cachedScheduleEventsPromise = null;
+      }
       return [];
     }
   })();
+  cachedScheduleEventsPromise = promise;
 
-  return cachedScheduleEventsPromise;
+  return promise;
 };
 
 export const loadCartScheduleEvents = async (): Promise<ScheduleEvent[]> => {
@@ -555,7 +575,8 @@ export const loadCartScheduleEvents = async (): Promise<ScheduleEvent[]> => {
     return cachedCartEventsPromise;
   }
 
-  cachedCartEventsPromise = (async () => {
+  const generation = getScheduleCacheGeneration();
+  const promise = (async () => {
     try {
       const calendarEntries = await getCacheCategory("shopCartCalEventsData");
       const calendarEvents = buildEventsFromCalendarEntries(
@@ -570,15 +591,21 @@ export const loadCartScheduleEvents = async (): Promise<ScheduleEvent[]> => {
         CALENDAR_COLOR_CART_CLASS,
         10_000 + calendarEvents.length,
       );
-      cachedCartEvents = mergeScheduleSources(tableEvents, calendarEvents);
-      return cachedCartEvents;
+      const events = mergeScheduleSources(tableEvents, calendarEvents);
+      if (generation === getScheduleCacheGeneration()) {
+        cachedCartEvents = events;
+      }
+      return events;
     } catch {
-      cachedCartEventsPromise = null;
+      if (generation === getScheduleCacheGeneration()) {
+        cachedCartEventsPromise = null;
+      }
       return [];
     }
   })();
+  cachedCartEventsPromise = promise;
 
-  return cachedCartEventsPromise;
+  return promise;
 };
 
 /**
@@ -599,6 +626,7 @@ export const CalendarView = (params: CalendarViewProps) => {
 
   const [eventData, setEventData] = useState<ScheduleEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const scheduleCacheVersion = useScheduleCacheVersion();
 
   useEffect(() => {
     if (staticBackgroundEvents !== undefined) {
@@ -663,7 +691,13 @@ export const CalendarView = (params: CalendarViewProps) => {
       mounted = false;
       window.clearTimeout(safetyTimeout);
     };
-  }, [dayTime, courseData?.code, staticBackgroundEvents, linkedMeetings]);
+  }, [
+    dayTime,
+    courseData?.code,
+    staticBackgroundEvents,
+    linkedMeetings,
+    scheduleCacheVersion,
+  ]);
 
   if (isLoading) {
     return (

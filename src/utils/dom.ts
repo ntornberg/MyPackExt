@@ -82,12 +82,12 @@ export function ensureExtensionCell(
 export function waitForScheduleTable(): Promise<Element> {
   AppLogger.info("Waiting for schedule table (#scheduleTable)...");
   return new Promise((resolve) => {
-    const findTable = (): Element | null => {
-      const iframe = document.querySelector<HTMLIFrameElement>(
+    const findIframe = () =>
+      document.querySelector<HTMLIFrameElement>(
         '[id$="divPSPAGECONTAINER"] iframe',
-      )?.contentDocument;
-      return iframe ? iframe.querySelector("#scheduleTable") : null;
-    };
+      );
+    const findTable = (): Element | null =>
+      findIframe()?.contentDocument?.querySelector("#scheduleTable") ?? null;
 
     const existingTable = findTable();
     if (existingTable) {
@@ -95,18 +95,49 @@ export function waitForScheduleTable(): Promise<Element> {
       return resolve(existingTable);
     }
 
-    const observer = new MutationObserver(() => {
+    // The table renders inside the PeopleSoft iframe, whose DOM changes don't
+    // reach an observer on the top document. Observe the iframe's document too,
+    // and re-attach on each load since navigation replaces that document.
+    const observedDocs = new WeakSet<Document>();
+    const observedIframes = new Set<HTMLIFrameElement>();
+
+    const check = () => {
       const table = findTable();
       if (table) {
         AppLogger.info("Schedule table found by MutationObserver.");
         observer.disconnect();
+        for (const iframe of observedIframes) {
+          iframe.removeEventListener("load", check);
+        }
         resolve(table);
+        return;
       }
-    });
+      watchIframe();
+    };
+
+    const observer = new MutationObserver(check);
+
+    const watchIframe = () => {
+      const iframe = findIframe();
+      if (!iframe) {
+        return;
+      }
+      if (!observedIframes.has(iframe)) {
+        observedIframes.add(iframe);
+        iframe.addEventListener("load", check);
+      }
+      const doc = iframe.contentDocument;
+      if (doc && !observedDocs.has(doc)) {
+        observedDocs.add(doc);
+        observer.observe(doc, { childList: true, subtree: true });
+      }
+    };
+
     observer.observe(document.documentElement, {
       childList: true,
       subtree: true,
     });
+    watchIframe();
   });
 }
 const SHADOW_THEME_STYLE_ATTR = "data-mpp-shadow-theme";

@@ -37,6 +37,31 @@ function buildNullCourseCacheKey(courseKey: string, term: string): string {
   return `null-${courseKey} ${term}`;
 }
 
+type GradeProfRequest = { course_title: string; instructor_name: string };
+
+async function fetchGradeProfData(
+  sections: GradeProfRequest[],
+): Promise<BatchDataRequestResponse> {
+  const url = `${SUPABASE_URL}/functions/v1/clever-function`;
+  const apiResponse = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify(sections),
+  });
+
+  if (!apiResponse.ok) {
+    throw new Error(
+      `API error: ${apiResponse.status} ${apiResponse.statusText}`,
+    );
+  }
+
+  const jsonResponse = await apiResponse.json();
+  return jsonResponse.data as BatchDataRequestResponse;
+}
+
 /** Same path as mergeData so lecture rows get `linkedMeetings` (labs/rec only get that in mergeData). */
 function mergeCourseDataWithoutGradeBatch(
   courseKey: string,
@@ -127,7 +152,15 @@ export async function fetchPlannerCourseSections(
       "fetching from API",
     );
     onProgress?.(30, `Fetching open courses data for ${courseKey}`);
-    courseData = await searchOpenCoursesByParams(term, courseAbr, catalogNum);
+    try {
+      courseData = await searchOpenCoursesByParams(term, courseAbr, catalogNum);
+    } catch (error) {
+      // Transient failure (network, HTTP error, bad response): don't cache it
+      // as "unavailable", so the next search retries.
+      AppLogger.error("Open courses search failed for", courseKey, error);
+      onProgress?.(100, `Could not load ${courseKey}; try again`);
+      return null;
+    }
 
     if (!courseData) {
       AppLogger.error("No open courses data returned for", courseKey);
@@ -211,24 +244,7 @@ export async function fetchPlannerCourseSections(
     // Fetch grade/professor data if not in cache
     onProgress?.(70, `Fetching grade/professor data for ${courseKey}`);
     try {
-      const url = `${SUPABASE_URL}/functions/v1/clever-function`;
-      const apiResponse = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify(courseSectionsWithProfs),
-      });
-
-      if (!apiResponse.ok) {
-        throw new Error(
-          `API error: ${apiResponse.status} ${apiResponse.statusText}`,
-        );
-      }
-
-      const jsonResponse = await apiResponse.json();
-      gradeProfData = jsonResponse.data as BatchDataRequestResponse;
+      gradeProfData = await fetchGradeProfData(courseSectionsWithProfs);
       // Cache grade/professor data
 
       await setGenericCache(CACHE_KEYS.GRADE_PROF, {
@@ -355,53 +371,26 @@ export async function batchFetchCoursesData(
     const fetchPromises = subjects_to_fetch.map(async (subject) => {
       try {
         onProgress?.(25, `Fetching open courses data for ${subject}`);
-        const courseData = await batchSearchOpenCourses(term, subject);
-        if (courseData) {
-          if (Array.isArray(courseData)) {
-            const filteredCourseData = courseData.filter((course) => {
-              return openCoursesToFetch[`${course.code}`];
-            });
-            for (const course of filteredCourseData) {
-              const hashKey = openCoursesHashKeys[course.code];
-              const cacheData = JSON.stringify(course);
-              await setGenericCache(
-                CACHE_KEYS.OPEN_COURSES,
-                { [hashKey]: cacheData },
-                OPEN_COURSES_CACHE_TTL_MS,
-              );
-              openCoursesCache[course.code] = course;
-            }
-          } else {
-            const filteredCourseData = openCoursesToFetch[`${courseData.code}`];
-            if (!filteredCourseData) {
-              const nullCacheKey = buildNullCourseCacheKey(
-                courseData.code,
-                term,
-              );
-              const nullHashKey = await generateCacheKey(nullCacheKey);
-              await setGenericCache(CACHE_KEYS.NULL_COURSES, {
-                [nullHashKey]: {
-                  courseKey: courseData.code,
-                  term,
-                  reason: "API returned null",
-                },
-              });
-            } else {
-              const hashKey = openCoursesHashKeys[courseData.code];
-              const cacheData = JSON.stringify(courseData);
-              await setGenericCache(
-                CACHE_KEYS.OPEN_COURSES,
-                { [hashKey]: cacheData },
-                OPEN_COURSES_CACHE_TTL_MS,
-              );
-              openCoursesCache[courseData.code] = courseData;
-            }
-          }
+        const subjectCourses = await batchSearchOpenCourses(term, subject);
 
-          return { success: true, subject };
-        } else {
-          return { success: false, subject };
+        const openCourseEntries: Record<string, string> = {};
+        for (const course of subjectCourses) {
+          if (!openCoursesToFetch[course.code]) continue;
+          openCourseEntries[openCoursesHashKeys[course.code]] =
+            JSON.stringify(course);
+          openCoursesCache[course.code] = course;
         }
+        await setGenericCache(
+          CACHE_KEYS.OPEN_COURSES,
+          openCourseEntries,
+          OPEN_COURSES_CACHE_TTL_MS,
+        );
+
+        // Requested courses this subject search didn't return are not
+        // null-cached: the batch source may format or limit results
+        // differently from the single-course search that shares that cache.
+
+        return { success: true, subject };
       } catch (error) {
         AppLogger.error(`Error fetching course data for ${subject}:`, error);
         return { success: false, subject, error };
@@ -417,7 +406,7 @@ export async function batchFetchCoursesData(
   // Process grade/professor data for each course individually
   const sectionsToFetch: { course_title: string; instructor_name: string }[] =
     [];
-  let gradeProfData: BatchDataRequestResponse = { courses: [], profs: [] };
+  const gradeProfData: BatchDataRequestResponse = { courses: [], profs: [] };
   const profList = Object.entries(openCoursesCache).reduce(
     (
       outputMap: Record<
@@ -477,7 +466,13 @@ export async function batchFetchCoursesData(
               gradeProfData.profs = gradeProfData.profs || [];
               gradeProfData.profs.push(...cacheData.profs);
             }
-          } else {
+          } else if (
+            !sectionsToFetch.some(
+              (queued) =>
+                queued.course_title === section.course_title &&
+                queued.instructor_name === section.instructor_name,
+            )
+          ) {
             sectionsToFetch.push(section);
           }
         });
@@ -488,35 +483,21 @@ export async function batchFetchCoursesData(
     await Promise.all(fetchProfDataPromises);
   }
 
+  let gradeFetchFailed = false;
   if (sectionsToFetch.length > 0) {
-    // Fetch grade/professor data for this specific course
-    const url = `${SUPABASE_URL}/functions/v1/clever-function`;
-    const apiResponse = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify(sectionsToFetch),
-    });
-
-    if (!apiResponse.ok) {
-      throw new Error(
-        `API error: ${apiResponse.status} ${apiResponse.statusText}`,
-      );
-    }
-
-    const jsonResponse = await apiResponse.json();
-    const responseData = jsonResponse.data as BatchDataRequestResponse;
-    if (!gradeProfData) {
-      gradeProfData = responseData;
-    } else {
-      if (responseData.courses) {
-        gradeProfData.courses?.push(...responseData.courses);
+    try {
+      const responseData = await fetchGradeProfData(sectionsToFetch);
+      if (responseData?.courses) {
+        (gradeProfData.courses ??= []).push(...responseData.courses);
       }
-      if (responseData.profs) {
-        gradeProfData.profs?.push(...responseData.profs);
+      if (responseData?.profs) {
+        (gradeProfData.profs ??= []).push(...responseData.profs);
       }
+    } catch (error) {
+      // Grades are an enhancement; still show registrar sections without them.
+      AppLogger.error("Error fetching grade/professor data:", error);
+      onProgress?.(70, "Grade/professor data unavailable");
+      gradeFetchFailed = true;
     }
   }
 
@@ -527,14 +508,15 @@ export async function batchFetchCoursesData(
     courses?: BatchDataRequestResponse | null;
   }>[] = [];
   // Merge data for each course
-  if (!gradeProfData) return {};
   const mergedData = mergeData(
     openCoursesCache,
     gradeProfData,
     courseKeyMapping,
   );
 
-  Object.values(sectionsToFetch).forEach((section, _) => {
+  // Don't cache empty grade data when the fetch failed.
+  const sectionsToCache = gradeFetchFailed ? [] : sectionsToFetch;
+  sectionsToCache.forEach((section) => {
     // Possible bug where you return grade data for a section that has no instructor because of a partial hash key (who knows)
 
     const set_cache_prom = async (
